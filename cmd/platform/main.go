@@ -27,9 +27,5 @@ func start() error {
 		return err
 	}
 
-	if err := platform.Start(); err != nil {
-		return err
-	}
-
-	return nil
+	return platform.Start()
 }
