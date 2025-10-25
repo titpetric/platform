@@ -1,6 +1,14 @@
 ---
 version: "3"
 
+# Setup GOTOOLCHAIN workaround for #75031:
+# https://github.com/golang/go/issues/75031#issuecomment-3195256688
+
+vars:
+  goversion:
+    sh: go env GOVERSION
+  toolchain: '{{.goversion}}+auto'
+
 tasks:
   default:
     desc: "Run platform base"
@@ -31,10 +39,14 @@ tasks:
 
   bench:
     desc: "Run benchmarks"
+    env:
+      GOTOOLCHAIN: '{{.toolchain}}'
     cmd: go test -bench=. -benchmem -cpu 1,2,4 -race -v ./...
 
   test:
     desc: "Run tests with escape analysis"
+    env:
+      GOTOOLCHAIN: '{{.toolchain}}'
     cmd: go test -v -cover -coverprofile=pkg.cov ./...
 
   cover:
