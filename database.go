@@ -15,7 +15,7 @@ func init() {
 
 func setupConnections(add func(string, string)) {
 	connections := map[string]string{
-		"default": "sqlite://file:platform.db",
+		"default": "sqlite://:memory:",
 	}
 
 	for _, e := range os.Environ() {
