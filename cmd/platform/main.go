@@ -21,11 +21,14 @@ func main() {
 }
 
 func start() error {
+	// Register common middleware.
 	registry.AddMiddleware(middleware.Logger)
 
+	// Register platform modules.
 	if err := module.LoadModules(); err != nil {
 		return err
 	}
 
+	// Start the platform server.
 	return platform.Start()
 }
