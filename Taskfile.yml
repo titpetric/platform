@@ -1,0 +1,53 @@
+---
+version: "3"
+
+tasks:
+  default:
+    desc: "Run platform base"
+    env:
+      PLATFORM_DB_DEFAULT: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
+    cmds:
+      - goimports -w .
+      - CGO_ENABLED=0 go run ./cmd/platform/main.go
+
+  docker:
+    desc: "Build docker image"
+    cmds:
+      - CGO_ENABLED=0 go build ./cmd/platform
+      - docker build -t titpetric/platform -f docker/Dockerfile .
+
+  clean:
+    desc: "Clean build assets"
+    cmds:
+      - rm -f ./platform
+      - docker rmi -f titpetric/platform
+
+  migrate:
+    desc: "Run migrations"
+    cmds:
+      - mig lint --db-dsn="platform:platform@tcp(127.0.0.1:3306)/platform" --schema platform
+      - mig docs --db-dsn="platform:platform@tcp(127.0.0.1:3306)/platform" --schema platform --output=./module/user/docs
+      - mig gen --db-dsn="platform:platform@tcp(127.0.0.1:3306)/platform" --go.skip-json --schema platform --output=./module/user/model
+
+  bench:
+    desc: "Run benchmarks"
+    cmd: go test -bench=. -benchmem -cpu 1,2,4 -race -v ./...
+
+  test:
+    desc: "Run tests with escape analysis"
+    cmd: go test -v -cover -coverprofile=pkg.cov ./...
+
+  cover:
+    desc: "Show source coverage"
+    cmd: go tool cover -func=pkg.cov
+
+  uncover:
+    desc: "Show uncovered source"
+    cmd: uncover pkg.cov
+
+  setup:
+    desc: "Install dev tooling"
+    env:
+      GOBIN: /usr/local/bin
+    cmds:
+      - go install github.com/gregoryv/uncover/...@latest
