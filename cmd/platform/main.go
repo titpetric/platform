@@ -15,13 +15,21 @@ import (
 )
 
 func main() {
+	if err := start(); err != nil {
+		log.Fatalf("exit error: %v", err)
+	}
+}
+
+func start() error {
 	registry.AddMiddleware(middleware.Logger)
 
 	if err := module.LoadModules(); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	if err := platform.Start(); err != nil {
-		log.Fatalf("%v", err)
+		return err
 	}
+
+	return nil
 }
