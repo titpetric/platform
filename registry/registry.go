@@ -30,6 +30,11 @@ func (r *Registry) Add(name string, hook func(chi.Router), shutdown func()) {
 	r.plugins = append(r.plugins, NewPlugin(name, hook, shutdown))
 }
 
+// AddModule will create a new plugin in the registry via a Module.
+func (r *Registry) AddModule(m Module) {
+	r.Add(m.Name(), m.Mount, m.Close)
+}
+
 // Mount will mount all the plugins registered.
 func (r *Registry) Mount(mux chi.Router) {
 	r.mu.RLock()

@@ -57,6 +57,11 @@ func NewHandler(themeFS fs.FS) (*Handler, error) {
 	}, nil
 }
 
+// Name returns the name of the containing package.
+func (h *Handler) Name() string {
+	return "user"
+}
+
 // View is a helper to add modularity to templates. It renders a view with the theme base.tpl.
 // The intent is to override the "content" block in the base.tpl with a view.
 func (h *Handler) View(w http.ResponseWriter, name string, data any) {

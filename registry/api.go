@@ -8,6 +8,7 @@ var global = struct {
 
 var (
 	Add           = global.registry.Add
+	AddModule     = global.registry.AddModule
 	AddMiddleware = global.registry.AddMiddleware
 	Mount         = global.registry.Mount
 	Close         = global.registry.Close

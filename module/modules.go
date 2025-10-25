@@ -1,8 +1,6 @@
 package module
 
 import (
-	"github.com/go-chi/chi/v5"
-
 	"github.com/titpetric/platform/module/theme"
 	"github.com/titpetric/platform/module/user"
 	"github.com/titpetric/platform/registry"
@@ -10,17 +8,8 @@ import (
 
 // Assert implementation contracts.
 var (
-	_ Module = (*user.Handler)(nil)
-	_ Module = (*registry.Plugin)(nil)
+	_ registry.Module = (*user.Handler)(nil)
 )
-
-// Module is the implementation contract for interfaces.
-// The interface should only be used to enforce the API
-// contract as shown above.
-type Module interface {
-	Mount(chi.Router)
-	Close()
-}
 
 // Modules is a collection holding all your modules.
 type Modules struct {
@@ -38,7 +27,7 @@ func LoadModules() error {
 		return err
 	}
 
-	registry.Add("user", result.user.Mount, result.user.Close)
+	registry.AddModule(result.user)
 
 	return nil
 }
