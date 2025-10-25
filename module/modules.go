@@ -1,6 +1,8 @@
 package module
 
 import (
+	"errors"
+
 	"github.com/titpetric/platform/module/theme"
 	"github.com/titpetric/platform/module/user"
 	"github.com/titpetric/platform/registry"
@@ -11,23 +13,22 @@ var (
 	_ registry.Module = (*user.Handler)(nil)
 )
 
-// Modules is a collection holding all your modules.
-type Modules struct {
-	user *user.Handler
-}
-
 // LoadModules will load the default modules and add them to the registry.
 func LoadModules() error {
-	var err error
+	var (
+		errs []error
 
-	result := &Modules{}
+		// addModule is a readability closure, deduplicating error checks for modules.
+		addModule = func(m registry.Module, err error) {
+			if err != nil {
+				errs = append(errs, err)
+				return
+			}
+			registry.AddModule(m)
+		}
+	)
 
-	result.user, err = user.NewHandler(theme.TemplateFS)
-	if err != nil {
-		return err
-	}
+	addModule(user.NewHandler(theme.TemplateFS))
 
-	registry.AddModule(result.user)
-
-	return nil
+	return errors.Join(errs...)
 }
