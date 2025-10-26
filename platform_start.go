@@ -5,7 +5,7 @@ import (
 )
 
 func Start() error {
-	svc, err := StartPlatform(context.Background())
+	svc, err := StartPlatform(context.Background(), nil)
 	if err != nil {
 		return err
 	}
@@ -14,8 +14,8 @@ func Start() error {
 	return nil
 }
 
-func StartPlatform(ctx context.Context, opts ...*Options) (*Platform, error) {
-	svc, err := NewPlatform(opts...)
+func StartPlatform(ctx context.Context, options *Options) (*Platform, error) {
+	svc, err := NewPlatform(options)
 	if err != nil {
 		return nil, err
 	}

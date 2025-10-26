@@ -16,6 +16,7 @@ import (
 	"github.com/titpetric/platform/registry"
 )
 
+// Platform is our world struct.
 type Platform struct {
 	options *Options
 
@@ -28,16 +29,21 @@ type Platform struct {
 	context context.Context
 	cancel  context.CancelFunc
 
-	// Registry holds settings for plugins and middleware.
+	// registry holds settings for plugins and middleware.
 	// It's currently auto-filled from the registry package.
-	Registry *registry.Registry
+	registry *registry.Registry
 }
 
+// Options is a configuration struct for platform behaviour.
 type Options struct {
+	// ServerAddr is the address the server listens to.
 	ServerAddr string
-	Quiet      bool
+
+	// Quiet turns down the verbosity in the Platform logging code, set to true in tests.
+	Quiet bool
 }
 
+// NewOptions provides default options for the platform.
 func NewOptions() *Options {
 	return &Options{
 		ServerAddr: ":8080",
@@ -45,13 +51,11 @@ func NewOptions() *Options {
 }
 
 // NewPlatform will create a new *Platform object. It is the allocation point
-// for each platform instance.
-func NewPlatform(opts ...*Options) (*Platform, error) {
-	var options *Options
-	if len(opts) == 0 {
+// for each platform instance. If no options are passed, the defaults are in use.
+// The defaults options are provided by NewOptions().
+func NewPlatform(options *Options) (*Platform, error) {
+	if options == nil {
 		options = NewOptions()
-	} else {
-		options = opts[0]
 	}
 
 	p := &Platform{
@@ -60,8 +64,8 @@ func NewPlatform(opts ...*Options) (*Platform, error) {
 	}
 
 	// Set up and mount registered routes.
-	p.Registry = registry.Clone()
-	p.Registry.Mount(p.router)
+	p.registry = registry.Clone()
+	p.registry.Mount(p.router)
 
 	// Set up server listener.
 	listener, err := net.Listen("tcp", p.options.ServerAddr)
@@ -78,6 +82,23 @@ func NewPlatform(opts ...*Options) (*Platform, error) {
 	// Set up final shutdown signal.
 	p.context, p.cancel = context.WithCancel(context.Background())
 	return p, nil
+}
+
+// AddModule will add a registry.Module into the internal platform registry.
+// This function should be called before Serve is called.
+func (p *Platform) AddModule(m registry.Module) {
+	p.registry.AddModule(m)
+}
+
+// AddMiddleware will add a middleware to the internal platform registry.
+// This function should be called before Serve is called.
+func (p *Platform) AddMiddleware(m registry.MiddlewareFunc) {
+	p.registry.AddMiddleware(m)
+}
+
+// Stats will report how many middlewares and plugins are added to the registry.
+func (p *Platform) Stats() (int, int) {
+	return p.registry.Stats()
 }
 
 // Serve will start the server and print the registered routes.
@@ -144,7 +165,7 @@ func (p *Platform) Close() {
 	defer p.cancel()
 
 	// Clear registry on shutdown.
-	defer p.Registry.Close()
+	defer p.registry.Close()
 
 	// Give a 5 second timeout for a graceful shutdown.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

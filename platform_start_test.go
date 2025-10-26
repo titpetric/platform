@@ -27,7 +27,7 @@ func TestPlatform(t *testing.T) {
 	t.Run("single", func(t *testing.T) {
 		svc := NewTestPlatform(t)
 
-		plugins, mws := svc.Registry.Stats()
+		plugins, mws := svc.Stats()
 
 		require.Equal(t, 0, plugins)
 		require.Equal(t, 0, mws)
