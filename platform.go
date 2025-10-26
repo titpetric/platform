@@ -50,6 +50,11 @@ func NewOptions() *Options {
 	}
 }
 
+// New is a shorthand for NewPlatform, using default options.
+func New() (*Platform, error) {
+	return NewPlatform(nil)
+}
+
 // NewPlatform will create a new *Platform object. It is the allocation point
 // for each platform instance. If no options are passed, the defaults are in use.
 // The defaults options are provided by NewOptions().
