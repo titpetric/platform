@@ -2,14 +2,9 @@ package registry
 
 import (
 	"log"
-	"net/http"
 	"runtime/debug"
 	"sync"
-
-	"github.com/go-chi/chi/v5"
 )
-
-type MiddlewareFunc func(http.Handler) http.Handler
 
 type Registry struct {
 	mu sync.RWMutex
@@ -23,7 +18,7 @@ func NewRegistry() *Registry {
 }
 
 // Add will create a new plugin in the registry.
-func (r *Registry) Add(name string, hook func(chi.Router), shutdown func()) {
+func (r *Registry) Add(name string, hook func(Router), shutdown func()) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -36,7 +31,7 @@ func (r *Registry) AddModule(m Module) {
 }
 
 // Mount will mount all the plugins registered.
-func (r *Registry) Mount(mux chi.Router) {
+func (r *Registry) Mount(mux Router) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -104,6 +99,5 @@ func (r *Registry) Clone() *Registry {
 
 // Stats returns counts for plugins and middlewares in the registry.
 func (r *Registry) Stats() (plugins, middleware int) {
-	pl, ml := len(r.plugins), len(r.middleware)
-	return pl, ml
+	return len(r.plugins), len(r.middleware)
 }
