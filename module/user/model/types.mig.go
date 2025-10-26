@@ -29,11 +29,29 @@ type User struct {
 	UpdatedAt *time.Time `db:"updated_at"`
 }
 
+// GetID will return the value of ID.
+func (u *User) GetID() string { return u.ID }
+
+// GetFirstName will return the value of FirstName.
+func (u *User) GetFirstName() string { return u.FirstName }
+
+// GetLastName will return the value of LastName.
+func (u *User) GetLastName() string { return u.LastName }
+
+// GetDeletedAt will return the value of DeletedAt.
+func (u *User) GetDeletedAt() *time.Time { return u.DeletedAt }
+
 // SetDeletedAt sets DeletedAt to the provided value.
 func (u *User) SetDeletedAt(stamp time.Time) { u.DeletedAt = &stamp }
 
+// GetCreatedAt will return the value of CreatedAt.
+func (u *User) GetCreatedAt() *time.Time { return u.CreatedAt }
+
 // SetCreatedAt sets CreatedAt to the provided value.
 func (u *User) SetCreatedAt(stamp time.Time) { u.CreatedAt = &stamp }
+
+// GetUpdatedAt will return the value of UpdatedAt.
+func (u *User) GetUpdatedAt() *time.Time { return u.UpdatedAt }
 
 // SetUpdatedAt sets UpdatedAt to the provided value.
 func (u *User) SetUpdatedAt(stamp time.Time) { u.UpdatedAt = &stamp }
@@ -67,8 +85,23 @@ type UserAuth struct {
 	UpdatedAt *time.Time `db:"updated_at"`
 }
 
+// GetUserID will return the value of UserID.
+func (u *UserAuth) GetUserID() string { return u.UserID }
+
+// GetEmail will return the value of Email.
+func (u *UserAuth) GetEmail() string { return u.Email }
+
+// GetPassword will return the value of Password.
+func (u *UserAuth) GetPassword() string { return u.Password }
+
+// GetCreatedAt will return the value of CreatedAt.
+func (u *UserAuth) GetCreatedAt() *time.Time { return u.CreatedAt }
+
 // SetCreatedAt sets CreatedAt to the provided value.
 func (u *UserAuth) SetCreatedAt(stamp time.Time) { u.CreatedAt = &stamp }
+
+// GetUpdatedAt will return the value of UpdatedAt.
+func (u *UserAuth) GetUpdatedAt() *time.Time { return u.UpdatedAt }
 
 // SetUpdatedAt sets UpdatedAt to the provided value.
 func (u *UserAuth) SetUpdatedAt(stamp time.Time) { u.UpdatedAt = &stamp }
@@ -99,8 +132,20 @@ type UserGroup struct {
 	UpdatedAt *time.Time `db:"updated_at"`
 }
 
+// GetID will return the value of ID.
+func (u *UserGroup) GetID() string { return u.ID }
+
+// GetTitle will return the value of Title.
+func (u *UserGroup) GetTitle() string { return u.Title }
+
+// GetCreatedAt will return the value of CreatedAt.
+func (u *UserGroup) GetCreatedAt() *time.Time { return u.CreatedAt }
+
 // SetCreatedAt sets CreatedAt to the provided value.
 func (u *UserGroup) SetCreatedAt(stamp time.Time) { u.CreatedAt = &stamp }
+
+// GetUpdatedAt will return the value of UpdatedAt.
+func (u *UserGroup) GetUpdatedAt() *time.Time { return u.UpdatedAt }
 
 // SetUpdatedAt sets UpdatedAt to the provided value.
 func (u *UserGroup) SetUpdatedAt(stamp time.Time) { u.UpdatedAt = &stamp }
@@ -119,7 +164,7 @@ var UserGroupPrimaryFields = []string{"id"}
 // Stores user memberships in groups using ULID for IDs.
 type UserGroupMember struct {
 	// Reference to user_group.id (ULID)
-	GroupID string `db:"group_id"`
+	UserGroupID string `db:"user_group_id"`
 
 	// Reference to user.id (ULID)
 	UserID string `db:"user_id"`
@@ -128,6 +173,15 @@ type UserGroupMember struct {
 	JoinedAt *time.Time `db:"joined_at"`
 }
 
+// GetUserGroupID will return the value of UserGroupID.
+func (u *UserGroupMember) GetUserGroupID() string { return u.UserGroupID }
+
+// GetUserID will return the value of UserID.
+func (u *UserGroupMember) GetUserID() string { return u.UserID }
+
+// GetJoinedAt will return the value of JoinedAt.
+func (u *UserGroupMember) GetJoinedAt() *time.Time { return u.JoinedAt }
+
 // SetJoinedAt sets JoinedAt to the provided value.
 func (u *UserGroupMember) SetJoinedAt(stamp time.Time) { u.JoinedAt = &stamp }
 
@@ -135,10 +189,10 @@ func (u *UserGroupMember) SetJoinedAt(stamp time.Time) { u.JoinedAt = &stamp }
 const UserGroupMemberTable = "`user_group_member`"
 
 // UserGroupMemberFields is a list of all columns in the DB table.
-var UserGroupMemberFields = []string{"group_id", "user_id", "joined_at"}
+var UserGroupMemberFields = []string{"user_group_id", "user_id", "joined_at"}
 
 // UserGroupMemberPrimaryFields are the primary key fields in the DB table.
-var UserGroupMemberPrimaryFields = []string{"group_id", "user_id"}
+var UserGroupMemberPrimaryFields = []string{"user_group_id", "user_id"}
 
 // UserSession generated for db table `user_session`.
 //
@@ -157,8 +211,20 @@ type UserSession struct {
 	CreatedAt *time.Time `db:"created_at"`
 }
 
+// GetID will return the value of ID.
+func (u *UserSession) GetID() string { return u.ID }
+
+// GetUserID will return the value of UserID.
+func (u *UserSession) GetUserID() string { return u.UserID }
+
+// GetExpiresAt will return the value of ExpiresAt.
+func (u *UserSession) GetExpiresAt() *time.Time { return u.ExpiresAt }
+
 // SetExpiresAt sets ExpiresAt to the provided value.
 func (u *UserSession) SetExpiresAt(stamp time.Time) { u.ExpiresAt = &stamp }
+
+// GetCreatedAt will return the value of CreatedAt.
+func (u *UserSession) GetCreatedAt() *time.Time { return u.CreatedAt }
 
 // SetCreatedAt sets CreatedAt to the provided value.
 func (u *UserSession) SetCreatedAt(stamp time.Time) { u.CreatedAt = &stamp }
