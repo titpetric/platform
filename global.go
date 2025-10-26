@@ -25,7 +25,7 @@ type DatabaseProvider interface {
 	Connect(...string) (*sqlx.DB, error)
 }
 
-// Database is a holder of the database factory api in package namespace.
+// Database is a holder of the database provider api in package namespace.
 // It's intended to be used as `platform.Database.Connect/Open(name string)` to
 // get a live connection, or an error if one occured.
 var Database = global.db
