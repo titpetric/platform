@@ -68,9 +68,8 @@ func NewPlatform(options *Options) (*Platform, error) {
 		router:  chi.NewRouter(),
 	}
 
-	// Set up and mount registered routes.
+	// Set up the default registry.
 	p.registry = registry.Clone()
-	p.registry.Mount(p.router)
 
 	// Set up server listener.
 	listener, err := net.Listen("tcp", p.options.ServerAddr)
@@ -78,11 +77,6 @@ func NewPlatform(options *Options) (*Platform, error) {
 		return nil, err
 	}
 	p.listener = listener
-
-	// Set up server.
-	p.server = &http.Server{
-		Handler: p.router,
-	}
 
 	// Set up final shutdown signal.
 	p.context, p.cancel = context.WithCancel(context.Background())
@@ -110,6 +104,14 @@ func (p *Platform) Stats() (int, int) {
 // It respects cancellation from the passed context, as well as
 // sets up signal notification to respond to SIGTERM.
 func (p *Platform) Serve(ctx context.Context) {
+	// Mount final routes.
+	p.registry.Mount(p.router)
+
+	// Set up the server.
+	p.server = &http.Server{
+		Handler: p.router,
+	}
+
 	// If the program receives a SIGTERM, trigger shutdown.
 	go func() {
 		sigs := make(chan os.Signal, 1)
