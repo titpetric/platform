@@ -1,4 +1,4 @@
-package platform
+package repository
 
 // Module is the implementation contract for modules.
 //

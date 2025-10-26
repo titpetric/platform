@@ -47,7 +47,8 @@ tasks:
     desc: "Run tests with escape analysis"
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
-    cmd: go test -v -cover -coverprofile=pkg.cov ./...
+      CGO_ENABLED: 0
+    cmd: go test -count=1 -v -cover -coverprofile=pkg.cov ./...
 
   cover:
     desc: "Show source coverage"

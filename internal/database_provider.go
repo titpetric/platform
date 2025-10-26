@@ -1,4 +1,4 @@
-package platform
+package internal
 
 import (
 	"fmt"
@@ -7,16 +7,29 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type DatabaseFactory struct {
+type DatabaseProvider struct {
 	credentials map[string]string
 }
 
-func (r *DatabaseFactory) Add(name string, config string) {
+func NewDatabaseProvider() *DatabaseProvider {
+	return &DatabaseProvider{
+		credentials: make(map[string]string, 1),
+	}
+}
+
+func (r *DatabaseProvider) Add(name string, config string) {
 	r.credentials[name] = config
 }
 
-func (r *DatabaseFactory) Connect(dbName ...string) (*sqlx.DB, error) {
-	names := dbName
+func (r *DatabaseProvider) Connect(names ...string) (*sqlx.DB, error) {
+	return r.with(sqlx.Connect, names...)
+}
+
+func (r *DatabaseProvider) Open(names ...string) (*sqlx.DB, error) {
+	return r.with(sqlx.Open, names...)
+}
+
+func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error), names ...string) (*sqlx.DB, error) {
 	if len(names) == 0 {
 		names = []string{"default"}
 	}
@@ -35,7 +48,7 @@ func (r *DatabaseFactory) Connect(dbName ...string) (*sqlx.DB, error) {
 			// we should parse/add these options to the DSN as mandatory:
 			// ?collation=utf8_general_ci&parseTime=true&loc=Local
 			dsn += "?parseTime=true"
-			return sqlx.Connect(driver, dsn)
+			return connector(driver, dsn)
 		}
 	}
 	return nil, fmt.Errorf("No configuration found for database: %v", names)

@@ -5,14 +5,11 @@ import (
 	"strings"
 )
 
-var Database *DatabaseFactory = &DatabaseFactory{
-	credentials: make(map[string]string),
-}
-
 func init() {
-	setupConnections(Database.Add)
+	setupConnections(global.db.Add)
 }
 
+// setupConnections will parse the env for named connection strings.
 func setupConnections(add func(string, string)) {
 	connections := map[string]string{
 		"default": "sqlite://:memory:",

@@ -1,4 +1,4 @@
-package platform
+package repository
 
 type Plugin struct {
 	name     string

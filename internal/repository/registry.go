@@ -1,4 +1,4 @@
-package platform
+package repository
 
 import (
 	"log"
@@ -6,15 +6,13 @@ import (
 	"sync"
 )
 
+// Registry provides a programmatic API to manage middleware and plugins.
+// A plugin registers middleware and has a contract to enforce lifecycle.
 type Registry struct {
 	mu sync.RWMutex
 
 	plugins    []Plugin
 	middleware []Middleware
-}
-
-func NewRegistry() *Registry {
-	return &Registry{}
 }
 
 // Add will create a new plugin in the registry.

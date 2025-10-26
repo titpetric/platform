@@ -1,4 +1,4 @@
-package platform
+package repository
 
 import (
 	"net/http"

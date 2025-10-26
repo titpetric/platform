@@ -1,4 +1,4 @@
 /platform
 /platform.db
-*.cov
-go-fsck.json
+/*.cov
+/*.json

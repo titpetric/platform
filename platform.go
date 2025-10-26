@@ -33,22 +33,6 @@ type Platform struct {
 	registry *Registry
 }
 
-// Options is a configuration struct for platform behaviour.
-type Options struct {
-	// ServerAddr is the address the server listens to.
-	ServerAddr string
-
-	// Quiet turns down the verbosity in the Platform logging code, set to true in tests.
-	Quiet bool
-}
-
-// NewOptions provides default options for the platform.
-func NewOptions() *Options {
-	return &Options{
-		ServerAddr: ":8080",
-	}
-}
-
 // New is a shorthand for NewPlatform, using default options.
 func New() (*Platform, error) {
 	return NewPlatform(nil)
@@ -76,6 +60,10 @@ func NewPlatform(options *Options) (*Platform, error) {
 		return nil, err
 	}
 	p.listener = listener
+
+	if !p.options.Quiet {
+		log.Println("Server listening on", p.listener.Addr().String())
+	}
 
 	// Set up final shutdown signal.
 	p.context, p.cancel = context.WithCancel(context.Background())
@@ -127,10 +115,6 @@ func (p *Platform) Serve(ctx context.Context) {
 
 	// Start the server.
 	go func() {
-		if !p.options.Quiet {
-			log.Println("Server listening on", p.listener.Addr().String())
-		}
-
 		if err := p.server.Serve(p.listener); err != nil && err != http.ErrServerClosed {
 			// Fatalf would skip module cancellation. This just logs the shutdown issue.
 			log.Printf("server error: %v", err)
@@ -159,9 +143,14 @@ func (p *Platform) URL() string {
 	return "http://127.0.0.1:" + port
 }
 
-// Close will gracefully shutdown the server and then cancel
-// the server context when done. The registry gets gracefully
-// shut down and cleared.
+// Close will gracefully shutdown the server and then cancel the server context when done.
+//
+// Close is an important part of the lifecycle tests. When closing the registry,
+// each plugins Close function gets invoked in parallel. This enables the plugin
+// to clear background goroutine event loops, or flush a dirty buffer to storage.
+//
+// Only after the server has fully shut down does the internal context get cancelled.
+// This is used by `Wait` to signal the service has shut down and the program can cleanly exit.
 func (p *Platform) Close() {
 	if !p.options.Quiet {
 		log.Println("shutting down server...")

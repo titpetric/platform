@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestDatabaseEnv checks that we properly decode the expected environment
+// and collect it for a named sql connection string map.
 func TestDatabaseEnv(t *testing.T) {
 	t.Setenv("PLATFORM_DB_XXX", "sqlite://:memory:")
 	t.Setenv("PLATFORM_DB_DEFAULT", "sqlite://:memory:")
