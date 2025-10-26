@@ -1,5 +1,8 @@
 package platform
 
-import "github.com/titpetric/platform/registry"
+import (
+	"github.com/go-chi/chi/v5"
+)
 
-type Router = registry.Router
+// Router is a local shim that aliases the chi router interface.
+type Router = chi.Router

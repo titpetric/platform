@@ -1,4 +1,4 @@
-package registry
+package platform
 
 // Module is the implementation contract for modules.
 //

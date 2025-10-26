@@ -1,4 +1,4 @@
-package registry
+package platform
 
 import (
 	"log"
@@ -10,7 +10,7 @@ type Registry struct {
 	mu sync.RWMutex
 
 	plugins    []Plugin
-	middleware []MiddlewareFunc
+	middleware []Middleware
 }
 
 func NewRegistry() *Registry {
@@ -45,7 +45,7 @@ func (r *Registry) Mount(mux Router) {
 }
 
 // AddMiddleware adds a middleware to the server.
-func (r *Registry) AddMiddleware(f MiddlewareFunc) {
+func (r *Registry) AddMiddleware(f Middleware) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -88,7 +88,7 @@ func (r *Registry) Clone() *Registry {
 
 	clone := &Registry{
 		plugins:    make([]Plugin, len(r.plugins)),
-		middleware: make([]MiddlewareFunc, len(r.middleware)),
+		middleware: make([]Middleware, len(r.middleware)),
 	}
 
 	copy(clone.plugins, r.plugins)

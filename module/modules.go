@@ -3,28 +3,28 @@ package module
 import (
 	"errors"
 
+	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/module/theme"
 	"github.com/titpetric/platform/module/user"
-	"github.com/titpetric/platform/registry"
 )
 
 // Assert implementation contracts.
 var (
-	_ registry.Module = (*user.Handler)(nil)
+	_ platform.Module = (*user.Handler)(nil)
 )
 
-// LoadModules will load the default modules and add them to the registry.
+// LoadModules will load the default modules and add them to the platform.
 func LoadModules() error {
 	var (
 		errs []error
 
 		// addModule is a readability closure, deduplicating error checks for modules.
-		addModule = func(m registry.Module, err error) {
+		addModule = func(m platform.Module, err error) {
 			if err != nil {
 				errs = append(errs, err)
 				return
 			}
-			registry.AddModule(m)
+			platform.AddModule(m)
 		}
 	)
 

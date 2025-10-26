@@ -1,4 +1,4 @@
-package registry
+package platform
 
 type Plugin struct {
 	name     string

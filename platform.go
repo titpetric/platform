@@ -13,7 +13,6 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/titpetric/platform/internal"
-	"github.com/titpetric/platform/registry"
 )
 
 // Platform is our world struct.
@@ -30,8 +29,8 @@ type Platform struct {
 	cancel  context.CancelFunc
 
 	// registry holds settings for plugins and middleware.
-	// It's currently auto-filled from the registry package.
-	registry *registry.Registry
+	// It's auto-filled from global scope.
+	registry *Registry
 }
 
 // Options is a configuration struct for platform behaviour.
@@ -69,7 +68,7 @@ func NewPlatform(options *Options) (*Platform, error) {
 	}
 
 	// Set up the default registry.
-	p.registry = registry.Clone()
+	p.registry = global.registry.Clone()
 
 	// Set up server listener.
 	listener, err := net.Listen("tcp", p.options.ServerAddr)
@@ -85,13 +84,13 @@ func NewPlatform(options *Options) (*Platform, error) {
 
 // AddModule will add a registry.Module into the internal platform registry.
 // This function should be called before Serve is called.
-func (p *Platform) AddModule(m registry.Module) {
+func (p *Platform) AddModule(m Module) {
 	p.registry.AddModule(m)
 }
 
 // AddMiddleware will add a middleware to the internal platform registry.
 // This function should be called before Serve is called.
-func (p *Platform) AddMiddleware(m registry.MiddlewareFunc) {
+func (p *Platform) AddMiddleware(m Middleware) {
 	p.registry.AddMiddleware(m)
 }
 

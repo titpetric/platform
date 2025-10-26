@@ -1,4 +1,4 @@
-package registry
+package platform
 
 var global = struct {
 	registry *Registry
@@ -7,10 +7,6 @@ var global = struct {
 }
 
 var (
-	Add           = global.registry.Add
 	AddModule     = global.registry.AddModule
 	AddMiddleware = global.registry.AddMiddleware
-	Mount         = global.registry.Mount
-	Close         = global.registry.Close
-	Clone         = global.registry.Clone
 )
