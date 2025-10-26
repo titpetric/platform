@@ -9,7 +9,6 @@ import (
 	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/module/user/storage"
-	"github.com/titpetric/platform/registry"
 )
 
 type Handler struct {
@@ -71,7 +70,7 @@ func (h *Handler) View(w http.ResponseWriter, name string, data any) {
 }
 
 // Mount registers login, logout, and register routes.
-func (h *Handler) Mount(r registry.Router) {
+func (h *Handler) Mount(r platform.Router) {
 	r.Get("/login", h.LoginView)
 	r.Post("/login", h.Login)
 	r.Post("/logout", h.Logout)
