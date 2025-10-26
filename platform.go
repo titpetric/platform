@@ -27,6 +27,7 @@ type Platform struct {
 	// final shutdown context
 	context context.Context
 	cancel  context.CancelFunc
+	stop    func()
 
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
@@ -100,16 +101,11 @@ func (p *Platform) Serve(ctx context.Context) {
 	}
 
 	// If the program receives a SIGTERM, trigger shutdown.
-	go func() {
-		sigs := make(chan os.Signal, 1)
-		signal.Notify(sigs, os.Interrupt, syscall.SIGTERM)
-		<-sigs
-		p.Close()
-	}()
+	sigctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	p.stop = stop
 
-	// If the passed context is cancelled, trigger shutdown.
 	go func() {
-		<-ctx.Done()
+		<-sigctx.Done()
 		p.Close()
 	}()
 
@@ -157,7 +153,12 @@ func (p *Platform) Close() {
 	}
 
 	// When done, exit main. It's waiting for the cancelled context there.
-	defer p.cancel()
+	defer func() {
+		if p.stop != nil {
+			p.stop()
+		}
+		p.cancel()
+	}()
 
 	// Clear registry on shutdown.
 	defer p.registry.Close()
