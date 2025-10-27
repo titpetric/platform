@@ -50,6 +50,7 @@ func NewPlatform(options *Options) (*Platform, error) {
 	p := &Platform{
 		options: options,
 		router:  chi.NewRouter(),
+		stop:    func() {},
 	}
 
 	// Set up the default registry.
@@ -153,12 +154,8 @@ func (p *Platform) Close() {
 	}
 
 	// When done, exit main. It's waiting for the cancelled context there.
-	defer func() {
-		if p.stop != nil {
-			p.stop()
-		}
-		p.cancel()
-	}()
+	defer p.cancel()
+	defer p.stop()
 
 	// Clear registry on shutdown.
 	defer p.registry.Close()
