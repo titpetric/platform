@@ -48,11 +48,16 @@ tasks:
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
       CGO_ENABLED: 0
-    cmd: go test -count=1 -v -cover -coverprofile=pkg.cov ./...
+    cmd: go test -count=1 -v -cover -coverpkg=./... -coverprofile=pkg.cov ./...
 
   cover:
     desc: "Show source coverage"
-    cmd: go tool cover -func=pkg.cov
+    cmds:
+      - defer: rm -f pkg.cov.json
+      - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
+      - go-fsck extract ./...
+      - go-fsck coverage -c pkg.cov.json -o go-fsck.json
+      - go-fsck coverage
 
   uncover:
     desc: "Show uncovered source"
