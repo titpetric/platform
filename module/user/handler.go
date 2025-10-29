@@ -1,9 +1,8 @@
 package user
 
 import (
-	"io/fs"
-
 	"github.com/titpetric/platform"
+	"github.com/titpetric/platform/module/theme"
 	"github.com/titpetric/platform/module/user/service"
 	"github.com/titpetric/platform/module/user/storage"
 )
@@ -17,12 +16,13 @@ type Handler struct {
 var _ platform.Module = (*Handler)(nil)
 
 // NewHandler sets up dependencies and produces a handler.
-func NewHandler(themeFS fs.FS) (*Handler, error) {
+func NewHandler() (*Handler, error) {
 	db, err := DB()
 	if err != nil {
 		return nil, err
 	}
 
+	themeFS := theme.TemplateFS
 	userStorage := storage.NewUserStorage(db)
 	sessionStorage := storage.NewSessionStorage(db)
 

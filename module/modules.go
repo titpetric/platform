@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/titpetric/platform"
-	"github.com/titpetric/platform/module/theme"
 	"github.com/titpetric/platform/module/user"
 )
 
@@ -23,7 +22,7 @@ func Load() error {
 		}
 	)
 
-	addModule(user.NewHandler(theme.TemplateFS))
+	addModule(user.NewHandler())
 
 	return errors.Join(errs...)
 }

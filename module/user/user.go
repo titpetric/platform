@@ -18,7 +18,7 @@ func IsLoggedIn(r *http.Request) bool {
 		return user.IsActive()
 	}
 
-	user, err := User(r)
+	user, err := GetSessionUser(r)
 	if user == nil || err != nil {
 		return false
 	}
@@ -26,9 +26,9 @@ func IsLoggedIn(r *http.Request) bool {
 	return user.IsActive()
 }
 
-// User will return the user bound to the session. If no user is bound to
+// GetSessionUser will return the user bound to the session. If no user is bound to
 // the session or there is no session, the function will return nil, nil.
-func User(r *http.Request) (*model.User, error) {
+func GetSessionUser(r *http.Request) (*model.User, error) {
 	if user := userContext.Get(r); user != nil {
 		return user, nil
 	}
