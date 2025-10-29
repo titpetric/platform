@@ -8,11 +8,13 @@ import (
 )
 
 type DatabaseProvider struct {
+	cache       map[string]*sqlx.DB
 	credentials map[string]string
 }
 
 func NewDatabaseProvider() *DatabaseProvider {
 	return &DatabaseProvider{
+		cache:       make(map[string]*sqlx.DB),
 		credentials: make(map[string]string, 1),
 	}
 }
@@ -22,13 +24,35 @@ func (r *DatabaseProvider) Add(name string, config string) {
 }
 
 func (r *DatabaseProvider) Connect(names ...string) (*sqlx.DB, error) {
-	return r.with(sqlx.Connect, names...)
+	db, err := r.cached(sqlx.Connect, names...)
+	return db, err
 }
 
 func (r *DatabaseProvider) Open(names ...string) (*sqlx.DB, error) {
-	return r.with(sqlx.Open, names...)
+	db, err := r.cached(sqlx.Open, names...)
+	return db, err
 }
 
+// cached will return a singleton *db.DB from a named connection.
+func (r *DatabaseProvider) cached(connector func(string, string) (*sqlx.DB, error), names ...string) (*sqlx.DB, error) {
+	if len(names) == 0 {
+		names = []string{"default"}
+	}
+	for _, name := range names {
+		db, ok := r.cache[name]
+		if ok {
+			return db, nil
+		}
+	}
+
+	db, err := r.with(connector, names...)
+	if err == nil {
+		r.cache[names[0]] = db
+	}
+	return db, err
+}
+
+// with will create a *db.DB given the connector (sqlx.Connect/Open).
 func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error), names ...string) (*sqlx.DB, error) {
 	if len(names) == 0 {
 		names = []string{"default"}
