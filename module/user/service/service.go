@@ -50,11 +50,11 @@ func (h *Service) initTemplates(themeFS, moduleFS fs.FS) error {
 		file := path.Base(f)
 		contents, _ := fs.ReadFile(moduleFS, f)
 
-		tmpl := template.Must(template.ParseFS(themeFS, "template/*.tpl"))
+		tmpl := template.Must(template.ParseFS(themeFS, "template/layout/*.tpl"))
 		tmpl = template.Must(tmpl.New(file).Parse(string(contents)))
 		tmpl = template.Must(tmpl.New("wrapper").Parse(`
 			{{define "content"}}{{template "` + file + `" .}}{{end}}
-			{{template "base.tpl" .}}
+			{{template "full.tpl" .}}
 		`))
 
 		templates[file] = internal.NewTemplate(tmpl)

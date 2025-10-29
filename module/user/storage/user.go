@@ -37,32 +37,37 @@ func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model
 	u.SetUpdatedAt(now)
 	u.ID = internal.ULID()
 
-	userQuery := `
-		INSERT INTO user
-		(id, first_name, last_name, deleted_at, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`
-	if _, err := s.db.ExecContext(ctx, userQuery,
-		u.ID, u.FirstName, u.LastName, u.DeletedAt, u.CreatedAt, u.UpdatedAt,
-	); err != nil {
-		return nil, fmt.Errorf("create user: %w", err)
-	}
-
 	hashed, err := bcrypt.GenerateFromPassword([]byte(userAuth.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
-	authQuery := `
-		INSERT INTO user_auth
-			(user_id, email, password, created_at, updated_at)
-		VALUES
-			(?, ?, ?, ?, ?)
-	`
-	if _, err := s.db.ExecContext(ctx, authQuery,
-		u.ID, userAuth.Email, hashed, now, now,
-	); err != nil {
-		return nil, fmt.Errorf("create user_auth: %w", err)
+	err = internal.Transaction(s.db, func(tx *sqlx.Tx) error {
+		var err error
+		userQuery := `
+			INSERT INTO user
+			(id, first_name, last_name, deleted_at, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?)
+		`
+		_, err = s.db.ExecContext(ctx, userQuery, u.ID, u.FirstName, u.LastName, u.DeletedAt, u.CreatedAt, u.UpdatedAt)
+		if err != nil {
+			return fmt.Errorf("create user: %w", err)
+		}
+
+		authQuery := `
+			INSERT INTO user_auth
+				(user_id, email, password, created_at, updated_at)
+			VALUES
+				(?, ?, ?, ?, ?)
+		`
+		_, err = s.db.ExecContext(ctx, authQuery, u.ID, userAuth.Email, hashed, now, now)
+		if err != nil {
+			return fmt.Errorf("create user_auth: %w", err)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return s.GetUser(ctx, u.ID)
@@ -86,8 +91,8 @@ func (s *UserStorage) Update(ctx context.Context, u *model.User) (*model.User, e
 
 // GetUser retrieves a user by ULID.
 func (s *UserStorage) GetUser(ctx context.Context, id string) (*model.User, error) {
+	u := &model.User{}
 	query := `SELECT * FROM user WHERE id=?`
-	var u *model.User
 	if err := s.db.GetContext(ctx, u, query, id); err != nil {
 		return nil, fmt.Errorf("get user: %w", err)
 	}
@@ -118,7 +123,7 @@ func (s *UserStorage) Authenticate(ctx context.Context, auth model.UserAuth) (*m
 		LIMIT 1
 	`
 
-	var dbAuth *model.UserAuth
+	dbAuth := &model.UserAuth{}
 	if err := s.db.GetContext(ctx, dbAuth, query, auth.Email); err != nil {
 		return nil, fmt.Errorf("authenticate lookup: %w", err)
 	}

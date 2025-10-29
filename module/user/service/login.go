@@ -9,11 +9,6 @@ import (
 
 // Login handles user authentication via HTML form submission.
 func (h *Service) Login(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "invalid form submission", http.StatusBadRequest)
-		return
-	}
-
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
@@ -27,7 +22,8 @@ func (h *Service) Login(w http.ResponseWriter, r *http.Request) {
 		Password: password,
 	})
 	if err != nil {
-		http.Error(w, "invalid credentials", http.StatusUnauthorized)
+		h.Error(r, "Invalid credentials for login", err)
+		h.LoginView(w, r)
 		return
 	}
 

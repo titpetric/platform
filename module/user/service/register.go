@@ -10,18 +10,13 @@ import (
 func (h *Service) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if err := r.ParseForm(); err != nil {
-		http.Error(w, "invalid form submission", http.StatusBadRequest)
-		return
-	}
-
 	firstName := r.FormValue("first_name")
 	lastName := r.FormValue("last_name")
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
 	if firstName == "" || lastName == "" || email == "" || password == "" {
-		http.Error(w, "all fields are required", http.StatusBadRequest)
+		h.Error(r, "All fields are required", nil)
 		return
 	}
 
@@ -37,13 +32,15 @@ func (h *Service) Register(w http.ResponseWriter, r *http.Request) {
 
 	createdUser, err := h.UserStorage.Create(ctx, user, auth)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.Error(r, "Failed to create user", err)
+		h.RegisterView(w, r)
 		return
 	}
 
 	session, err := h.SessionStorage.Create(ctx, createdUser.ID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		h.Error(r, "Failed to create session", err)
+		h.RegisterView(w, r)
 		return
 	}
 

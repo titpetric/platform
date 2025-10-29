@@ -8,11 +8,6 @@ import (
 	"github.com/titpetric/platform/module/user"
 )
 
-// Assert implementation contracts.
-var (
-	_ platform.Module = (*user.Handler)(nil)
-)
-
 // LoadModules will load the default modules and add them to the platform.
 func LoadModules() error {
 	var (

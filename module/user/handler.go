@@ -8,9 +8,13 @@ import (
 	"github.com/titpetric/platform/module/user/storage"
 )
 
+// Handler implements a module contract.
 type Handler struct {
 	Service *service.Service
 }
+
+// Verify contract.
+var _ platform.Module = (*Handler)(nil)
 
 // NewHandler sets up dependencies and produces a handler.
 func NewHandler(themeFS fs.FS) (*Handler, error) {

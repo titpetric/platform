@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/titpetric/platform/module/theme"
@@ -16,10 +17,17 @@ func (h *Service) LoginView(w http.ResponseWriter, r *http.Request) {
 		Theme   *theme.Options
 		User    *model.User
 		Session *model.UserSession
+
+		ErrorMessage string
+		Form         map[string]string
 	}
 
 	var data templateData = templateData{
-		Theme: theme.NewOptions(),
+		Theme:        theme.NewOptions(),
+		ErrorMessage: h.GetError(r),
+		Form: map[string]string{
+			"email": r.FormValue("email"),
+		},
 	}
 
 	cookie, err := r.Cookie("session_id")
@@ -32,6 +40,9 @@ func (h *Service) LoginView(w http.ResponseWriter, r *http.Request) {
 				h.View(w, "logout.tpl", data)
 				return
 			}
+			log.Println(err)
+		} else {
+			log.Println(err)
 		}
 	}
 

@@ -32,13 +32,9 @@ func (s *SessionStorage) Create(ctx context.Context, userID string) (*model.User
 	session.SetCreatedAt(now)
 	session.SetExpiresAt(now.Add(24 * time.Hour)) // default 24h expiration
 
-	query := `
-		INSERT INTO user_session (id, user_id, expires_at, created_at)
-		VALUES (?, ?, ?, ?)
-	`
-	if _, err := s.db.ExecContext(ctx, query,
-		session.ID, session.UserID, session.ExpiresAt, session.CreatedAt,
-	); err != nil {
+	query := `INSERT INTO user_session (id, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)`
+	_, err := s.db.ExecContext(ctx, query, session.ID, session.UserID, session.ExpiresAt, session.CreatedAt)
+	if err != nil {
 		return nil, fmt.Errorf("create session: %w", err)
 	}
 
@@ -49,10 +45,10 @@ func (s *SessionStorage) Create(ctx context.Context, userID string) (*model.User
 // Returns model.ErrSessionExpired if the session has expired.
 func (s *SessionStorage) Get(ctx context.Context, sessionID string) (*model.UserSession, error) {
 	query := `SELECT * FROM user_session WHERE id=?`
-	var session *model.UserSession
+	session := &model.UserSession{}
 	if err := s.db.GetContext(ctx, session, query, sessionID); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, sql.ErrNoRows
+			return nil, err
 		}
 		return nil, fmt.Errorf("get session: %w", err)
 	}
@@ -68,11 +64,7 @@ func (s *SessionStorage) Get(ctx context.Context, sessionID string) (*model.User
 func (s *SessionStorage) Delete(ctx context.Context, sessionID string) error {
 	query := `DELETE FROM user_session WHERE id=?`
 	_, err := s.db.ExecContext(ctx, query, sessionID)
-	if err != nil {
-		return fmt.Errorf("delete session: %w", err)
-	}
-
-	return nil
+	return fmt.Errorf("delete session: %w", err)
 }
 
 var _ model.SessionStorage = (*SessionStorage)(nil)
