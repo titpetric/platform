@@ -18,7 +18,7 @@ var _ platform.Module = (*Handler)(nil)
 
 // NewHandler sets up dependencies and produces a handler.
 func NewHandler(themeFS fs.FS) (*Handler, error) {
-	db, err := platform.Database.Connect()
+	db, err := DB()
 	if err != nil {
 		return nil, err
 	}

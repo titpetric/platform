@@ -17,7 +17,7 @@
                     name="email"
                     id="email"
                     class="form-control"
-                    value="{{.Form.mail}}"
+                    value="{{.Form.email}}"
                     required
                   />
                 </td>
