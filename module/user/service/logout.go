@@ -1,11 +1,11 @@
-package user
+package service
 
 import (
 	"net/http"
 )
 
 // Logout deletes the session cookie and optionally the session in storage.
-func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
+func (h *Service) Logout(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	cookie, err := r.Cookie("session_id")

@@ -16,7 +16,7 @@ import (
 
 // UserStorage implements the model.Storage interface using MySQL via sqlx.
 type UserStorage struct {
-	//model.UnimplementedStorage
+	// model.UnimplementedStorage
 	db *sqlx.DB
 }
 

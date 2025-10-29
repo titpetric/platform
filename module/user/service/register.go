@@ -1,26 +1,13 @@
-package user
+package service
 
 import (
 	"net/http"
 
-	"github.com/titpetric/platform/module/theme"
 	"github.com/titpetric/platform/module/user/model"
 )
 
-// RegisterView renders the registration page.
-func (h *Handler) RegisterView(w http.ResponseWriter, r *http.Request) {
-	type templateData struct {
-		Theme *theme.Options
-	}
-	data := templateData{
-		Theme: theme.NewOptions(),
-	}
-
-	h.View(w, "register.tpl", data)
-}
-
 // Register handles creating a new user and starting a session via HTML form submission.
-func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+func (h *Service) Register(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if err := r.ParseForm(); err != nil {

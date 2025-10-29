@@ -16,6 +16,7 @@ tasks:
       PLATFORM_DB_DEFAULT: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
     cmds:
       - goimports -w .
+      - gofumpt -w .
       - CGO_ENABLED=0 go run ./cmd/platform/main.go
 
   docker:
@@ -69,3 +70,4 @@ tasks:
       GOBIN: /usr/local/bin
     cmds:
       - go install github.com/gregoryv/uncover/...@latest
+      - go install mvdan.cc/gofumpt@latest
