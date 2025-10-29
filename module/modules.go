@@ -8,8 +8,8 @@ import (
 	"github.com/titpetric/platform/module/user"
 )
 
-// LoadModules will load the default modules and add them to the platform.
-func LoadModules() error {
+// Load will load the default modules and add them to the platform.
+func Load() error {
 	var (
 		errs []error
 

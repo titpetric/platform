@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	err := module.LoadModules()
+	err := module.Load()
 	if err != nil {
 		log.Fatalf("init error loading modules: %v", err)
 	}
