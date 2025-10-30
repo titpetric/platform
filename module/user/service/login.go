@@ -13,7 +13,8 @@ func (h *Service) Login(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	if email == "" || password == "" {
-		http.Error(w, "email and password are required", http.StatusBadRequest)
+		h.Error(r, "Email and Password are required", nil)
+		h.LoginView(w, r)
 		return
 	}
 
@@ -21,7 +22,7 @@ func (h *Service) Login(w http.ResponseWriter, r *http.Request) {
 		Email:    email,
 		Password: password,
 	})
-	if err != nil {
+	if err != nil || !user.IsActive() {
 		h.Error(r, "Invalid credentials for login", err)
 		h.LoginView(w, r)
 		return
@@ -29,7 +30,8 @@ func (h *Service) Login(w http.ResponseWriter, r *http.Request) {
 
 	session, err := h.SessionStorage.Create(context.Background(), user.ID)
 	if err != nil {
-		http.Error(w, "failed to create session", http.StatusInternalServerError)
+		h.Error(r, "Can't create session", err)
+		h.LoginView(w, r)
 		return
 	}
 

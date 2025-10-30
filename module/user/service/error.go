@@ -1,8 +1,11 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
 	"net/http"
 
+	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/internal"
 )
 
@@ -15,6 +18,13 @@ var errorMessageContext = internal.NewContextValue[string](errorMessageKey{})
 
 func (h *Service) Error(r *http.Request, message string, err error) {
 	errorMessageContext.Set(r, message)
+	if errors.Is(err, sql.ErrNoRows) {
+		err = nil
+	}
+	if err == nil {
+		err = errors.New(message)
+	}
+	platform.CaptureError(r.Context(), err)
 }
 
 func (h *Service) GetError(r *http.Request) string {

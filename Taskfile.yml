@@ -23,12 +23,12 @@ tasks:
     desc: "Build docker image"
     cmds:
       - CGO_ENABLED=0 go build ./cmd/platform
-      - docker build -t titpetric/platform -f docker/Dockerfile .
+      - docker build --no-cache -t titpetric/platform -f docker/Dockerfile .
 
   clean:
     desc: "Clean build assets"
     cmds:
-      - rm -f ./platform
+      - rm -f ./platform pkg.cov
       - docker rmi -f titpetric/platform
 
   migrate:
@@ -71,3 +71,11 @@ tasks:
     cmds:
       - go install github.com/gregoryv/uncover/...@latest
       - go install mvdan.cc/gofumpt@latest
+
+  up:
+    desc: "Bring up docker env"
+    cmd: docker compose up -d --remove-orphans
+
+  down:
+    desc: "Bring down docker env"
+    cmd: docker compose down

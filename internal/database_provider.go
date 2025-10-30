@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/titpetric/platform/internal/tracing"
 )
 
 type DatabaseProvider struct {
@@ -24,12 +25,12 @@ func (r *DatabaseProvider) Add(name string, config string) {
 }
 
 func (r *DatabaseProvider) Connect(names ...string) (*sqlx.DB, error) {
-	db, err := r.cached(sqlx.Connect, names...)
+	db, err := r.cached(tracing.Connect, names...)
 	return db, err
 }
 
 func (r *DatabaseProvider) Open(names ...string) (*sqlx.DB, error) {
-	db, err := r.cached(sqlx.Open, names...)
+	db, err := r.cached(tracing.Open, names...)
 	return db, err
 }
 
