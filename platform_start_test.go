@@ -21,7 +21,9 @@ func NewTestPlatform(tb testing.TB) *platform.Platform {
 	require.NoError(tb, err)
 	require.NotNil(tb, svc)
 
-	tb.Cleanup(svc.Close)
+	tb.Cleanup(func() {
+		require.NoError(tb, svc.Stop())
+	})
 	return svc
 }
 
@@ -59,8 +61,7 @@ func TestPlatform_goroutine_leaks(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotNil(t, svc)
-
-			svc.Close()
+			require.NoError(t, svc.Stop())
 
 			t.Logf("run[%d]: %d", i, runtime.NumGoroutine())
 		}
@@ -80,8 +81,7 @@ func BenchmarkPlatform(b *testing.B) {
 
 			require.NoError(b, err)
 			require.NotNil(b, svc)
-
-			svc.Close()
+			require.NoError(b, svc.Stop())
 		}
 	})
 }

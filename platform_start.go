@@ -20,6 +20,8 @@ func StartPlatform(ctx context.Context, options *Options) (*Platform, error) {
 		return nil, err
 	}
 
-	svc.Serve(ctx)
+	if err := svc.Start(ctx); err != nil {
+		return nil, err
+	}
 	return svc, nil
 }

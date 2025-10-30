@@ -16,10 +16,15 @@ type Handler struct {
 var _ platform.Module = (*Handler)(nil)
 
 // NewHandler sets up dependencies and produces a handler.
-func NewHandler() (*Handler, error) {
+func NewHandler() *Handler {
+	return &Handler{}
+}
+
+// Start will initialize the service to handle requests.
+func (h *Handler) Start() error {
 	db, err := DB()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	themeFS := theme.TemplateFS
@@ -35,12 +40,11 @@ func NewHandler() (*Handler, error) {
 
 	svc, err := service.NewService(options)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return &Handler{
-		Service: svc,
-	}, nil
+	h.Service = svc
+	return nil
 }
 
 // Name returns the name of the containing package.
@@ -53,7 +57,8 @@ func (h *Handler) Mount(r platform.Router) {
 	h.Service.Mount(r)
 }
 
-// Close implements a closer for graceful shutdown.
-func (h *Handler) Close() {
+// Stop implements a closer for graceful shutdown.
+func (h *Handler) Stop() error {
 	h.Service.Close()
+	return nil
 }

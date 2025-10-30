@@ -3,7 +3,6 @@ package platform
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/titpetric/platform/internal"
-	"github.com/titpetric/platform/internal/repository"
 )
 
 // global is a value to prevent pollution of the global package namespace.
@@ -30,22 +29,16 @@ type DatabaseProvider interface {
 // get a live connection, or an error if one occured.
 var Database = global.db
 
-var (
-	// AddModule provides a `package.AddModule` api for the global registry.
-	AddModule = global.registry.AddModule
-	// AddMiddleware provides a `package.AddMiddleware` api for the global registry.
-	AddMiddleware = global.registry.AddMiddleware
-)
+// Register will register a module in the platform global registry.
+// It should not be relied upon in tests, keeping global state empty.
+// This enables registering modules using blank imports.
+func Register(m Module) {
+	global.registry.Register(m)
+}
 
-type (
-	// Plugin represents a decomposed `Module`.
-	Plugin = repository.Plugin
-	// Module is an implementation interface for a plugin.
-	Module = repository.Module
-	// Registry holds state of middlewares and plugins.
-	Registry = repository.Registry
-	// Middleware is the function signature for middlewares.
-	Middleware = repository.Middleware
-	// Router is the router interface (chi.Router).
-	Router = repository.Router
-)
+// Use will add a middleware to the platform router.
+// It should not be relied upon in tests, keeping global state empty.
+// This should be used from main() to define any global middleware.
+func Use(mw Middleware) {
+	global.registry.Use(mw)
+}

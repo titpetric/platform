@@ -16,7 +16,7 @@ import (
 
 func main() {
 	// Register common middleware.
-	platform.AddMiddleware(middleware.Logger)
+	platform.Use(middleware.Logger)
 
 	if err := platform.Start(); err != nil {
 		log.Fatalf("exit error: %v", err)
