@@ -11,7 +11,7 @@ type SessionStorage interface {
 }
 
 type UserStorage interface {
-	Create(context.Context, *User) (*User, error)
+	Create(context.Context, *User, *UserAuth) (*User, error)
 	Update(context.Context, *User) (*User, error)
 
 	Get(context.Context, string) (*User, error)

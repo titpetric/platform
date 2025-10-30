@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"expvar"
 	"fmt"
 	"time"
 
@@ -15,15 +16,36 @@ import (
 // SessionStorage implements session persistence using MySQL.
 type SessionStorage struct {
 	db *sqlx.DB
+
+	monitor SessionStorageMonitor
+}
+
+type SessionStorageMonitor struct {
+	Create *expvar.Int
+	Get    *expvar.Int
+	Delete *expvar.Int
+}
+
+func NewSessionStorageMonitor() SessionStorageMonitor {
+	return SessionStorageMonitor{
+		Create: expvar.NewInt("user.storage.session.create"),
+		Get:    expvar.NewInt("user.storage.session.get"),
+		Delete: expvar.NewInt("user.storage.session.delete"),
+	}
 }
 
 // NewSessionStorage creates a new SessionStorage.
 func NewSessionStorage(db *sqlx.DB) *SessionStorage {
-	return &SessionStorage{db: db}
+	return &SessionStorage{
+		db:      db,
+		monitor: NewSessionStorageMonitor(),
+	}
 }
 
 // Create inserts a new session for the given userID.
 func (s *SessionStorage) Create(ctx context.Context, userID string) (*model.UserSession, error) {
+	defer s.monitor.Create.Add(1)
+
 	now := time.Now()
 	session := &model.UserSession{
 		ID:     internal.ULID(),
@@ -44,6 +66,8 @@ func (s *SessionStorage) Create(ctx context.Context, userID string) (*model.User
 // Get retrieves a session by sessionID.
 // Returns model.ErrSessionExpired if the session has expired.
 func (s *SessionStorage) Get(ctx context.Context, sessionID string) (*model.UserSession, error) {
+	defer s.monitor.Get.Add(1)
+
 	query := `SELECT * FROM user_session WHERE id=?`
 	session := &model.UserSession{}
 	if err := s.db.GetContext(ctx, session, query, sessionID); err != nil {
@@ -62,6 +86,8 @@ func (s *SessionStorage) Get(ctx context.Context, sessionID string) (*model.User
 
 // Delete removes a session by sessionID.
 func (s *SessionStorage) Delete(ctx context.Context, sessionID string) error {
+	defer s.monitor.Delete.Add(1)
+
 	query := `DELETE FROM user_session WHERE id=?`
 	_, err := s.db.ExecContext(ctx, query, sessionID)
 	return fmt.Errorf("delete session: %w", err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"expvar"
 	"fmt"
 	"time"
 
@@ -17,16 +18,41 @@ import (
 // UserStorage implements the model.Storage interface using MySQL via sqlx.
 type UserStorage struct {
 	db *sqlx.DB
+
+	monitor UserStorageMonitor
+}
+
+type UserStorageMonitor struct {
+	Create       *expvar.Int
+	Update       *expvar.Int
+	Get          *expvar.Int
+	GetGroups    *expvar.Int
+	Authenticate *expvar.Int
+}
+
+func NewUserStorageMonitor() UserStorageMonitor {
+	return UserStorageMonitor{
+		Create:       expvar.NewInt("user.storage.user.create"),
+		Update:       expvar.NewInt("user.storage.user.update"),
+		Get:          expvar.NewInt("user.storage.user.get"),
+		GetGroups:    expvar.NewInt("user.storage.user.getgroups"),
+		Authenticate: expvar.NewInt("user.storage.user.authenticate"),
+	}
 }
 
 // NewUserStorage returns a new UserStorage backed by the given sqlx.DB.
 func NewUserStorage(db *sqlx.DB) *UserStorage {
-	return &UserStorage{db: db}
+	return &UserStorage{
+		db:      db,
+		monitor: NewUserStorageMonitor(),
+	}
 }
 
 // Create inserts a new user and their authentication credentials.
 // Returns an error if authentication information is missing.
 func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model.UserAuth) (*model.User, error) {
+	defer s.monitor.Create.Add(1)
+
 	if userAuth == nil || userAuth.Email == "" || userAuth.Password == "" {
 		return nil, errors.New("missing authentication info: email and password are required")
 	}
@@ -69,11 +95,13 @@ func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model
 		return nil, err
 	}
 
-	return s.GetUser(ctx, u.ID)
+	return s.Get(ctx, u.ID)
 }
 
 // Update modifies an existing user and updates the updated_at timestamp.
 func (s *UserStorage) Update(ctx context.Context, u *model.User) (*model.User, error) {
+	defer s.monitor.Update.Add(1)
+
 	u.SetUpdatedAt(time.Now())
 
 	query := `UPDATE user SET first_name=?, last_name=?, deleted_at=?, updated_at=? WHERE id=?`
@@ -88,8 +116,10 @@ func (s *UserStorage) Update(ctx context.Context, u *model.User) (*model.User, e
 	return u, nil
 }
 
-// GetUser retrieves a user by ULID.
-func (s *UserStorage) GetUser(ctx context.Context, id string) (*model.User, error) {
+// Get retrieves a user by ULID.
+func (s *UserStorage) Get(ctx context.Context, id string) (*model.User, error) {
+	defer s.monitor.Get.Add(1)
+
 	u := &model.User{}
 	query := `SELECT * FROM user WHERE id=?`
 	if err := s.db.GetContext(ctx, u, query, id); err != nil {
@@ -98,8 +128,10 @@ func (s *UserStorage) GetUser(ctx context.Context, id string) (*model.User, erro
 	return u, nil
 }
 
-// GetUserGroups returns all groups the user belongs to.
-func (s *UserStorage) GetUserGroups(ctx context.Context, userID string) ([]model.UserGroup, error) {
+// GetGroups returns all groups the user belongs to.
+func (s *UserStorage) GetGroups(ctx context.Context, userID string) ([]model.UserGroup, error) {
+	defer s.monitor.GetGroups.Add(1)
+
 	query := `
 		SELECT g.id, g.title, g.created_at, g.updated_at
 		FROM user_group g
@@ -115,12 +147,9 @@ func (s *UserStorage) GetUserGroups(ctx context.Context, userID string) ([]model
 
 // Authenticate verifies a user's credentials using bcrypt and returns the user.
 func (s *UserStorage) Authenticate(ctx context.Context, auth model.UserAuth) (*model.User, error) {
-	query := `
-		SELECT a.user_id, a.password
-		FROM user_auth a
-		WHERE a.email = ?
-		LIMIT 1
-	`
+	defer s.monitor.Authenticate.Add(1)
+
+	query := `SELECT user_id, password FROM user_auth WHERE email=? LIMIT 1`
 
 	dbAuth := &model.UserAuth{}
 	if err := s.db.GetContext(ctx, dbAuth, query, auth.Email); err != nil {
@@ -134,10 +163,12 @@ func (s *UserStorage) Authenticate(ctx context.Context, auth model.UserAuth) (*m
 		return nil, fmt.Errorf("bcrypt compare: %w", err)
 	}
 
-	user, err := s.GetUser(ctx, dbAuth.UserID)
+	user, err := s.Get(ctx, dbAuth.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("authenticate get user: %w", err)
 	}
 
 	return user, nil
 }
+
+var _ model.UserStorage = (*UserStorage)(nil)

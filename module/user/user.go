@@ -50,7 +50,7 @@ func GetSessionUser(r *http.Request) (*model.User, error) {
 			return nil, err
 		}
 
-		user, err := userStorage.GetUser(ctx, session.UserID)
+		user, err := userStorage.Get(ctx, session.UserID)
 		if err != nil {
 			return nil, err
 		}

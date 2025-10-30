@@ -33,7 +33,7 @@ func (h *Service) LoginView(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie("session_id")
 	if err == nil && cookie.Value != "" {
 		if session, err := h.SessionStorage.Get(ctx, cookie.Value); err == nil {
-			if user, err := h.UserStorage.GetUser(ctx, session.UserID); err == nil {
+			if user, err := h.UserStorage.Get(ctx, session.UserID); err == nil {
 				data.User = user
 				data.Session = session
 
