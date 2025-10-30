@@ -47,7 +47,9 @@ func (r *Registry) Start(mux Router) error {
 	}
 
 	for _, plugin := range r.modules {
-		plugin.Mount(mux)
+		if err := plugin.Mount(mux); err != nil {
+			return err
+		}
 	}
 
 	return nil

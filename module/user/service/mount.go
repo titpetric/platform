@@ -2,7 +2,7 @@ package service
 
 import "github.com/titpetric/platform"
 
-func (h *Service) Mount(r platform.Router) {
+func (h *Service) Mount(r platform.Router) error {
 	r.Get("/login", h.LoginView)
 	r.Post("/login", h.Login)
 
@@ -11,4 +11,6 @@ func (h *Service) Mount(r platform.Router) {
 
 	r.Get("/register", h.RegisterView)
 	r.Post("/register", h.Register)
+
+	return nil
 }

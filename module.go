@@ -18,5 +18,5 @@ type Module interface {
 
 	// Mount runs before the server starts, and allows you to
 	// register new routes to your module.
-	Mount(Router)
+	Mount(Router) error
 }

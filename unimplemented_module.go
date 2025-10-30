@@ -20,8 +20,9 @@ func (UnimplementedModule) Stop() error {
 	return nil
 }
 
-// Mount does nothing.
-func (UnimplementedModule) Mount(Router) {
+// Mount returns nil (no error).
+func (UnimplementedModule) Mount(Router) error {
+	return nil
 }
 
 var _ Module = UnimplementedModule{}

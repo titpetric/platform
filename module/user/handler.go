@@ -53,8 +53,8 @@ func (h *Handler) Name() string {
 }
 
 // Mount registers login, logout, and register routes.
-func (h *Handler) Mount(r platform.Router) {
-	h.Service.Mount(r)
+func (h *Handler) Mount(r platform.Router) error {
+	return h.Service.Mount(r)
 }
 
 // Stop implements a closer for graceful shutdown.
