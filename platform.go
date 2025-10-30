@@ -108,6 +108,9 @@ func (p *Platform) Start(ctx context.Context) error {
 
 	go func() {
 		<-sigctx.Done()
+		if !p.options.Quiet {
+			log.Println("caught sigterm, stopping server")
+		}
 		if err := p.Stop(); err != nil {
 			log.Printf("server shutdown error: %v", err)
 		}
