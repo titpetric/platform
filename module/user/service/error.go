@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/titpetric/platform/internal"
-	"github.com/titpetric/platform/module/telemetry"
+	"github.com/titpetric/platform/telemetry"
 )
 
 // errorMessageKey is a request context scoped value. If an error

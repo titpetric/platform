@@ -5,7 +5,8 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/titpetric/platform/module/telemetry"
+
+	"github.com/titpetric/platform/telemetry"
 )
 
 type DatabaseProvider struct {
@@ -70,10 +71,17 @@ func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error)
 				dsn = dsn[sepIndex+3:]
 			}
 
-			// we should parse/add these options to the DSN as mandatory:
-			// ?collation=utf8_general_ci&parseTime=true&loc=Local
-			dsn += "?parseTime=true"
-			return connector(driver, dsn)
+			client, err := connector(driver, cleanDSN(dsn))
+			if err != nil {
+				return nil, err
+			}
+
+			opt, ok := databaseOptions[driver]
+			if ok {
+				client.SetMaxOpenConns(opt.MaxOpenConns)
+				client.SetMaxIdleConns(opt.MaxIdleConns)
+			}
+			return client, nil
 		}
 	}
 	return nil, fmt.Errorf("No configuration found for database: %v", names)

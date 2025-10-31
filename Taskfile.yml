@@ -13,9 +13,9 @@ tasks:
   default:
     desc: "Run platform base"
     env:
-      PLATFORM_DB_DEFAULT: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
+      PLATFORM_DB_DEFAULT: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform?interpolateParams=true&parseTime=true"
     cmds:
-      - goimports -w .
+      - goimports -w -local github.com/titpetric/platform .
       - gofumpt -w .
       - CGO_ENABLED=0 go run ./cmd/platform/main.go
 

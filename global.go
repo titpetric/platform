@@ -2,6 +2,7 @@ package platform
 
 import (
 	"github.com/jmoiron/sqlx"
+
 	"github.com/titpetric/platform/internal"
 )
 
