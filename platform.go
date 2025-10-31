@@ -1,3 +1,25 @@
+// The platform is an extensible modular system for writing HTTP servers.
+//
+// 1. Provides a global registry for middleware and module registration
+// 2. Provides a lifecycle to the modules for graceful shutdown
+// 3. Provides a router the modules can attach to
+//
+// It's advised to use `platform.Register` from `init` functions.
+// Similarly, `platform.Use` should be used from `main` or any
+// descendant setup functions. Don't use these functions from tests
+// as they create a shared state.
+//
+// It's possible to use the platform in an emperative way.
+//
+// ```go
+// svc := platform.New()
+// svg.Use(middleware.Logger)
+// svc.Register(user.NewModule())
+// ```
+//
+// The platform lifecycle is extensively tested to ensure no races, no
+// goroutine leaks. Each platform object creates a copy of the global
+// state and holds scoped allocations only, enabling test parallelism.
 package platform
 
 import (
@@ -7,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -28,6 +51,7 @@ type Platform struct {
 	context context.Context
 	cancel  context.CancelFunc
 	stop    func()
+	once    sync.Once
 
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
@@ -157,20 +181,20 @@ func (p *Platform) URL() string {
 //
 // Only after the server has fully shut down does the internal context get cancelled.
 // This is used by `Wait` to signal the service has shut down and the program can cleanly exit.
-func (p *Platform) Stop() error {
-	// When done, exit main. It's waiting for the cancelled context there.
-	defer p.cancel()
-	defer p.stop()
+func (p *Platform) Stop() (err error) {
+	p.once.Do(func() {
+		// When done, exit main. It's waiting for the cancelled context there.
+		defer p.cancel()
+		defer p.stop()
 
-	// Clear registry on shutdown.
-	defer p.registry.Close()
+		// Clear registry on shutdown.
+		defer p.registry.Close()
 
-	// Give a 5 second timeout for a graceful shutdown.
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+		// Give a 5 second timeout for a graceful shutdown.
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-	if err := p.server.Shutdown(ctx); err != nil {
-		return err
-	}
-	return nil
+		err = p.server.Shutdown(ctx)
+	})
+	return
 }
