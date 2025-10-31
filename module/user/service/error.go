@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/internal"
+	"github.com/titpetric/platform/module/telemetry"
 )
 
 // errorMessageKey is a request context scoped value. If an error
@@ -24,7 +24,7 @@ func (h *Service) Error(r *http.Request, message string, err error) {
 	if err == nil {
 		err = errors.New(message)
 	}
-	platform.CaptureError(r.Context(), err)
+	telemetry.CaptureError(r.Context(), err)
 }
 
 func (h *Service) GetError(r *http.Request) string {

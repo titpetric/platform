@@ -11,20 +11,17 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "modernc.org/sqlite"
 
-	// Add apmsql wrappers for tracing with build tag `telemetry`.
-	_ "github.com/titpetric/platform/internal/tracing"
+	// Add telemetry with OpenTelemetry.
+	"github.com/titpetric/platform/module/telemetry"
 
 	// Add platform modules.
 	_ "github.com/titpetric/platform/module/autoload"
-
-	// Add instrumentation middleware.
-	"go.elastic.co/apm/module/apmchiv5/v2"
 )
 
 func main() {
 	// Register common middleware.
 	platform.Use(middleware.Logger)
-	platform.Use(apmchiv5.Middleware())
+	platform.Use(telemetry.Middleware)
 
 	if err := platform.Start(); err != nil {
 		log.Fatalf("exit error: %v", err)

@@ -1,0 +1,29 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4317
+
+processors:
+
+extensions:
+  health_check: {}
+
+exporters:
+  otlp:
+    endpoint: jaeger:4317
+    tls:
+      insecure_skip_verify: true
+  prometheus:
+    endpoint: prometheus:9090
+    tls:
+      insecure_skip_verify: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlp]
+    metrics:
+      receivers: [otlp]
+      exporters: [prometheus]

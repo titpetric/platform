@@ -1,92 +1,43 @@
 services:
   platform:
     image: titpetric/platform
+    networks:
+      - elastic
+      - db_storage
     ports:
       - 8080:8080
-    depends_on:
-      apm-server:
-        condition: service_healthy
     environment:
-    - ELASTIC_APM_ACTIVE=true
-    - ELASTIC_APM_LOG_FILE=stdout
-    - ELASTIC_APM_SERVER_URL=http://apm-server:8200
-    - ELASTIC_APM_SERVICE_NAME=platform
-    - ELASTIC_APM_SECRET_TOKEN=
-    - ELASTIC_APM_EXIT_SPAN_MIN_DURATION=1us
-    - PLATFORM_DB_DEFAULT=mysql://platform:platform@tcp(db1:3306)/platform
+      - PLATFORM_DB_DEFAULT=mysql://platform:platform@tcp(db1:3306)/platform
+      - OTEL_SERVICE_NAME=platform
+      - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
     networks:
     - elastic
-    - db_storage
-
-  apm-server:
-    image: docker.elastic.co/apm/apm-server:7.6.2
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-      kibana:
-        condition: service_healthy
-    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
-    cap_drop: ["ALL"]
-    ports:
-    - 8200:8200
-    networks:
-    - elastic
-    command: >
-       apm-server -e
-         -E apm-server.rum.enabled=true
-         -E setup.kibana.host=kibana:5601
-         -E setup.template.settings.index.number_of_replicas=0
-         -E apm-server.kibana.enabled=true
-         -E apm-server.kibana.host=kibana:5601
-         -E output.elasticsearch.hosts=["elasticsearch:9200"]
-    healthcheck:
-      interval: 10s
-      retries: 12
-      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8200/
-
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.6.2
-    environment:
-    - bootstrap.memory_lock=true
-    - cluster.name=docker-cluster
-    - cluster.routing.allocation.disk.threshold_enabled=false
-    - discovery.type=single-node
-    - ES_JAVA_OPTS=-XX:UseAVX=2 -Xms1g -Xmx1g
-    ulimits:
-      memlock:
-        hard: -1
-        soft: -1
+    command: ["--config=/etc/otel-collector-config.yml"]
     volumes:
-    - esdata:/usr/share/elasticsearch/data
+      - ./docker/dev/otel-collector-config.yml:/etc/otel-collector-config.yml
     ports:
-    - 9200:9200
+      - "4317:4317" # OTLP gRPC receiver
+
+  jaeger:
+    image: jaegertracing/jaeger:latest
     networks:
     - elastic
-    healthcheck:
-      interval: 20s
-      retries: 10
-      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
-
-  kibana:
-    image: docker.elastic.co/kibana/kibana:7.6.2
-    depends_on:
-      elasticsearch:
-        condition: service_healthy
-    environment:
-      ELASTICSEARCH_URL: http://elasticsearch:9200
-      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
     ports:
-    - 5601:5601
+      - "6831:6831/udp" # UDP port for Jaeger agent
+      - "16686:16686" # Web UI
+      - "14268:14268" # HTTP port for spans
+
+  prometheus:
+    image: prom/prometheus:latest
     networks:
     - elastic
-    healthcheck:
-      interval: 10s
-      retries: 20
-      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:5601/api/status
-
-volumes:
-  esdata:
-    driver: local
+    volumes:
+      - ./docker/dev/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
 
 networks:
   db_storage:
