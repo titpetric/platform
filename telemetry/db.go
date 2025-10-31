@@ -11,7 +11,7 @@ import (
 // It wraps otelsql.Open and sqlx.NewDb for full compatibility.
 func Open(driver, dsn string) (*sqlx.DB, error) {
 	// Open an instrumented *sql.DB
-	db, err := otelsql.Open(driver, dsn)
+	db, err := otelsql.Open(driver, dsn, otelsql.WithDisableSkipErrMeasurement(true), otelsql.WithSpanOptions(otelsql.SpanOptions{DisableErrSkip: true}))
 	if err != nil {
 		return nil, fmt.Errorf("open instrumented db: %w", err)
 	}
