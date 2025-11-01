@@ -5,13 +5,18 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+
+	"github.com/titpetric/platform/telemetry"
 )
 
 // Transaction wraps a function in a transaction.
 // If the function returns an error, the transaction is rolled back.
 // If the function returns nil, the transaction is committed.
-func Transaction(db *sqlx.DB, fn func(tx *sqlx.Tx) error) error {
-	tx, err := db.BeginTxx(context.Background(), nil)
+func Transaction(ctx context.Context, db *sqlx.DB, fn func(context.Context, *sqlx.Tx) error) error {
+	ctx, span := telemetry.Start(ctx, "db.Transaction")
+	defer span.End()
+
+	tx, err := db.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
@@ -21,7 +26,7 @@ func Transaction(db *sqlx.DB, fn func(tx *sqlx.Tx) error) error {
 		_ = tx.Rollback()
 	}()
 
-	if err := fn(tx); err != nil {
+	if err := fn(ctx, tx); err != nil {
 		return err
 	}
 

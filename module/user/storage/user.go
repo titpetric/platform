@@ -73,7 +73,7 @@ func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
 
-	err = internal.Transaction(s.db, func(tx *sqlx.Tx) error {
+	err = internal.Transaction(ctx, s.db, func(ctx context.Context, tx *sqlx.Tx) error {
 		var err error
 		userQuery := `
 			INSERT INTO user
