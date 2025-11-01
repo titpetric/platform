@@ -4,10 +4,14 @@ import (
 	"net/http"
 
 	"github.com/titpetric/platform/module/user/model"
+	"github.com/titpetric/platform/telemetry"
 )
 
 // Register handles creating a new user and starting a session via HTML form submission.
 func (h *Service) Register(w http.ResponseWriter, r *http.Request) {
+	r, span := telemetry.StartRequest(r, "user.service.Register")
+	defer span.End()
+
 	ctx := r.Context()
 
 	firstName := r.FormValue("first_name")

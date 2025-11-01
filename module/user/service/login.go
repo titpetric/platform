@@ -1,14 +1,17 @@
 package service
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/titpetric/platform/module/user/model"
+	"github.com/titpetric/platform/telemetry"
 )
 
 // Login handles user authentication via HTML form submission.
 func (h *Service) Login(w http.ResponseWriter, r *http.Request) {
+	r, span := telemetry.StartRequest(r, "user.service.Login")
+	defer span.End()
+
 	email := r.FormValue("email")
 	password := r.FormValue("password")
 
@@ -18,7 +21,7 @@ func (h *Service) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.UserStorage.Authenticate(context.Background(), model.UserAuth{
+	user, err := h.UserStorage.Authenticate(r.Context(), model.UserAuth{
 		Email:    email,
 		Password: password,
 	})
@@ -28,7 +31,7 @@ func (h *Service) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session, err := h.SessionStorage.Create(context.Background(), user.ID)
+	session, err := h.SessionStorage.Create(r.Context(), user.ID)
 	if err != nil {
 		h.Error(r, "Can't create session", err)
 		h.LoginView(w, r)

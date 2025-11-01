@@ -13,6 +13,7 @@ import (
 
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/module/user/model"
+	"github.com/titpetric/platform/telemetry"
 )
 
 // UserStorage implements the model.Storage interface using MySQL via sqlx.
@@ -51,6 +52,9 @@ func NewUserStorage(db *sqlx.DB) *UserStorage {
 // Create inserts a new user and their authentication credentials.
 // Returns an error if authentication information is missing.
 func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model.UserAuth) (*model.User, error) {
+	ctx, span := telemetry.Start(ctx, "user.storage.user.Create")
+	defer span.End()
+
 	defer s.monitor.Create.Add(1)
 
 	if userAuth == nil || userAuth.Email == "" || userAuth.Password == "" {
@@ -100,6 +104,9 @@ func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model
 
 // Update modifies an existing user and updates the updated_at timestamp.
 func (s *UserStorage) Update(ctx context.Context, u *model.User) (*model.User, error) {
+	ctx, span := telemetry.Start(ctx, "user.storage.user.Update")
+	defer span.End()
+
 	defer s.monitor.Update.Add(1)
 
 	u.SetUpdatedAt(time.Now())
@@ -118,6 +125,9 @@ func (s *UserStorage) Update(ctx context.Context, u *model.User) (*model.User, e
 
 // Get retrieves a user by ULID.
 func (s *UserStorage) Get(ctx context.Context, id string) (*model.User, error) {
+	ctx, span := telemetry.Start(ctx, "user.storage.user.Get")
+	defer span.End()
+
 	defer s.monitor.Get.Add(1)
 
 	u := &model.User{}
@@ -130,6 +140,9 @@ func (s *UserStorage) Get(ctx context.Context, id string) (*model.User, error) {
 
 // GetGroups returns all groups the user belongs to.
 func (s *UserStorage) GetGroups(ctx context.Context, userID string) ([]model.UserGroup, error) {
+	ctx, span := telemetry.Start(ctx, "user.storage.user.GetGroups")
+	defer span.End()
+
 	defer s.monitor.GetGroups.Add(1)
 
 	query := `
@@ -147,6 +160,9 @@ func (s *UserStorage) GetGroups(ctx context.Context, userID string) ([]model.Use
 
 // Authenticate verifies a user's credentials using bcrypt and returns the user.
 func (s *UserStorage) Authenticate(ctx context.Context, auth model.UserAuth) (*model.User, error) {
+	ctx, span := telemetry.Start(ctx, "user.storage.user.Authenticate")
+	defer span.End()
+
 	defer s.monitor.Authenticate.Add(1)
 
 	query := `SELECT user_id, password FROM user_auth WHERE email=? LIMIT 1`
@@ -156,11 +172,23 @@ func (s *UserStorage) Authenticate(ctx context.Context, auth model.UserAuth) (*m
 		return nil, fmt.Errorf("authenticate lookup: %w", err)
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(dbAuth.Password), []byte(auth.Password)); err != nil {
-		if err == bcrypt.ErrMismatchedHashAndPassword {
-			return nil, sql.ErrNoRows
+	// instrument a cpu-heavy operation with an inner span
+	err := func() error {
+		_, span := telemetry.Start(ctx, "bcrypt.CompareHashAndPassword")
+		err := bcrypt.CompareHashAndPassword([]byte(dbAuth.Password), []byte(auth.Password))
+		span.End()
+
+		if err != nil {
+			if err == bcrypt.ErrMismatchedHashAndPassword {
+				return sql.ErrNoRows
+			}
+			return fmt.Errorf("bcrypt compare: %w", err)
 		}
-		return nil, fmt.Errorf("bcrypt compare: %w", err)
+
+		return nil
+	}()
+	if err != nil {
+		return nil, err
 	}
 
 	user, err := s.Get(ctx, dbAuth.UserID)

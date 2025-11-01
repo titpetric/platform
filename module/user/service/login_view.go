@@ -6,11 +6,15 @@ import (
 
 	"github.com/titpetric/platform/module/theme"
 	"github.com/titpetric/platform/module/user/model"
+	"github.com/titpetric/platform/telemetry"
 )
 
 // LoginView renders login.tpl when no valid session exists,
 // or logout.tpl with the full user model when a valid session is found.
 func (h *Service) LoginView(w http.ResponseWriter, r *http.Request) {
+	r, span := telemetry.StartRequest(r, "user.service.LoginView")
+	defer span.End()
+
 	ctx := r.Context()
 
 	type templateData struct {
@@ -37,7 +41,7 @@ func (h *Service) LoginView(w http.ResponseWriter, r *http.Request) {
 				data.User = user
 				data.Session = session
 
-				h.View(w, "logout.tpl", data)
+				h.View(w, r, "logout.tpl", data)
 				return
 			}
 			log.Println(err)
@@ -46,5 +50,5 @@ func (h *Service) LoginView(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	h.View(w, "login.tpl", data)
+	h.View(w, r, "login.tpl", data)
 }

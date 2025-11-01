@@ -8,6 +8,7 @@ import (
 
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/module/user/storage"
+	"github.com/titpetric/platform/telemetry"
 )
 
 // Service encapsulates what we need to get from the handler.
@@ -67,7 +68,12 @@ func (h *Service) initTemplates(themeFS, moduleFS fs.FS) error {
 
 // View is a helper to add modularity to templates. It renders a view with the theme base.tpl.
 // The intent is to override the "content" block in the base.tpl with a view.
-func (h *Service) View(w http.ResponseWriter, name string, data any) {
+// The request is passed to access it's request context for telemetry. The template
+// filename is added to the name of the span recorded in the telemetry data.
+func (h *Service) View(w http.ResponseWriter, r *http.Request, name string, data any) {
+	r, span := telemetry.StartRequest(r, "user.service.View "+name)
+	defer span.End()
+
 	tmpl, ok := h.templates[name]
 	if ok {
 		tmpl.Render(w, "wrapper", data)

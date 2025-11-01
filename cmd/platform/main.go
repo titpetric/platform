@@ -19,7 +19,7 @@ import (
 func main() {
 	// Register common middleware.
 	platform.Use(middleware.Logger)
-	platform.Use(telemetry.Middleware)
+	platform.Use(telemetry.Middleware("platform"))
 
 	if err := platform.Start(); err != nil {
 		log.Fatalf("exit error: %v", err)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/module/user/model"
+	"github.com/titpetric/platform/telemetry"
 )
 
 // SessionStorage implements session persistence using MySQL.
@@ -44,6 +45,9 @@ func NewSessionStorage(db *sqlx.DB) *SessionStorage {
 
 // Create inserts a new session for the given userID.
 func (s *SessionStorage) Create(ctx context.Context, userID string) (*model.UserSession, error) {
+	ctx, span := telemetry.Start(ctx, "user.storage.session.Create")
+	defer span.End()
+
 	defer s.monitor.Create.Add(1)
 
 	now := time.Now()
@@ -66,6 +70,9 @@ func (s *SessionStorage) Create(ctx context.Context, userID string) (*model.User
 // Get retrieves a session by sessionID.
 // Returns model.ErrSessionExpired if the session has expired.
 func (s *SessionStorage) Get(ctx context.Context, sessionID string) (*model.UserSession, error) {
+	ctx, span := telemetry.Start(ctx, "user.storage.session.Get")
+	defer span.End()
+
 	defer s.monitor.Get.Add(1)
 
 	query := `SELECT * FROM user_session WHERE id=?`
@@ -86,6 +93,9 @@ func (s *SessionStorage) Get(ctx context.Context, sessionID string) (*model.User
 
 // Delete removes a session by sessionID.
 func (s *SessionStorage) Delete(ctx context.Context, sessionID string) error {
+	ctx, span := telemetry.Start(ctx, "user.storage.session.Delete")
+	defer span.End()
+
 	defer s.monitor.Delete.Add(1)
 
 	query := `DELETE FROM user_session WHERE id=?`
