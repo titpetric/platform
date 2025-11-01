@@ -2,36 +2,62 @@
 
 The platform implements a telemetry module with OpenTelemetry.
 
-It is included by importing `github.com/titpetric/platform/module/telemetry`.
-The package provides a middleware and instrumentation for the database.
+To test the platform with OTel, `task docker up` in the root
+of the project will build the app and bring up the required services.
+Check the `docker-compose.yml` file for configuration.
+
+To access the tracing dashboard, open: [http://localhost:16686/](http://localhost:16686/).
+
+## Usage
+
+Instrumenting your code with telemetry is simple. To use telemetry,
+start by importing `github.com/titpetric/platform/telemetry`. This
+provides functions to use `context.Context` and `*http.Request` values.
 
 ```
-var TracerProvider *sdktrace.TracerProvider
-    TracerProvider is shared globally
+func Start(ctx context.Context, name string) (context.Context, trace.Span)
+    Start is a wrapper to tracer.Start. It's meant to add instrumentation in the
+    storage layer, or around important bits of code. It adds nothing to the span
+    but the name. Ideally use a FQDN ("package.Type.Function").
 
-
-FUNCTIONS
-
-func CaptureError(ctx context.Context, err error)
-    CaptureError logs an error that occured in a request.
-
-func Connect(driver, dsn string) (*sqlx.DB, error)
-    Connect is like Open but verifies the connection (calls Ping).
-
-func Middleware(next http.Handler) http.Handler
-    Middleware returns an otelhttp middleware
-
-func Open(driver, dsn string) (*sqlx.DB, error)
-    Open creates a new instrumented *sqlx.DB without pinging. It wraps
-    otelsql.Open and sqlx.NewDb for full compatibility.
+func StartRequest(r *http.Request, name string) (*http.Request, trace.Span)
+    StartRequest is an utility to take the http.Request and update it's context.
 ```
+
+The package exposes other symbols, but don't rely on them.
+
+So, to trace from a `*http.Request`:
+
+```go
+func Handler(w http.ResponseWriter, r *http.Request) {
+	r, span = telemetry.StartRequest(r, "vendor.module.package.handler")
+	defer span.End()
+	// continue using `r`
+}
+```
+
+And to trace any context aware function:
+
+```go
+func GetUsers(ctx context.Context) []string {
+	ctx, span = telemetry.Start(ctx, "vendor.module.package.storage.get_users")
+	defer span.End()
+
+	// continue using ctx for database queries
+}
+```
+
+The `span` value notably contains an implementation of the `trace.Span`
+interface. In that interface is a `SetName(string)` function that lets
+you customize the name of the span.
+
+For example, platform requests carry the request method and the route
+pattern, e.g. `POST /login`, to ease the grouping process. It's nice to
+see repeated traces, but the behaviour depends a lot on the tool used
+to display opentelemetry data.
 
 The package also implements an `init` function to set up the
-opentelemetry collector. To test the platform with opentelemetry, `task
-docker up` in the root of the project will build the app and bring up
-the required services.
-
-To access the dashboard, open: [http://localhost:16686/](http://localhost:16686/).
+opentelemetry collector.
 
 Requests made to the service will be logged in opentelemetry.
 
@@ -50,6 +76,7 @@ You can quickly bring up a test environment with Docker Compose. Example configu
     environment:
       - PLATFORM_DB_DEFAULT=mysql://platform:platform@tcp(db1:3306)/platform
       - OTEL_SERVICE_NAME=platform
+      - OTEL_SERVICE_ENABLED=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
 ```
 
@@ -64,10 +91,12 @@ setup for other observability components.
 
 ### Observability Features
 
-1. **APM Tracing**:
-   Requests to the platform app are automatically traced in Elastic APM. Chi route middleware is instrumented by default, so HTTP spans will be visible in the APM dashboard.
+The OpenTelemetry stack includes their collector service, prometheus and jaeger.
 
-2. **Database Instrumentation**:
+1. **APM Tracing**: Requests to the platform app are automatically traced in Jaeger. Other OpenTelemetry monitoring tooling exists.
+
+2. **Database Instrumentation**: Any database driver in use is instrumented with telemetry. 
+
    Supported drivers (SQLite, MySQL) are instrumented. Queries executed via the platform modules are automatically captured as spans.
 
 3. **Explicit Error Capture**:
