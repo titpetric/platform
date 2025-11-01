@@ -16,8 +16,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// TracerProvider is shared globally
-var TracerProvider *sdktrace.TracerProvider
+var (
+	tracerProvider *sdktrace.TracerProvider
+	tracer         trace.Tracer
+)
 
 func init() {
 	initOpenTelemetry()
@@ -26,13 +28,12 @@ func init() {
 func initOpenTelemetry() {
 	ctx := context.Background()
 
-	// Example: read endpoint from env var
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if endpoint == "" {
 		endpoint = "localhost:4318" // default local collector
 	}
 
-	// Create OTLP trace exporter
+	// Create OTLP trace exporter via HTTP
 	exporter, err := otlptracehttp.New(ctx,
 		otlptracehttp.WithEndpoint(endpoint),
 		otlptracehttp.WithInsecure(),
@@ -52,12 +53,13 @@ func initOpenTelemetry() {
 		log.Fatalf("telemetry: failed to create resource: %v", err)
 	}
 
-	// Set up the TracerProvider
-	TracerProvider = sdktrace.NewTracerProvider(
+	tracerProvider = sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(res),
 	)
-	otel.SetTracerProvider(TracerProvider)
+	otel.SetTracerProvider(tracerProvider)
+
+	tracer = tracerProvider.Tracer("internal/telemetry")
 
 	log.Println("[telemetry] OpenTelemetry initialized")
 }
@@ -66,7 +68,6 @@ func initOpenTelemetry() {
 // in the storage layer, or around important bits of code. It adds nothing
 // to the span but the name. Ideally use a FQDN ("package.Type.Function").
 func Start(ctx context.Context, name string) (context.Context, trace.Span) {
-	tracer := TracerProvider.Tracer("telemetry")
 	return tracer.Start(ctx, name)
 }
 
