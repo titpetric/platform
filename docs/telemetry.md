@@ -22,6 +22,13 @@ func Start(ctx context.Context, name string) (context.Context, trace.Span)
 
 func StartRequest(r *http.Request, name string) (*http.Request, trace.Span)
     StartRequest is an utility to take the http.Request and update it's context.
+
+func StartAuto(ctx context.Context, symbol any) (context.Context, trace.Span)
+    StartAuto tries to fill the span name from the symbol.
+
+    It's intended to pass a function, or a type. The package name, type name,
+    and function name are combined with `.` to delimit them. See tests under
+    internal/reflect for more information.
 ```
 
 The package exposes other symbols, but don't rely on them.
@@ -30,7 +37,7 @@ So, to trace from a `*http.Request`:
 
 ```go
 func Handler(w http.ResponseWriter, r *http.Request) {
-	r, span = telemetry.StartRequest(r, "vendor.module.package.handler")
+	r, span = telemetry.StartRequest(r, "user.Handler")
 	defer span.End()
 	// continue using `r`
 }
@@ -39,13 +46,28 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 And to trace any context aware function:
 
 ```go
-func GetUsers(ctx context.Context) []string {
-	ctx, span = telemetry.Start(ctx, "vendor.module.package.storage.get_users")
+func (*UserStorage) GetUsers(ctx context.Context) []string {
+	ctx, span = telemetry.Start(ctx, "storage.UserStorage.GetUsers")
 	defer span.End()
 
 	// continue using ctx for database queries
 }
 ```
+
+Or with `StartAuto`, passing the symbol to trace by name. In the given
+example, the name of the symbol is `storage.UserStorage.GetUsers`.
+
+```go
+func (*UserStorage) GetUsers(ctx context.Context) []string {
+	ctx, span = telemetry.StartAuto(ctx, GetUsers)
+	defer span.End()
+
+	// continue using ctx for database queries
+}
+```
+
+> StartAuto uses reflection and may not work correctly under various conditions.
+> If performance or build restrictions are impacting use, use `Start`.
 
 The `span` value notably contains an implementation of the `trace.Span`
 interface. In that interface is a `SetName(string)` function that lets
@@ -53,13 +75,9 @@ you customize the name of the span.
 
 For example, platform requests carry the request method and the route
 pattern, e.g. `POST /login`, to ease the grouping process. It's nice to
-see repeated traces, but the behaviour depends a lot on the tool used
-to display opentelemetry data.
-
-The package also implements an `init` function to set up the
-opentelemetry collector.
-
-Requests made to the service will be logged in opentelemetry.
+see repeated traces, but the behaviour depends a lot on the tool used to
+display opentelemetry data. This seems suitable for Jaeger and Elastic
+APM.
 
 ## Docker Test Environment
 

@@ -85,18 +85,11 @@ func Start(ctx context.Context, name string) (context.Context, trace.Span) {
 	return tracer.Start(ctx, name)
 }
 
-// StartAuto tries to fill the span name from the symbol. If a pointer of
-// a type is passed, the expected output contains the package and the type
-// name concatenated with a dot. If a function is passed, the function
-// name is appended with another dot. For example:
+// StartAuto tries to fill the span name from the symbol.
 //
-// - internal.StartAuto
-// - storage.UserStorage.Get
-//
-// It's good enough considering handlers should carry parent span context.
-// If a string is passed, the string is returned as is.
-//
-// In addition, the name will be used to publish an expvar counter.
+// It's intended to pass a function, or a type. The package name, type
+// name, and function name are combined with `.` to delimit them.
+// See tests under internal/reflect for more information.
 func StartAuto(ctx context.Context, symbol any) (context.Context, trace.Span) {
 	name := reflect.SymbolName(symbol)
 	monitorTouch(name)
