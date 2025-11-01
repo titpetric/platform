@@ -1,6 +1,8 @@
 package user
 
 import (
+	"context"
+
 	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/module/theme"
 	"github.com/titpetric/platform/module/user/service"
@@ -22,7 +24,7 @@ func NewHandler() *Handler {
 
 // Start will initialize the service to handle requests.
 func (h *Handler) Start() error {
-	db, err := DB()
+	db, err := DB(context.Background())
 	if err != nil {
 		return err
 	}

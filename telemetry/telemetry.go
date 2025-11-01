@@ -2,10 +2,12 @@ package telemetry
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/XSAM/otelsql"
 	"github.com/riandyrn/otelchi"
 
 	"go.opentelemetry.io/otel"
@@ -14,24 +16,36 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/titpetric/platform/internal/reflect"
 )
 
-var (
-	tracerProvider *sdktrace.TracerProvider
-	tracer         trace.Tracer
-)
+var tracer trace.Tracer
+
+const Name = "internal/telemetry"
 
 func init() {
+	if os.Getenv("OTEL_SERVICE_ENABLED") != "true" {
+		log.Println("[telemetry] OpenTelemetry is disabled, setting tracer to noop")
+		tracer = trace.NewNoopTracerProvider().Tracer(Name)
+		return
+	}
+
 	initOpenTelemetry()
 }
 
 func initOpenTelemetry() {
-	ctx := context.Background()
+	// instrument sql
+	sql_open = func(driver, dsn string) (*sql.DB, error) {
+		return otelsql.Open(driver, dsn)
+	}
 
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
 	if endpoint == "" {
 		endpoint = "localhost:4318" // default local collector
 	}
+
+	ctx := context.Background()
 
 	// Create OTLP trace exporter via HTTP
 	exporter, err := otlptracehttp.New(ctx,
@@ -53,13 +67,13 @@ func initOpenTelemetry() {
 		log.Fatalf("telemetry: failed to create resource: %v", err)
 	}
 
-	tracerProvider = sdktrace.NewTracerProvider(
+	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(res),
 	)
-	otel.SetTracerProvider(tracerProvider)
+	tracer = tracerProvider.Tracer(Name)
 
-	tracer = tracerProvider.Tracer("internal/telemetry")
+	otel.SetTracerProvider(tracerProvider)
 
 	log.Println("[telemetry] OpenTelemetry initialized")
 }
@@ -69,6 +83,24 @@ func initOpenTelemetry() {
 // to the span but the name. Ideally use a FQDN ("package.Type.Function").
 func Start(ctx context.Context, name string) (context.Context, trace.Span) {
 	return tracer.Start(ctx, name)
+}
+
+// StartAuto tries to fill the span name from the symbol. If a pointer of
+// a type is passed, the expected output contains the package and the type
+// name concatenated with a dot. If a function is passed, the function
+// name is appended with another dot. For example:
+//
+// - internal.StartAuto
+// - storage.UserStorage.Get
+//
+// It's good enough considering handlers should carry parent span context.
+// If a string is passed, the string is returned as is.
+//
+// In addition, the name will be used to publish an expvar counter.
+func StartAuto(ctx context.Context, symbol any) (context.Context, trace.Span) {
+	name := reflect.SymbolName(symbol)
+	monitorTouch(name)
+	return Start(ctx, name)
 }
 
 // StartRequest is an utility to take the http.Request and update it's context.

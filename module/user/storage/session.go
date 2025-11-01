@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"database/sql"
-	"expvar"
 	"fmt"
 	"time"
 
@@ -17,38 +16,19 @@ import (
 // SessionStorage implements session persistence using MySQL.
 type SessionStorage struct {
 	db *sqlx.DB
-
-	monitor SessionStorageMonitor
-}
-
-type SessionStorageMonitor struct {
-	Create *expvar.Int
-	Get    *expvar.Int
-	Delete *expvar.Int
-}
-
-func NewSessionStorageMonitor() SessionStorageMonitor {
-	return SessionStorageMonitor{
-		Create: expvar.NewInt("user.storage.session.create"),
-		Get:    expvar.NewInt("user.storage.session.get"),
-		Delete: expvar.NewInt("user.storage.session.delete"),
-	}
 }
 
 // NewSessionStorage creates a new SessionStorage.
 func NewSessionStorage(db *sqlx.DB) *SessionStorage {
 	return &SessionStorage{
-		db:      db,
-		monitor: NewSessionStorageMonitor(),
+		db: db,
 	}
 }
 
 // Create inserts a new session for the given userID.
 func (s *SessionStorage) Create(ctx context.Context, userID string) (*model.UserSession, error) {
-	ctx, span := telemetry.Start(ctx, "user.storage.session.Create")
+	ctx, span := telemetry.StartAuto(ctx, s.Create)
 	defer span.End()
-
-	defer s.monitor.Create.Add(1)
 
 	now := time.Now()
 	session := &model.UserSession{
@@ -70,10 +50,8 @@ func (s *SessionStorage) Create(ctx context.Context, userID string) (*model.User
 // Get retrieves a session by sessionID.
 // Returns model.ErrSessionExpired if the session has expired.
 func (s *SessionStorage) Get(ctx context.Context, sessionID string) (*model.UserSession, error) {
-	ctx, span := telemetry.Start(ctx, "user.storage.session.Get")
+	ctx, span := telemetry.StartAuto(ctx, s.Get)
 	defer span.End()
-
-	defer s.monitor.Get.Add(1)
 
 	query := `SELECT * FROM user_session WHERE id=?`
 	session := &model.UserSession{}
@@ -93,10 +71,8 @@ func (s *SessionStorage) Get(ctx context.Context, sessionID string) (*model.User
 
 // Delete removes a session by sessionID.
 func (s *SessionStorage) Delete(ctx context.Context, sessionID string) error {
-	ctx, span := telemetry.Start(ctx, "user.storage.session.Delete")
+	ctx, span := telemetry.StartAuto(ctx, s.Delete)
 	defer span.End()
-
-	defer s.monitor.Delete.Add(1)
 
 	query := `DELETE FROM user_session WHERE id=?`
 	_, err := s.db.ExecContext(ctx, query, sessionID)

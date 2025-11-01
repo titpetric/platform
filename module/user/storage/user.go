@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"expvar"
 	"fmt"
 	"time"
 
@@ -19,43 +18,20 @@ import (
 // UserStorage implements the model.Storage interface using MySQL via sqlx.
 type UserStorage struct {
 	db *sqlx.DB
-
-	monitor UserStorageMonitor
-}
-
-type UserStorageMonitor struct {
-	Create       *expvar.Int
-	Update       *expvar.Int
-	Get          *expvar.Int
-	GetGroups    *expvar.Int
-	Authenticate *expvar.Int
-}
-
-func NewUserStorageMonitor() UserStorageMonitor {
-	return UserStorageMonitor{
-		Create:       expvar.NewInt("user.storage.user.create"),
-		Update:       expvar.NewInt("user.storage.user.update"),
-		Get:          expvar.NewInt("user.storage.user.get"),
-		GetGroups:    expvar.NewInt("user.storage.user.getgroups"),
-		Authenticate: expvar.NewInt("user.storage.user.authenticate"),
-	}
 }
 
 // NewUserStorage returns a new UserStorage backed by the given sqlx.DB.
 func NewUserStorage(db *sqlx.DB) *UserStorage {
 	return &UserStorage{
-		db:      db,
-		monitor: NewUserStorageMonitor(),
+		db: db,
 	}
 }
 
 // Create inserts a new user and their authentication credentials.
 // Returns an error if authentication information is missing.
 func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model.UserAuth) (*model.User, error) {
-	ctx, span := telemetry.Start(ctx, "user.storage.user.Create")
+	ctx, span := telemetry.StartAuto(ctx, s.Create)
 	defer span.End()
-
-	defer s.monitor.Create.Add(1)
 
 	if userAuth == nil || userAuth.Email == "" || userAuth.Password == "" {
 		return nil, errors.New("missing authentication info: email and password are required")
@@ -106,10 +82,8 @@ func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model
 
 // Update modifies an existing user and updates the updated_at timestamp.
 func (s *UserStorage) Update(ctx context.Context, u *model.User) (*model.User, error) {
-	ctx, span := telemetry.Start(ctx, "user.storage.user.Update")
+	ctx, span := telemetry.StartAuto(ctx, s.Update)
 	defer span.End()
-
-	defer s.monitor.Update.Add(1)
 
 	u.SetUpdatedAt(time.Now())
 
@@ -127,10 +101,8 @@ func (s *UserStorage) Update(ctx context.Context, u *model.User) (*model.User, e
 
 // Get retrieves a user by ULID.
 func (s *UserStorage) Get(ctx context.Context, id string) (*model.User, error) {
-	ctx, span := telemetry.Start(ctx, "user.storage.user.Get")
+	ctx, span := telemetry.StartAuto(ctx, s.Get)
 	defer span.End()
-
-	defer s.monitor.Get.Add(1)
 
 	u := &model.User{}
 	query := `SELECT * FROM user WHERE id=?`
@@ -142,10 +114,8 @@ func (s *UserStorage) Get(ctx context.Context, id string) (*model.User, error) {
 
 // GetGroups returns all groups the user belongs to.
 func (s *UserStorage) GetGroups(ctx context.Context, userID string) ([]model.UserGroup, error) {
-	ctx, span := telemetry.Start(ctx, "user.storage.user.GetGroups")
+	ctx, span := telemetry.StartAuto(ctx, s.GetGroups)
 	defer span.End()
-
-	defer s.monitor.GetGroups.Add(1)
 
 	query := `
 		SELECT g.id, g.title, g.created_at, g.updated_at
@@ -162,10 +132,8 @@ func (s *UserStorage) GetGroups(ctx context.Context, userID string) ([]model.Use
 
 // Authenticate verifies a user's credentials using bcrypt and returns the user.
 func (s *UserStorage) Authenticate(ctx context.Context, auth model.UserAuth) (*model.User, error) {
-	ctx, span := telemetry.Start(ctx, "user.storage.user.Authenticate")
+	ctx, span := telemetry.StartAuto(ctx, s.Authenticate)
 	defer span.End()
-
-	defer s.monitor.Authenticate.Add(1)
 
 	query := `SELECT user_id, password FROM user_auth WHERE email=? LIMIT 1`
 

@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -9,11 +10,13 @@ import (
 	"github.com/titpetric/platform/telemetry"
 )
 
+// DatabaseProvider holds a list of named sql connection credentials.
 type DatabaseProvider struct {
 	cache       map[string]*sqlx.DB
 	credentials map[string]string
 }
 
+// NewDatabaseProvider will allocate a valid `*DatabaseProvider` and return it.
 func NewDatabaseProvider() *DatabaseProvider {
 	return &DatabaseProvider{
 		cache:       make(map[string]*sqlx.DB),
@@ -21,15 +24,24 @@ func NewDatabaseProvider() *DatabaseProvider {
 	}
 }
 
-func (r *DatabaseProvider) Add(name string, config string) {
+// Register will add a new named credential into the provider.
+// The function is not concurrency safe, database credentials
+// can't be changed during the lifetime of the provider.
+func (r *DatabaseProvider) Register(name string, config string) {
 	r.credentials[name] = config
 }
 
-func (r *DatabaseProvider) Connect(names ...string) (*sqlx.DB, error) {
-	db, err := r.cached(telemetry.Connect, names...)
+// Connect issues a PingContext to verify a live connection before returning.
+// The context is used to propagate tracing detail so ping is grouped correctly.
+func (r *DatabaseProvider) Connect(ctx context.Context, names ...string) (*sqlx.DB, error) {
+	db, err := r.cached(telemetry.Open, names...)
+	if err := db.PingContext(ctx); err != nil {
+		return nil, err
+	}
 	return db, err
 }
 
+// Open is the same as sql.Open. It creates a client from a named connection.
 func (r *DatabaseProvider) Open(names ...string) (*sqlx.DB, error) {
 	db, err := r.cached(telemetry.Open, names...)
 	return db, err

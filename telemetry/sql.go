@@ -1,11 +1,15 @@
 package telemetry
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/XSAM/otelsql"
 	"github.com/jmoiron/sqlx"
 )
+
+// sql_open gets overridden in init() if opentelemetry is enabled
+var sql_open = sql.Open
 
 // Open creates a new instrumented *sqlx.DB without pinging.
 // It wraps otelsql.Open and sqlx.NewDb for full compatibility.
@@ -17,16 +21,4 @@ func Open(driver, dsn string) (*sqlx.DB, error) {
 	}
 
 	return sqlx.NewDb(db, driver), nil
-}
-
-// Connect is like Open but verifies the connection (calls Ping).
-func Connect(driver, dsn string) (*sqlx.DB, error) {
-	db, err := Open(driver, dsn)
-	if err != nil {
-		return nil, err
-	}
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-	return db, nil
 }
