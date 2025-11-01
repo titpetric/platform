@@ -80,7 +80,7 @@ func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model
 			(id, first_name, last_name, deleted_at, created_at, updated_at)
 			VALUES (?, ?, ?, ?, ?, ?)
 		`
-		_, err = s.db.ExecContext(ctx, userQuery, u.ID, u.FirstName, u.LastName, u.DeletedAt, u.CreatedAt, u.UpdatedAt)
+		_, err = tx.ExecContext(ctx, userQuery, u.ID, u.FirstName, u.LastName, u.DeletedAt, u.CreatedAt, u.UpdatedAt)
 		if err != nil {
 			return fmt.Errorf("create user: %w", err)
 		}
@@ -91,7 +91,7 @@ func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model
 			VALUES
 				(?, ?, ?, ?, ?)
 		`
-		_, err = s.db.ExecContext(ctx, authQuery, u.ID, userAuth.Email, hashed, now, now)
+		_, err = tx.ExecContext(ctx, authQuery, u.ID, userAuth.Email, hashed, now, now)
 		if err != nil {
 			return fmt.Errorf("create user_auth: %w", err)
 		}
