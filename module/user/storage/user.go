@@ -66,7 +66,9 @@ func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model
 	u.SetUpdatedAt(now)
 	u.ID = internal.ULID()
 
+	_, span2 := telemetry.Start(ctx, "bcrypt.GenerateFromPassword")
 	hashed, err := bcrypt.GenerateFromPassword([]byte(userAuth.Password), bcrypt.DefaultCost)
+	span2.End()
 	if err != nil {
 		return nil, fmt.Errorf("hash password: %w", err)
 	}
