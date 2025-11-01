@@ -25,8 +25,11 @@ var tracer trace.Tracer
 const Name = "internal/telemetry"
 
 func init() {
-	if os.Getenv("OTEL_SERVICE_ENABLED") != "true" {
-		log.Println("[telemetry] OpenTelemetry is disabled, setting tracer to noop")
+	if os.Getenv("PLATFORM_ENABLE_EXPVAR") == "true" {
+		monitor.enabled = true
+	}
+
+	if os.Getenv("PLATFORM_ENABLE_OTEL") != "true" {
 		tracer = trace.NewNoopTracerProvider().Tracer(Name)
 		return
 	}
@@ -74,14 +77,15 @@ func initOpenTelemetry() {
 	tracer = tracerProvider.Tracer(Name)
 
 	otel.SetTracerProvider(tracerProvider)
-
-	log.Println("[telemetry] OpenTelemetry initialized")
 }
 
-// Start is a wrapper to tracer.Start. It's meant to add instrumentation
-// in the storage layer, or around important bits of code. It adds nothing
-// to the span but the name. Ideally use a FQDN ("package.Type.Function").
+// Start is a wrapper to tracer.Start and expvar.NewInt.
+//
+// Calling the function adds a span to the current context. The name should
+// be a symbol reference for the caller. For best results, combine the
+// package, symbol and function into a name like `user.service.Login`.
 func Start(ctx context.Context, name string) (context.Context, trace.Span) {
+	monitorTouch(name)
 	return tracer.Start(ctx, name)
 }
 
@@ -90,9 +94,11 @@ func Start(ctx context.Context, name string) (context.Context, trace.Span) {
 // It's intended to pass a function, or a type. The package name, type
 // name, and function name are combined with `.` to delimit them.
 // See tests under internal/reflect for more information.
+//
+// StartAuto uses reflection and may not work correctly under various conditions.
+// If performance or build restrictions are impacting use, use `Start`.
 func StartAuto(ctx context.Context, symbol any) (context.Context, trace.Span) {
 	name := reflect.SymbolName(symbol)
-	monitorTouch(name)
 	return Start(ctx, name)
 }
 

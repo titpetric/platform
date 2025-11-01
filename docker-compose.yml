@@ -8,8 +8,9 @@ services:
       - 8080:8080
     environment:
       - PLATFORM_DB_DEFAULT=mysql://platform:platform@tcp(db1:3306)/platform
+      - PLATFORM_ENABLE_EXPVAR=true
+      - PLATFORM_ENABLE_OTEL=true
       - OTEL_SERVICE_NAME=platform
-      - OTEL_SERVICE_ENABLED=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
 
   otel-collector:

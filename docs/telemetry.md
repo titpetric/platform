@@ -16,12 +16,11 @@ provides functions to use `context.Context` and `*http.Request` values.
 
 ```
 func Start(ctx context.Context, name string) (context.Context, trace.Span)
-    Start is a wrapper to tracer.Start. It's meant to add instrumentation in the
-    storage layer, or around important bits of code. It adds nothing to the span
-    but the name. Ideally use a FQDN ("package.Type.Function").
+    Start is a wrapper to tracer.Start and expvar.NewInt.
 
-func StartRequest(r *http.Request, name string) (*http.Request, trace.Span)
-    StartRequest is an utility to take the http.Request and update it's context.
+    Calling the function adds a span to the current context. The name should be
+    a symbol reference for the caller. For best results, combine the package,
+    symbol and function into a name like `user.service.Login`.
 
 func StartAuto(ctx context.Context, symbol any) (context.Context, trace.Span)
     StartAuto tries to fill the span name from the symbol.
@@ -29,6 +28,10 @@ func StartAuto(ctx context.Context, symbol any) (context.Context, trace.Span)
     It's intended to pass a function, or a type. The package name, type name,
     and function name are combined with `.` to delimit them. See tests under
     internal/reflect for more information.
+
+func StartRequest(r *http.Request, name string) (*http.Request, trace.Span)
+    StartRequest is an utility to take the http.Request and update it's context.
+
 ```
 
 The package exposes other symbols, but don't rely on them.
@@ -93,8 +96,8 @@ You can quickly bring up a test environment with Docker Compose. Example configu
       - 8080:8080
     environment:
       - PLATFORM_DB_DEFAULT=mysql://platform:platform@tcp(db1:3306)/platform
+      - PLATFORM_ENABLE_OTEL=true
       - OTEL_SERVICE_NAME=platform
-      - OTEL_SERVICE_ENABLED=true
       - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
 ```
 

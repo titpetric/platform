@@ -14,6 +14,7 @@ tasks:
     desc: "Run platform base"
     env:
       PLATFORM_DB_DEFAULT: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
+      PLATFORM_ENABLE_EXPVAR: "true"
     cmds:
       - goimports -w -local github.com/titpetric/platform .
       - gofumpt -w .
@@ -50,6 +51,8 @@ tasks:
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
       CGO_ENABLED: 0
+      PLATFORM_ENABLE_EXPVAR: "true"
+      PLATFORM_ENABLE_OTEL: "true"
     cmd: go test -count=1 -v -cover -coverpkg=./... -coverprofile=pkg.cov ./...
 
   cover:

@@ -7,12 +7,17 @@ import (
 
 var monitor = struct {
 	sync.Mutex
-	state map[string]*expvar.Int
+	enabled bool
+	state   map[string]*expvar.Int
 }{
 	state: make(map[string]*expvar.Int),
 }
 
 func monitorTouch(name string) {
+	if !monitor.enabled {
+		return
+	}
+
 	monitor.Lock()
 	defer monitor.Unlock()
 

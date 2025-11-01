@@ -30,11 +30,14 @@ func NewTestPlatform(tb testing.TB) *platform.Platform {
 func TestPlatform(t *testing.T) {
 	t.Run("single", func(t *testing.T) {
 		svc := NewTestPlatform(t)
-
+		svc.Register(&platform.UnimplementedModule{})
 		plugins, mws := svc.Stats()
 
-		require.Equal(t, 0, plugins)
+		require.Equal(t, 1, plugins)
 		require.Equal(t, 0, mws)
+
+		require.NoError(t, svc.Start(t.Context()))
+		require.NoError(t, svc.Stop())
 	})
 
 	t.Run("multi", func(t *testing.T) {

@@ -4,7 +4,6 @@ The platform package implements **named database provider**:
 
 ```go
 type DatabaseProvider interface {
-	Add(name, dsn string)
 	Open(...string) (*sqlx.DB, error)
 	Connect(...string) (*sqlx.DB, error)
 }
@@ -27,12 +26,6 @@ db, err := platform.Database.Get()
 The platform scans the runtime environment for `PLATFORM_DB_` prefixed
 environment variables. The remainder after the prefix is used for the
 connection name.
-
-This is done from `init`, and automatically invokes `plaform.Database.Add`.
-
-To register additional connection strings at runtime, you should invoke
-the `Add` function. This is the intended pattern if you want to provide
-configuration from a config file or other location.
 
 ## Connection strings
 
