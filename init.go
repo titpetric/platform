@@ -6,11 +6,11 @@ import (
 )
 
 func init() {
-	setupConnections(global.db.Add)
+	setupConnections(global.db.Register)
 }
 
 // setupConnections will parse the env for named connection strings.
-func setupConnections(add func(string, string)) {
+func setupConnections(register func(string, string)) {
 	connections := map[string]string{
 		"default": "sqlite://:memory:",
 	}
@@ -24,6 +24,6 @@ func setupConnections(add func(string, string)) {
 	}
 
 	for name, dsn := range connections {
-		add(name, dsn)
+		register(name, dsn)
 	}
 }
