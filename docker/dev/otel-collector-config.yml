@@ -12,12 +12,8 @@ extensions:
 exporters:
   otlp:
     endpoint: jaeger:4317
-    tls:
-      insecure_skip_verify: true
   prometheus:
-    endpoint: prometheus:9090
-    tls:
-      insecure_skip_verify: true
+    endpoint: 0.0.0.0:9091
 
 service:
   pipelines:
