@@ -58,15 +58,10 @@ type Platform struct {
 	registry *Registry
 }
 
-// New is a shorthand for NewPlatform, using default options.
-func New() (*Platform, error) {
-	return NewPlatform(nil)
-}
-
-// NewPlatform will create a new *Platform object. It is the allocation point
+// New will create a new *Platform object. It is the allocation point
 // for each platform instance. If no options are passed, the defaults are in use.
 // The defaults options are provided by NewOptions().
-func NewPlatform(options *Options) (*Platform, error) {
+func New(options *Options) (*Platform, error) {
 	if options == nil {
 		options = NewOptions()
 	}
@@ -149,7 +144,9 @@ func (p *Platform) Start(ctx context.Context) error {
 	}()
 
 	// Print registered routes.
-	internal.PrintRoutes(p.router)
+	if !p.options.Quiet {
+		internal.PrintRoutes(p.router)
+	}
 
 	return nil
 }
@@ -162,6 +159,9 @@ func (p *Platform) Context() context.Context {
 
 // Wait will pause until the server is shut down.
 func (p *Platform) Wait() {
+	if p.context.Err() != nil {
+		return
+	}
 	// Wait for Stop() to be invoked.
 	<-p.context.Done()
 }

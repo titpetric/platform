@@ -10,13 +10,8 @@ import (
 	"github.com/titpetric/platform"
 )
 
-var platformTestOptions = &platform.Options{
-	ServerAddr: "127.0.0.1:0",
-	Quiet:      true,
-}
-
 func NewTestPlatform(tb testing.TB) *platform.Platform {
-	svc, err := platform.StartPlatform(tb.Context(), platformTestOptions)
+	svc, err := platform.Start(tb.Context(), platform.NewTestOptions())
 
 	require.NoError(tb, err)
 	require.NotNil(tb, svc)
@@ -60,7 +55,7 @@ func TestPlatform_goroutine_leaks(t *testing.T) {
 	t.Run("stress", func(t *testing.T) {
 		t.Logf("start: %d", runtime.NumGoroutine())
 		for i := 0; i < 30; i++ {
-			svc, err := platform.StartPlatform(t.Context(), platformTestOptions)
+			svc, err := platform.Start(t.Context(), platform.NewTestOptions())
 
 			require.NoError(t, err)
 			require.NotNil(t, svc)
@@ -80,7 +75,7 @@ func TestPlatform_goroutine_leaks(t *testing.T) {
 func BenchmarkPlatform(b *testing.B) {
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			svc, err := platform.StartPlatform(b.Context(), platformTestOptions)
+			svc, err := platform.Start(b.Context(), platform.NewTestOptions())
 
 			require.NoError(b, err)
 			require.NotNil(b, svc)

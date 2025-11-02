@@ -4,18 +4,8 @@ import (
 	"context"
 )
 
-func Start() error {
-	svc, err := StartPlatform(context.Background(), nil)
-	if err != nil {
-		return err
-	}
-
-	svc.Wait()
-	return nil
-}
-
-func StartPlatform(ctx context.Context, options *Options) (*Platform, error) {
-	svc, err := NewPlatform(options)
+func Start(ctx context.Context, options *Options) (*Platform, error) {
+	svc, err := New(options)
 	if err != nil {
 		return nil, err
 	}

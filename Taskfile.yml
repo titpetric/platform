@@ -30,7 +30,8 @@ tasks:
   clean:
     desc: "Clean build assets"
     cmds:
-      - rm -f ./platform pkg.cov
+      - go clean -testcache
+      - rm -f ./platform pkg.cov go-fsck.json
       - docker rmi -f titpetric/platform
 
   migrate:
@@ -53,7 +54,11 @@ tasks:
       CGO_ENABLED: 0
       PLATFORM_ENABLE_EXPVAR: "true"
       PLATFORM_ENABLE_OTEL: "true"
-    cmd: go test -count=1 -v -cover -coverpkg=./... -coverprofile=pkg.cov ./...
+#    cmd: coverpkg=$(go list ./... | paste -sd "," -) go test -trimpath -count=1 -gcflags="-l" -cover -coverpkg="$coverpkg" -coverprofile=pkg.cov ./...
+    cmds:
+      - go test -trimpath -count=1 -cover -covermode=atomic -coverpkg="all" -coverprofile=pkg-original.cov ./...
+      - egrep "(^mode:|^$(go list .))" pkg-original.cov > pkg.cov
+#    cmd: go test -trimpath -count=1 -gcflags="-l" -cover -coverpkg="github.com/titpetric/platform/...,./..." -coverprofile=pkg.cov ./...
 
   cover:
     desc: "Show source coverage"
