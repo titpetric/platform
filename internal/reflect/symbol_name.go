@@ -39,10 +39,5 @@ func readSymbolName(in any) string {
 		}
 	}
 
-	// Otherwise, return the fully qualified type name
-	if pkg := t.PkgPath(); pkg != "" {
-		return pkg + "." + t.String()
-	}
-
 	return t.String()
 }

@@ -3,6 +3,7 @@ package reflect_test
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/internal/reflect"
 	"github.com/titpetric/platform/module/user/storage"
@@ -14,17 +15,18 @@ var SymbolName = reflect.SymbolName
 func TestStartAuto(t *testing.T) {
 	input := internal.NewDatabaseProvider()
 
-	t.Log(SymbolName(input))
-	t.Log(SymbolName(input.Open))
+	require.Equal(t, "internal.DatabaseProvider", SymbolName(input))
+	require.Equal(t, "internal.DatabaseProvider.Open", SymbolName(input.Open))
 
 	storage := &storage.UserStorage{}
 
-	t.Log(SymbolName(storage))
-	t.Log(SymbolName(storage.Create))
+	require.Equal(t, "storage.UserStorage", SymbolName(storage))
+	require.Equal(t, "storage.UserStorage.Create", SymbolName(storage.Create))
 
-	t.Log(SymbolName(telemetry.StartAuto))
-	t.Log(SymbolName(32))
+	require.Equal(t, "telemetry.StartAuto", SymbolName(telemetry.StartAuto))
+	require.Equal(t, "int", SymbolName(32))
 
-	// If a string is passed, the string is returned
-	t.Log(SymbolName("test.start.auto"))
+	require.Equal(t, "test.start.auto", SymbolName("test.start.auto"))
+	require.Equal(t, "test.start.auto", SymbolName("github.com/titpetric/internal/test.start.auto"))
+	require.Equal(t, "<nil>", SymbolName(nil))
 }
