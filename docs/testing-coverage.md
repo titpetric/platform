@@ -13,18 +13,19 @@ cover. Tests with cognitive complexity 0 would be tested by invocation.
 
 | #  | Status | Package                                           | Coverage | Cognitive | Lines |
 | -- | ------ | ------------------------------------------------- | -------- | --------- | ----- |
-| 0  | ✅      | github.com/titpetric/platform                     | 82.17%   | 34        | 304   |
+| 0  | ✅      | github.com/titpetric/platform                     | 82.01%   | 34        | 304   |
 | 1  | ✅      | github.com/titpetric/platform/cmd/platform        | 41.65%   | 1         | 16    |
 | 2  | ❌      | github.com/titpetric/platform/internal            | 61.36%   | 27        | 182   |
 | 3  | ✅      | github.com/titpetric/platform/internal/reflect    | 100.00%  | 7         | 31    |
-| 4  | ✅      | github.com/titpetric/platform/module/autoload     | 100.00%  | 0         | 4     |
-| 5  | ✅      | github.com/titpetric/platform/module/expvar       | 93.33%   | 1         | 16    |
-| 6  | ✅      | github.com/titpetric/platform/module/theme        | 100.00%  | 0         | 11    |
-| 7  | ❌      | github.com/titpetric/platform/module/user         | 60.41%   | 13        | 103   |
-| 8  | ✅      | github.com/titpetric/platform/module/user/model   | 8.11%    | 1         | 82    |
-| 9  | ❌      | github.com/titpetric/platform/module/user/service | 28.25%   | 27        | 285   |
-| 10 | ❌      | github.com/titpetric/platform/module/user/storage | 20.00%   | 24        | 200   |
-| 11 | ❌      | github.com/titpetric/platform/telemetry           | 70.90%   | 8         | 130   |
+| 4  | ✅      | github.com/titpetric/platform/internal/require    | 0.00%    | 0         | 0     |
+| 5  | ✅      | github.com/titpetric/platform/module/autoload     | 100.00%  | 0         | 4     |
+| 6  | ✅      | github.com/titpetric/platform/module/expvar       | 93.33%   | 1         | 16    |
+| 7  | ✅      | github.com/titpetric/platform/module/theme        | 100.00%  | 0         | 11    |
+| 8  | ❌      | github.com/titpetric/platform/module/user         | 60.41%   | 13        | 103   |
+| 9  | ✅      | github.com/titpetric/platform/module/user/model   | 8.11%    | 1         | 82    |
+| 10 | ❌      | github.com/titpetric/platform/module/user/service | 28.25%   | 27        | 285   |
+| 11 | ❌      | github.com/titpetric/platform/module/user/storage | 20.00%   | 24        | 200   |
+| 12 | ❌      | github.com/titpetric/platform/telemetry           | 70.90%   | 8         | 130   |
 
 ## Functions
 
@@ -37,7 +38,7 @@ cover. Tests with cognitive complexity 0 would be tested by invocation.
 | 4   | ✅      | github.com/titpetric/platform                     | NewTestOptions                 | 100.00%  | 0         |
 | 5   | ✅      | github.com/titpetric/platform                     | Platform.Context               | 0.00%    | 0         |
 | 6   | ✅      | github.com/titpetric/platform                     | Platform.Register              | 100.00%  | 0         |
-| 7   | ❌      | github.com/titpetric/platform                     | Platform.Start                 | 73.90%   | 11        |
+| 7   | ❌      | github.com/titpetric/platform                     | Platform.Start                 | 69.60%   | 11        |
 | 8   | ✅      | github.com/titpetric/platform                     | Platform.Stats                 | 100.00%  | 0         |
 | 9   | ✅      | github.com/titpetric/platform                     | Platform.Stop                  | 100.00%  | 0         |
 | 10  | ✅      | github.com/titpetric/platform                     | Platform.URL                   | 0.00%    | 0         |
