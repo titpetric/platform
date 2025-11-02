@@ -24,7 +24,7 @@ func NewHandler() *Handler {
 
 // Start will initialize the service to handle requests.
 func (h *Handler) Start() error {
-	db, err := DB(context.Background())
+	db, err := storage.DB(context.Background())
 	if err != nil {
 		return err
 	}

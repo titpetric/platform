@@ -33,7 +33,7 @@ func (s *UserStorage) Create(ctx context.Context, u *model.User, userAuth *model
 	ctx, span := telemetry.StartAuto(ctx, s.Create)
 	defer span.End()
 
-	if userAuth == nil || userAuth.Email == "" || userAuth.Password == "" {
+	if !userAuth.Valid() {
 		return nil, errors.New("missing authentication info: email and password are required")
 	}
 
@@ -131,30 +131,33 @@ func (s *UserStorage) GetGroups(ctx context.Context, userID string) ([]model.Use
 }
 
 // Authenticate verifies a user's credentials using bcrypt and returns the user.
-func (s *UserStorage) Authenticate(ctx context.Context, auth model.UserAuth) (*model.User, error) {
+func (s *UserStorage) Authenticate(ctx context.Context, userAuth model.UserAuth) (*model.User, error) {
 	ctx, span := telemetry.StartAuto(ctx, s.Authenticate)
 	defer span.End()
+
+	if !userAuth.Valid() {
+		return nil, errors.New("missing authentication info: email and password are required")
+	}
 
 	query := `SELECT user_id, password FROM user_auth WHERE email=? LIMIT 1`
 
 	dbAuth := &model.UserAuth{}
-	if err := s.db.GetContext(ctx, dbAuth, query, auth.Email); err != nil {
+	if err := s.db.GetContext(ctx, dbAuth, query, userAuth.Email); err != nil {
 		return nil, fmt.Errorf("authenticate lookup: %w", err)
 	}
 
 	// instrument a cpu-heavy operation with an inner span
 	err := func() error {
 		_, span := telemetry.Start(ctx, "bcrypt.CompareHashAndPassword")
-		err := bcrypt.CompareHashAndPassword([]byte(dbAuth.Password), []byte(auth.Password))
+		err := bcrypt.CompareHashAndPassword([]byte(dbAuth.Password), []byte(userAuth.Password))
 		span.End()
 
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			err = sql.ErrNoRows
+		}
 		if err != nil {
-			if err == bcrypt.ErrMismatchedHashAndPassword {
-				return sql.ErrNoRows
-			}
 			return fmt.Errorf("bcrypt compare: %w", err)
 		}
-
 		return nil
 	}()
 	if err != nil {

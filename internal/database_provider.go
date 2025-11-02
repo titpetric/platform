@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/jmoiron/sqlx"
 )
 
 // DatabaseProvider holds a list of named sql connection credentials.
 type DatabaseProvider struct {
-	open        func(string, string) (*sqlx.DB, error)
+	open func(string, string) (*sqlx.DB, error)
+
+	mu          sync.Mutex
 	cache       map[string]*sqlx.DB
 	credentials map[string]string
 }
@@ -35,6 +38,9 @@ func (r *DatabaseProvider) Register(name string, config string) {
 // The context is used to propagate tracing detail so ping is grouped correctly.
 func (r *DatabaseProvider) Connect(ctx context.Context, names ...string) (*sqlx.DB, error) {
 	db, err := r.Open(names...)
+	if err != nil {
+		return nil, err
+	}
 	if err := db.PingContext(ctx); err != nil {
 		return nil, err
 	}
@@ -52,8 +58,11 @@ func (r *DatabaseProvider) cached(connector func(string, string) (*sqlx.DB, erro
 	if len(names) == 0 {
 		names = []string{"default"}
 	}
+
 	for _, name := range names {
+		r.mu.Lock()
 		db, ok := r.cache[name]
+		r.mu.Unlock()
 		if ok {
 			return db, nil
 		}
@@ -61,7 +70,9 @@ func (r *DatabaseProvider) cached(connector func(string, string) (*sqlx.DB, erro
 
 	db, err := r.with(connector, names...)
 	if err == nil {
+		r.mu.Lock()
 		r.cache[names[0]] = db
+		r.mu.Unlock()
 	}
 	return db, err
 }

@@ -42,7 +42,7 @@ func GetSessionUser(r *http.Request) (*model.User, error) {
 
 	ctx := r.Context()
 
-	db, err := DB(ctx)
+	db, err := storage.DB(ctx)
 	if err != nil {
 		return nil, err
 	}

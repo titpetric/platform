@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -56,7 +57,7 @@ func (s *SessionStorage) Get(ctx context.Context, sessionID string) (*model.User
 	query := `SELECT * FROM user_session WHERE id=?`
 	session := &model.UserSession{}
 	if err := s.db.GetContext(ctx, session, query, sessionID); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
 		return nil, fmt.Errorf("get session: %w", err)
@@ -76,7 +77,10 @@ func (s *SessionStorage) Delete(ctx context.Context, sessionID string) error {
 
 	query := `DELETE FROM user_session WHERE id=?`
 	_, err := s.db.ExecContext(ctx, query, sessionID)
-	return fmt.Errorf("delete session: %w", err)
+	if err != nil {
+		return fmt.Errorf("delete session: %w", err)
+	}
+	return nil
 }
 
 var _ model.SessionStorage = (*SessionStorage)(nil)

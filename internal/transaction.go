@@ -30,5 +30,8 @@ func Transaction(ctx context.Context, db *sqlx.DB, fn func(context.Context, *sql
 		return err
 	}
 
-	return fmt.Errorf("commit transaction: %w", tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction: %w", err)
+	}
+	return nil
 }
