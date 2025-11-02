@@ -14,7 +14,7 @@ import (
 var SymbolName = reflect.SymbolName
 
 func TestStartAuto(t *testing.T) {
-	input := internal.NewDatabaseProvider()
+	input := internal.NewDatabaseProvider(nil)
 
 	require.Equal(t, "internal.DatabaseProvider", SymbolName(input))
 	require.Equal(t, "internal.DatabaseProvider.Open", SymbolName(input.Open))

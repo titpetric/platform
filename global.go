@@ -6,6 +6,7 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/titpetric/platform/internal"
+	"github.com/titpetric/platform/telemetry"
 )
 
 // global is a value to prevent pollution of the global package namespace.
@@ -16,7 +17,7 @@ var global = struct {
 	db       *internal.DatabaseProvider
 }{
 	registry: &Registry{},
-	db:       internal.NewDatabaseProvider(),
+	db:       internal.NewDatabaseProvider(telemetry.Open),
 }
 
 // DatabaseProvider is the implementation interface for working with named connections.

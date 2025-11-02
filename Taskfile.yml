@@ -61,7 +61,9 @@ tasks:
       CGO_ENABLED: 0
       PLATFORM_ENABLE_EXPVAR: "true"
       PLATFORM_ENABLE_OTEL: "true"
-    cmd: go test -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
+    cmds:
+      - task: fmt
+      - go test -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
 
   cover:
     desc: "Show source coverage"
