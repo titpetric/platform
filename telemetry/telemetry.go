@@ -85,7 +85,7 @@ func initOpenTelemetry() {
 // be a symbol reference for the caller. For best results, combine the
 // package, symbol and function into a name like `user.service.Login`.
 func Start(ctx context.Context, name string) (context.Context, trace.Span) {
-	monitorTouch(name)
+	monitor.Touch(name)
 	return tracer.Start(ctx, name)
 }
 

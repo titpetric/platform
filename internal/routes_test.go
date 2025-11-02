@@ -21,4 +21,6 @@ func TestRoutesCount(t *testing.T) {
 	routes_b, mws_b := CountRoutes(r)
 	require.Equal(t, 1, routes_b)
 	require.Equal(t, 0, mws_b)
+
+	PrintRoutes(r)
 }

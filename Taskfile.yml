@@ -16,9 +16,14 @@ tasks:
       PLATFORM_DB_DEFAULT: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
       PLATFORM_ENABLE_EXPVAR: "true"
     cmds:
+      - task: fmt
+      - CGO_ENABLED=0 go run ./cmd/platform/main.go
+
+  fmt:
+    desc: "Source code formatting"
+    cmds:
       - goimports -w -local github.com/titpetric/platform .
       - gofumpt -w .
-      - CGO_ENABLED=0 go run ./cmd/platform/main.go
 
   docker:
     desc: "Build docker image"
@@ -30,6 +35,7 @@ tasks:
   clean:
     desc: "Clean build assets"
     cmds:
+      - task: fmt
       - go clean -cache
       - go clean -testcache
       - rm -f ./platform pkg.cov go-fsck.json
@@ -64,7 +70,7 @@ tasks:
       - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
       - go-fsck extract ./...
       - go-fsck coverage -c pkg.cov.json -o go-fsck.json
-      - go-fsck coverage
+      - go-fsck coverage --template=docs/testing-coverage.md.tpl -v > docs/testing-coverage.md
 
   uncover:
     desc: "Show uncovered source"

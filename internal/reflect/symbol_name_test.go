@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/internal/reflect"
 	"github.com/titpetric/platform/module/user/storage"

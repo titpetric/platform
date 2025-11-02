@@ -5,25 +5,40 @@ import (
 	"sync"
 )
 
-var monitor = struct {
-	sync.Mutex
+var monitor = NewMonitor()
+
+// Monitor adds expvar instrumentation over the telemetry API.
+type Monitor struct {
+	mu      sync.Mutex
 	enabled bool
 	state   map[string]*expvar.Int
-}{
-	state: make(map[string]*expvar.Int),
 }
 
-func monitorTouch(name string) {
-	if !monitor.enabled {
+func NewMonitor() *Monitor {
+	return &Monitor{
+		state: make(map[string]*expvar.Int),
+	}
+}
+
+func (m *Monitor) SetEnabled(enabled bool) {
+	m.enabled = enabled
+}
+
+func (m *Monitor) Enabled() bool {
+	return m.enabled
+}
+
+func (m *Monitor) Touch(name string) {
+	if !m.enabled {
 		return
 	}
 
-	monitor.Lock()
-	defer monitor.Unlock()
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	if v, ok := monitor.state[name]; ok {
+	if v, ok := m.state[name]; ok {
 		v.Add(1)
 		return
 	}
-	monitor.state[name] = expvar.NewInt(name)
+	m.state[name] = expvar.NewInt(name)
 }

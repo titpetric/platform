@@ -1,8 +1,10 @@
 package internal
 
 import (
+	"bytes"
+	"fmt"
 	"html/template"
-	"io/fs"
+	"io"
 	"net/http"
 )
 
@@ -15,23 +17,16 @@ func NewTemplate(templates *template.Template) *Template {
 	return &Template{templates}
 }
 
-// NewTemplateFS parses templates from any FS and returns a Template instance.
-func NewTemplateFS(fs fs.FS, pattern string) (*Template, error) {
-	tmpl, err := template.ParseFS(fs, pattern)
-	if err != nil {
-		return nil, err
+// Render a template to a ResponseWriter. If an error is returned, no
+// data has been written to the response writer and the error needs handling.
+func (t *Template) Render(w http.ResponseWriter, name string, data any) error {
+	buf := &bytes.Buffer{}
+	if err := t.templates.ExecuteTemplate(buf, name, data); err != nil {
+		return fmt.Errorf("template error: %w", err)
 	}
 
-	return &Template{
-		templates: tmpl,
-	}, nil
-}
-
-func (t *Template) Render(w http.ResponseWriter, name string, data any) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 
-	if err := t.templates.ExecuteTemplate(w, name, data); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	_, err := io.Copy(w, buf)
+	return err
 }

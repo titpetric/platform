@@ -76,7 +76,10 @@ func (h *Service) View(w http.ResponseWriter, r *http.Request, name string, data
 
 	tmpl, ok := h.templates[name]
 	if ok {
-		tmpl.Render(w, "wrapper", data)
+		if err := tmpl.Render(w, "wrapper", data); err != nil {
+			h.Error(r, "Error rendering template "+name, err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 	}
 }
 
