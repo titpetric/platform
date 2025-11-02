@@ -28,9 +28,8 @@ func start(ctx context.Context) {
 	platform.Use(middleware.Logger)
 	platform.Use(telemetry.Middleware("platform"))
 
-	p, err := platform.Start(ctx, options)
+	_, err := platform.Start(ctx, options)
 	if err != nil {
 		telemetry.CaptureError(ctx, fmt.Errorf("exit error: %w", err))
 	}
-	p.Wait()
 }
