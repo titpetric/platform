@@ -7,5 +7,5 @@ import (
 )
 
 func TestTheme(t *testing.T) {
-	require.True(t, true)
+	require.NotNil(t, NewOptions())
 }
