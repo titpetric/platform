@@ -30,6 +30,6 @@ func start(ctx context.Context) {
 
 	_, err := platform.Start(ctx, options)
 	if err != nil {
-		telemetry.CaptureError(ctx, fmt.Errorf("exit error: %w", err))
+		telemetry.Fatal(ctx, fmt.Errorf("exit error: %w", err))
 	}
 }

@@ -118,3 +118,10 @@ func Middleware(name string) func(http.Handler) http.Handler {
 func CaptureError(ctx context.Context, err error) {
 	trace.SpanFromContext(ctx).RecordError(err)
 }
+
+// Fatal wraps CaptureError with log.Fatal.
+func Fatal(ctx context.Context, err error) {
+	CaptureError(ctx, err)
+	// Do we need span.Send?
+	log.Fatal(err)
+}
