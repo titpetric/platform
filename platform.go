@@ -12,7 +12,7 @@
 // It's possible to use the platform in an emperative way.
 //
 // ```go
-// svc := platform.New()
+// svc := platform.New(context.Background())
 // svg.Use(middleware.Logger)
 // svc.Register(user.NewModule())
 // ```
@@ -36,6 +36,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/titpetric/platform/internal"
+	"github.com/titpetric/platform/telemetry"
 )
 
 // Platform is our world struct.
@@ -101,24 +102,8 @@ func (p *Platform) Stats() (int, int) {
 // It respects cancellation from the passed context, as well as
 // sets up signal notification to respond to SIGTERM.
 func (p *Platform) Start(ctx context.Context) error {
-	if err := p.registry.Start(p.router); err != nil {
+	if err := p.setup(); err != nil {
 		return err
-	}
-
-	// Set up server listener.
-	listener, err := net.Listen("tcp", p.options.ServerAddr)
-	if err != nil {
-		return err
-	}
-	p.listener = listener
-
-	if !p.options.Quiet {
-		log.Println("Server listening on", p.listener.Addr().String())
-	}
-
-	// Set up the server.
-	p.server = &http.Server{
-		Handler: p.router,
 	}
 
 	// If the program receives a SIGTERM, trigger shutdown.
@@ -130,16 +115,13 @@ func (p *Platform) Start(ctx context.Context) error {
 		if !p.options.Quiet {
 			log.Println("caught sigterm, stopping server")
 		}
-		if err := p.Stop(); err != nil {
-			log.Printf("server shutdown error: %v", err)
-		}
+		p.Stop()
 	}()
 
 	// Start the server.
 	go func() {
 		if err := p.server.Serve(p.listener); err != nil && err != http.ErrServerClosed {
-			// Fatalf would skip module cancellation. This just logs the shutdown issue.
-			log.Printf("server error: %v", err)
+			telemetry.CaptureError(p.context, err)
 		}
 	}()
 
@@ -148,6 +130,34 @@ func (p *Platform) Start(ctx context.Context) error {
 		internal.PrintRoutes(p.router)
 	}
 
+	return nil
+}
+
+func (p *Platform) setup() error {
+	if err := p.registry.Start(p.router); err != nil {
+		return err
+	}
+
+	if err := p.setupListener(); err != nil {
+		return err
+	}
+
+	p.server = internal.NewServer(p.router)
+
+	return nil
+}
+
+func (p *Platform) setupListener() error {
+	// Set up server listener.
+	listener, err := net.Listen("tcp", p.options.ServerAddr)
+	if err != nil {
+		return err
+	}
+	p.listener = listener
+
+	if !p.options.Quiet {
+		log.Println("Server listening on", p.listener.Addr().String())
+	}
 	return nil
 }
 
@@ -177,8 +187,7 @@ func (p *Platform) URL() string {
 // to clear background goroutine event loops, or flush a dirty buffer to storage.
 //
 // Only after the server has fully shut down does the internal context get cancelled.
-// This is used by `Wait` to signal the service has shut down and the program can cleanly exit.
-func (p *Platform) Stop() (err error) {
+func (p *Platform) Stop() {
 	p.once.Do(func() {
 		// When done, exit main. It's waiting for the cancelled context there.
 		defer p.cancel()
@@ -191,7 +200,8 @@ func (p *Platform) Stop() (err error) {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		err = p.server.Shutdown(ctx)
+		// Capture error to telemetry sink.
+		telemetry.CaptureError(p.context, p.server.Shutdown(ctx))
 	})
 	return
 }

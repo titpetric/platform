@@ -2,10 +2,13 @@ package expvar
 
 import (
 	"expvar"
+	"sync"
 	"time"
 
 	"github.com/titpetric/platform"
 )
+
+var publishMu sync.Mutex
 
 type Handler struct {
 	platform.UnimplementedModule
@@ -16,6 +19,9 @@ func NewHandler() *Handler {
 }
 
 func (m *Handler) Start() error {
+	publishMu.Lock()
+	defer publishMu.Unlock()
+
 	start := time.Now()
 	if expvar.Get("uptime") == nil {
 		expvar.Publish("uptime", expvar.Func(func() interface{} {

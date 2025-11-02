@@ -1,6 +1,7 @@
 package platform_test
 
 import (
+	"net/http"
 	"runtime"
 	"testing"
 	"time"
@@ -15,23 +16,27 @@ func NewTestPlatform(tb testing.TB) *platform.Platform {
 	require.NoError(tb, err)
 	require.NotNil(tb, svc)
 
-	tb.Cleanup(func() {
-		require.NoError(tb, svc.Stop())
-	})
+	tb.Cleanup(svc.Stop)
 	return svc
 }
 
 func TestPlatform(t *testing.T) {
 	t.Run("single", func(t *testing.T) {
-		svc := NewTestPlatform(t)
-		svc.Register(&platform.UnimplementedModule{})
-		plugins, mws := svc.Stats()
+		svc := platform.New(platform.NewTestOptions())
+		defer svc.Stop()
 
+		svc.Register(&platform.UnimplementedModule{})
+		svc.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				next.ServeHTTP(w, r)
+			})
+		})
+
+		plugins, mws := svc.Stats()
 		require.Equal(t, 1, plugins)
-		require.Equal(t, 0, mws)
+		require.Equal(t, 1, mws)
 
 		require.NoError(t, svc.Start(t.Context()))
-		require.NoError(t, svc.Stop())
 	})
 
 	t.Run("multi", func(t *testing.T) {
@@ -58,7 +63,8 @@ func TestPlatform_goroutine_leaks(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotNil(t, svc)
-			require.NoError(t, svc.Stop())
+
+			svc.Stop()
 
 			t.Logf("run[%d]: %d", i, runtime.NumGoroutine())
 		}
@@ -78,7 +84,8 @@ func BenchmarkPlatform(b *testing.B) {
 
 			require.NoError(b, err)
 			require.NotNil(b, svc)
-			require.NoError(b, svc.Stop())
+
+			svc.Stop()
 		}
 	})
 }

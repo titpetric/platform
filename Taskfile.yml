@@ -58,7 +58,6 @@ tasks:
     desc: "Run tests with escape analysis"
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
-      CGO_ENABLED: 1
       PLATFORM_ENABLE_EXPVAR: "true"
       PLATFORM_ENABLE_OTEL: "true"
     cmds:
