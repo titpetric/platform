@@ -9,11 +9,8 @@ import (
 	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/telemetry"
 
-	_ "github.com/go-sql-driver/mysql"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	_ "modernc.org/sqlite"
-
-	// Add platform modules.
+	// Add platform drivers and modules.
+	_ "github.com/titpetric/platform/drivers"
 	_ "github.com/titpetric/platform/module/autoload"
 )
 
