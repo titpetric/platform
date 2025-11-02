@@ -18,22 +18,19 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
-	err := start(ctx)
-	telemetry.CaptureError(ctx, err)
+	start(context.Background())
 }
 
 var options = platform.NewOptions()
 
-func start(ctx context.Context) error {
+func start(ctx context.Context) {
 	// Register common middleware.
 	platform.Use(middleware.Logger)
 	platform.Use(telemetry.Middleware("platform"))
 
 	p, err := platform.Start(ctx, options)
 	if err != nil {
-		return fmt.Errorf("exit error: %v", err)
+		telemetry.CaptureError(ctx, fmt.Errorf("exit error: %w", err))
 	}
 	p.Wait()
-	return nil
 }
