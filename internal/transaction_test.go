@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/stretchr/testify/require"
+	"github.com/titpetric/platform/internal/require"
 )
 
 func TestTransaction(t *testing.T) {

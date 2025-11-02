@@ -9,6 +9,7 @@ var (
 	Equal    = require.Equal
 	NotEqual = require.NotEqual
 	Error    = require.Error
+	ErrorIs  = require.ErrorIs
 	NoError  = require.NoError
 	Nil      = require.Nil
 	NotNil   = require.NotNil
