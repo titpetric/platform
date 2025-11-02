@@ -52,18 +52,18 @@ tasks:
     desc: "Run benchmarks"
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
-    cmd: go test -bench=. -benchmem -cpu 1,2,4 -race -v ./...
+    cmd: go test -failfast -run='Bench.+' -bench=. -benchmem -cpu 1,2,4 -race -v ./...
 
   test:
     desc: "Run tests with escape analysis"
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
-      CGO_ENABLED: 0
+      CGO_ENABLED: 1
       PLATFORM_ENABLE_EXPVAR: "true"
       PLATFORM_ENABLE_OTEL: "true"
     cmds:
       - task: fmt
-      - go test -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
+      - go test -failfast -race -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
 
   cover:
     desc: "Show source coverage"
