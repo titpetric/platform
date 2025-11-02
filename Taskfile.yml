@@ -30,6 +30,7 @@ tasks:
   clean:
     desc: "Clean build assets"
     cmds:
+      - go clean -cache
       - go clean -testcache
       - rm -f ./platform pkg.cov go-fsck.json
       - docker rmi -f titpetric/platform
@@ -54,11 +55,7 @@ tasks:
       CGO_ENABLED: 0
       PLATFORM_ENABLE_EXPVAR: "true"
       PLATFORM_ENABLE_OTEL: "true"
-#    cmd: coverpkg=$(go list ./... | paste -sd "," -) go test -trimpath -count=1 -gcflags="-l" -cover -coverpkg="$coverpkg" -coverprofile=pkg.cov ./...
-    cmds:
-      - go test -trimpath -count=1 -cover -covermode=atomic -coverpkg="all" -coverprofile=pkg-original.cov ./...
-      - egrep "(^mode:|^$(go list .))" pkg-original.cov > pkg.cov
-#    cmd: go test -trimpath -count=1 -gcflags="-l" -cover -coverpkg="github.com/titpetric/platform/...,./..." -coverprofile=pkg.cov ./...
+    cmd: go test -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
 
   cover:
     desc: "Show source coverage"
@@ -83,7 +80,7 @@ tasks:
 
   up:
     desc: "Bring up docker env"
-    cmd: docker compose up -d --remove-orphans
+    cmd: docker compose up -d --remove-orphans --wait
 
   down:
     desc: "Bring down docker env"
