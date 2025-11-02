@@ -5,11 +5,7 @@ import (
 )
 
 func Start(ctx context.Context, options *Options) (*Platform, error) {
-	svc, err := New(options)
-	if err != nil {
-		return nil, err
-	}
-
+	svc := New(options)
 	if err := svc.Start(ctx); err != nil {
 		return nil, err
 	}

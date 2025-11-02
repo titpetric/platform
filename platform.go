@@ -61,7 +61,7 @@ type Platform struct {
 // New will create a new *Platform object. It is the allocation point
 // for each platform instance. If no options are passed, the defaults are in use.
 // The defaults options are provided by NewOptions().
-func New(options *Options) (*Platform, error) {
+func New(options *Options) *Platform {
 	if options == nil {
 		options = NewOptions()
 	}
@@ -77,7 +77,7 @@ func New(options *Options) (*Platform, error) {
 
 	// Set up final shutdown signal.
 	p.context, p.cancel = context.WithCancel(context.Background())
-	return p, nil
+	return p
 }
 
 // Register will add a registry.Module into the internal platform registry.
@@ -159,9 +159,6 @@ func (p *Platform) Context() context.Context {
 
 // Wait will pause until the server is shut down.
 func (p *Platform) Wait() {
-	if p.context.Err() != nil {
-		return
-	}
 	// Wait for Stop() to be invoked.
 	<-p.context.Done()
 }

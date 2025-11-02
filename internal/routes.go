@@ -31,7 +31,7 @@ func CountRoutes(r chi.Routes) (int, int) {
 // PrintRoutes will print the number of routes and middlewares, and the routing table.
 func PrintRoutes(r chi.Routes) {
 	routes, mws := CountRoutes(r)
-	log.Printf("[router] registered %d routes and %d middlewares globally\n", routes, mws)
+	log.Printf("[router] registered %d routes and %d middlewares\n", routes, mws)
 
 	chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
 		log.Printf("%s %s -> %s\n", method, route, runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name())
