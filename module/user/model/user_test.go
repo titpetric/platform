@@ -5,20 +5,16 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-	// "github.com/titpetric/platform/module/user/model"
 )
 
-// type User = model.User
-func TestUser_String(t *testing.T) {
-	m1 := &User{
-		FirstName: "Tit",
-		LastName:  "Petric",
-	}
+func TestUser(t *testing.T) {
+	m1 := NewUser()
+	m1.FirstName = "Tit"
+	m1.LastName = "Petric"
 
-	m2 := &User{
-		FirstName: "Tit",
-		LastName:  "Petric",
-	}
+	m2 := NewUser()
+	m2.FirstName = "Tit"
+	m2.LastName = "Petric"
 	m2.SetDeletedAt(time.Now())
 
 	s1 := m1.String()

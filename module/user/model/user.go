@@ -1,5 +1,9 @@
 package model
 
+func NewUser() *User {
+	return &User{}
+}
+
 func (u *User) String() string {
 	if u.DeletedAt != nil {
 		return "Deleted user"
@@ -9,8 +13,4 @@ func (u *User) String() string {
 
 func (u *User) IsActive() bool {
 	return u.DeletedAt == nil
-}
-
-func (u *UserGroup) String() string {
-	return u.Title
 }
