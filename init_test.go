@@ -3,7 +3,7 @@ package platform
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/titpetric/platform/internal/require"
 )
 
 // TestDatabaseEnv checks that we properly decode the expected environment

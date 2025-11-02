@@ -3,7 +3,7 @@ package telemetry
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/titpetric/platform/internal/require"
 )
 
 func TestNewMonitor(t *testing.T) {

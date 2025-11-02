@@ -3,7 +3,7 @@ package storage
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/titpetric/platform/internal/require"
 )
 
 func TestNewUserStorage(t *testing.T) {

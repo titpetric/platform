@@ -5,7 +5,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/stretchr/testify/require"
+	"github.com/titpetric/platform/internal/require"
 )
 
 func TestDatabaseProvider(t *testing.T) {

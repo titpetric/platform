@@ -3,7 +3,7 @@ package autoload
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/titpetric/platform/internal/require"
 )
 
 func TestAutoload(t *testing.T) {

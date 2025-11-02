@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
+	"github.com/titpetric/platform/internal/require"
 
 	"github.com/titpetric/platform"
 )

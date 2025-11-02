@@ -3,7 +3,7 @@ package reflect_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/titpetric/platform/internal/require"
 
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/internal/reflect"

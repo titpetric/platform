@@ -3,7 +3,7 @@ package theme
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/titpetric/platform/internal/require"
 )
 
 func TestTheme(t *testing.T) {

@@ -5,9 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/titpetric/platform"
+	"github.com/titpetric/platform/internal/require"
 )
 
 func NewTestPlatform(tb testing.TB) *platform.Platform {
