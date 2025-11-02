@@ -15,3 +15,11 @@ func NewOptions() *Options {
 		ServerAddr: ":8080",
 	}
 }
+
+// NewTestOptions produces default options for tests.
+func NewTestOptions() *Options {
+	return &Options{
+		ServerAddr: "127.0.0.1:0",
+		Quiet:      true,
+	}
+}
