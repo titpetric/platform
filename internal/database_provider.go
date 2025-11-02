@@ -74,27 +74,29 @@ func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error)
 
 	for _, name := range names {
 		if value, ok := r.credentials[name]; ok {
-			driver, dsn := "mysql", value
-
-			// allow specifying the driver with url notation,
-			// in the follwing form: <driver>://<dsn>.
-			if sepIndex := strings.Index(dsn, "://"); sepIndex != -1 {
-				driver = dsn[:sepIndex]
-				dsn = dsn[sepIndex+3:]
-			}
-
-			client, err := connector(driver, cleanDSN(dsn))
+			driver, dsn := r.parseCredential(value)
+			client, err := connector(driver, dsn)
 			if err != nil {
 				return nil, err
 			}
 
-			opt, ok := databaseOptions[driver]
-			if ok {
-				client.SetMaxOpenConns(opt.MaxOpenConns)
-				client.SetMaxIdleConns(opt.MaxIdleConns)
-			}
+			opt, _ := databaseOptions[driver]
+			opt.Apply(client)
 			return client, nil
 		}
 	}
 	return nil, fmt.Errorf("No configuration found for database: %v", names)
+}
+
+func (r *DatabaseProvider) parseCredential(credential string) (driver string, dsn string) {
+	driver, dsn = "mysql", credential
+
+	// allow specifying the driver with url notation,
+	// in the follwing form: <driver>://<dsn>.
+	if sepIndex := strings.Index(dsn, "://"); sepIndex != -1 {
+		driver = dsn[:sepIndex]
+		dsn = dsn[sepIndex+3:]
+	}
+
+	return driver, cleanDSN(dsn)
 }
