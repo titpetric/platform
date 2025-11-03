@@ -3,7 +3,7 @@ package platform
 import (
 	"testing"
 
-	"github.com/titpetric/platform/internal/require"
+	"github.com/titpetric/platform/pkg/require"
 )
 
 // TestDatabaseEnv checks that we properly decode the expected environment

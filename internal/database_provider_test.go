@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
-	"github.com/titpetric/platform/internal/require"
+	"github.com/titpetric/platform/pkg/require"
 )
 
 func TestDatabaseProvider_Connect(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/titpetric/platform/telemetry"
+	"github.com/titpetric/platform/pkg/telemetry"
 )
 
 // JSON writes any payload as JSON. If the payload is nil, the write is omitted.

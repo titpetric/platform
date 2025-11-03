@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/titpetric/platform/internal/require"
+	"github.com/titpetric/platform/pkg/require"
 )
 
 func TestError(t *testing.T) {

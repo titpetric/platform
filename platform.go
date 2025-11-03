@@ -36,7 +36,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/titpetric/platform/internal"
-	"github.com/titpetric/platform/telemetry"
+	"github.com/titpetric/platform/pkg/telemetry"
 )
 
 // Platform is our world struct.

@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/titpetric/platform/internal/require"
+	"github.com/titpetric/platform/pkg/require"
 )
 
 func TestRoutesCount(t *testing.T) {

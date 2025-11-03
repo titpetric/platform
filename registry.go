@@ -15,6 +15,7 @@ type Registry struct {
 	middleware []Middleware
 }
 
+// Register adds a Module to the registry.
 func (r *Registry) Register(m Module) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -22,7 +23,7 @@ func (r *Registry) Register(m Module) {
 	r.modules = append(r.modules, m)
 }
 
-// Use adds a middleware to the registry.
+// Use adds a Middleware to the registry.
 func (r *Registry) Use(f Middleware) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -36,18 +37,30 @@ func (r *Registry) Start(mux Router) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	for _, plugin := range r.modules {
-		if err := plugin.Start(); err != nil {
-			return err
-		}
+	if err := r.start(); err != nil {
+		return err
 	}
 
+	return r.mount(mux)
+}
+
+func (r *Registry) mount(mux Router) error {
 	for _, mw := range r.middleware {
 		mux.Use(mw)
 	}
 
 	for _, plugin := range r.modules {
 		if err := plugin.Mount(mux); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *Registry) start() error {
+	for _, plugin := range r.modules {
+		if err := plugin.Start(); err != nil {
 			return err
 		}
 	}
