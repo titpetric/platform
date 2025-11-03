@@ -11,22 +11,18 @@ structure services as composable, testable modules.
 
 ## Coverage
 
-| Status | Package                                           | Coverage | Cognitive | Lines |
-| ------ | ------------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                     | 84.61%   | 34        | 311   |
-| ✅      | titpetric/platform/cmd/platform        | 41.65%   | 1         | 16    |
-| ✅      | titpetric/platform/drivers             | 0.00%    | 0         | 0     |
-| ❌      | titpetric/platform/internal            | 79.59%   | 24        | 203   |
-| ✅      | titpetric/platform/internal/reflect    | 100.00%  | 7         | 31    |
-| ✅      | titpetric/platform/internal/require    | 0.00%    | 0         | 0     |
-| ✅      | titpetric/platform/module/autoload     | 100.00%  | 0         | 4     |
-| ✅      | titpetric/platform/module/expvar       | 95.23%   | 1         | 19    |
-| ✅      | titpetric/platform/module/theme        | 100.00%  | 0         | 11    |
-| ❌      | titpetric/platform/module/user         | 54.76%   | 13        | 98    |
-| ✅      | titpetric/platform/module/user/model   | 10.53%   | 3         | 88    |
-| ❌      | titpetric/platform/module/user/service | 28.25%   | 27        | 285   |
-| ❌      | titpetric/platform/module/user/storage | 44.01%   | 24        | 211   |
-| ❌      | titpetric/platform/telemetry           | 78.59%   | 8         | 130   |
+| Status | Package                                     | Coverage | Cognitive | Lines |
+| ------ | ------------------------------------------- | -------- | --------- | ----- |
+| ✅      | titpetric/platform               | 82.20%   | 42        | 370   |
+| ✅      | titpetric/platform/cmd           | 87.50%   | 2         | 23    |
+| ✅      | titpetric/platform/cmd/platform  | 0.00%    | 0         | 3     |
+| ✅      | titpetric/platform/internal      | 94.87%   | 20        | 155   |
+| ✅      | titpetric/platform/pkg/assert    | 0.00%    | 0         | 0     |
+| ✅      | titpetric/platform/pkg/drivers   | 0.00%    | 0         | 0     |
+| ✅      | titpetric/platform/pkg/reflect   | 100.00%  | 7         | 31    |
+| ✅      | titpetric/platform/pkg/require   | 0.00%    | 0         | 0     |
+| ❌      | titpetric/platform/pkg/telemetry | 57.44%   | 8         | 130   |
+| ✅      | titpetric/platform/pkg/ulid      | 100.00%  | 0         | 20    |
 
 For more detail, see: [Testing Coverage](./docs/testing-coverage.md).
 
