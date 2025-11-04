@@ -18,13 +18,14 @@ tasks:
       PLATFORM_ENABLE_EXPVAR: "true"
     cmds:
       - task: fmt
-      - CGO_ENABLED=0 go run ./cmd/platform/main.go
+      - CGO_ENABLED=0 go run ./cmd/platform
 
   fmt:
     desc: "Source code formatting"
     cmds:
-      - goimports -w -local github.com/titpetric/platform .
+      - goimports -w -local $(go list .) .
       - gofumpt -w .
+      - go mod tidy
 
   docker:
     desc: "Build docker image"
