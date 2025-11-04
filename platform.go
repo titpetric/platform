@@ -156,7 +156,7 @@ func (p *Platform) setupListener() error {
 	p.listener = listener
 
 	if !p.options.Quiet {
-		log.Println("Server listening on", p.listener.Addr().String())
+		log.Println("Server listening on", p.listener.Addr().String(), p.URL())
 	}
 	return nil
 }
