@@ -13,6 +13,7 @@ tasks:
   default:
     desc: "Run platform base"
     env:
+      PLATFORM_SERVER_ADDR: ":0"
       PLATFORM_DB_DEFAULT: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
       PLATFORM_DB_USER: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
       PLATFORM_ENABLE_EXPVAR: "true"
