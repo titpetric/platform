@@ -21,6 +21,16 @@ function you only need this if you're working on shared schema:
 db, err := platform.Database.Get()
 ```
 
+The platform automatically imports three drivers:
+
+1. `go-sql-driver/mysql` for MySQL, Percona, MariaDB,
+2. `github.com/jackc/pgx/v5/stdlib` for PostgreSQL,
+3. `modernc.org/sqlite` for sqlite,
+
+The extensions are imported by `pkg/drivers`, integration tests need to
+import the package to provide database functionality, or import the
+packages (or any other) on their own. The platform is database agnostic.
+
 ## Named Connections
 
 The platform scans the runtime environment for `PLATFORM_DB_` prefixed

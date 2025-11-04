@@ -9,6 +9,14 @@ It provides a global registry for modules and middleware, a lifecycle
 for graceful shutdown, and named database connections, allowing you to
 structure services as composable, testable modules.
 
+Application examples, with database use:
+
+- A monolithic app with modules: [titpetric/platform-app](https://github.com/titpetric/platform-app).
+- Extended `titpetric/platform-app` for a Mailing list manager app: [titpetric/platform-maillist](https://github.com/titpetric/platform-maillist).
+- Miscelaneous module examples: [titpetric/platform-example](https://github.com/titpetric/platform-example).
+
+Status: the app and maillist packages still need implementation surface.
+
 ## Coverage
 
 | Status | Package                                     | Coverage | Cognitive | Lines |
