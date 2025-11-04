@@ -16,7 +16,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform               | 82.20%   | 42        | 370   |
 | ✅      | titpetric/platform/cmd           | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform  | 0.00%    | 0         | 3     |
-| ✅      | titpetric/platform/internal      | 94.87%   | 20        | 155   |
+| ✅      | titpetric/platform/internal      | 93.68%   | 19        | 140   |
 | ✅      | titpetric/platform/pkg/assert    | 0.00%    | 0         | 0     |
 | ✅      | titpetric/platform/pkg/drivers   | 0.00%    | 0         | 0     |
 | ✅      | titpetric/platform/pkg/reflect   | 100.00%  | 7         | 31    |
@@ -64,8 +64,6 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform               | setupConnections                 | 100.00%  | 4         |
 | ✅      | titpetric/platform/cmd           | Main                             | 87.50%   | 2         |
 | ✅      | titpetric/platform/cmd/platform  | main                             | 0.00%    | 0         |
-| ✅      | titpetric/platform/internal      | ContextValue[T].Get              | 100.00%  | 1         |
-| ✅      | titpetric/platform/internal      | ContextValue[T].Set              | 100.00%  | 0         |
 | ✅      | titpetric/platform/internal      | CountRoutes                      | 100.00%  | 2         |
 | ✅      | titpetric/platform/internal      | DatabaseOption.Apply             | 75.00%   | 1         |
 | ✅      | titpetric/platform/internal      | DatabaseProvider.Connect         | 66.70%   | 2         |
@@ -74,7 +72,6 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform/internal      | DatabaseProvider.cached          | 92.90%   | 5         |
 | ✅      | titpetric/platform/internal      | DatabaseProvider.parseCredential | 100.00%  | 1         |
 | ✅      | titpetric/platform/internal      | DatabaseProvider.with            | 83.30%   | 7         |
-| ✅      | titpetric/platform/internal      | NewContextValue                  | 100.00%  | 0         |
 | ✅      | titpetric/platform/internal      | NewDatabaseProvider              | 100.00%  | 0         |
 | ✅      | titpetric/platform/internal      | NewServer                        | 100.00%  | 0         |
 | ✅      | titpetric/platform/internal      | PrintRoutes                      | 100.00%  | 0         |
