@@ -6,6 +6,9 @@ import (
 
 	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/pkg/telemetry"
+
+	// Add platform drivers and modules.
+	_ "github.com/titpetric/platform/pkg/drivers"
 )
 
 // Main is the entrypoint for the app.
