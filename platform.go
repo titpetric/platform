@@ -98,6 +98,11 @@ func (p *Platform) Stats() (int, int) {
 	return p.registry.Stats()
 }
 
+// Find fills target with the module matching the type.
+func (p *Platform) Find(target any) bool {
+	return p.registry.Find(target)
+}
+
 // Start will start the server and print the registered routes.
 // It respects cancellation from the passed context, as well as
 // sets up signal notification to respond to SIGTERM.
@@ -134,7 +139,9 @@ func (p *Platform) Start(ctx context.Context) error {
 }
 
 func (p *Platform) setup() error {
-	if err := p.registry.Start(p.router); err != nil {
+	// set up context for module start
+	ctx := p.bindContext(context.Background())
+	if err := p.registry.Start(ctx, p.router); err != nil {
 		return err
 	}
 
@@ -142,9 +149,24 @@ func (p *Platform) setup() error {
 		return err
 	}
 
-	p.server = internal.NewServer(p.router)
+	p.server = &http.Server{
+		Handler: p.setupRequestContext(p.router),
+	}
 
 	return nil
+}
+
+func (p *Platform) bindContext(ctx context.Context) context.Context {
+	return platformContext.SetContext(ctx, p)
+}
+
+// setupRequestContext will bind *Platform to the request context.
+func (p *Platform) setupRequestContext(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		platformContext.Set(r, p)
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (p *Platform) setupListener() error {
@@ -190,11 +212,11 @@ func (p *Platform) URL() string {
 func (p *Platform) Stop() {
 	p.once.Do(func() {
 		// When done, exit main. It's waiting for the cancelled context there.
-		defer p.cancel()
-		defer p.stop()
-
-		// Clear registry on shutdown.
-		defer p.registry.Close()
+		defer func() {
+			p.registry.Close()
+			p.stop()
+			p.cancel()
+		}()
 
 		// Give a 5 second timeout for a graceful shutdown.
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

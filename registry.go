@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"context"
 	"log"
 	"reflect"
 	"runtime/debug"
@@ -69,11 +70,12 @@ func (r *Registry) Use(f Middleware) {
 
 // Start will invoke all the modules start functions sequentially.
 // If an error occurs, execution is halted and an error is returned.
-func (r *Registry) Start(mux Router) error {
+// The context is passed along for observability and access to the platform.
+func (r *Registry) Start(ctx context.Context, mux Router) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	if err := r.start(); err != nil {
+	if err := r.start(ctx); err != nil {
 		return err
 	}
 
@@ -94,9 +96,9 @@ func (r *Registry) mount(mux Router) error {
 	return nil
 }
 
-func (r *Registry) start() error {
+func (r *Registry) start(ctx context.Context) error {
 	for _, plugin := range r.modules {
-		if err := plugin.Start(); err != nil {
+		if err := plugin.Start(ctx); err != nil {
 			return err
 		}
 	}

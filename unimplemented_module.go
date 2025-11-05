@@ -1,11 +1,15 @@
 package platform
 
+import (
+	"context"
+)
+
 // UnimplementedModule implements the module contract.
 // The module can embed the type to skip implementing
 // any of the bound functions.
 type UnimplementedModule struct {
 	NameFn  func() string
-	StartFn func() error
+	StartFn func(context.Context) error
 	StopFn  func() error
 	MountFn func(Router) error
 }
@@ -19,9 +23,9 @@ func (m UnimplementedModule) Name() string {
 }
 
 // Start returns nil (no error).
-func (m UnimplementedModule) Start() error {
+func (m UnimplementedModule) Start(ctx context.Context) error {
 	if m.StartFn != nil {
-		return m.StartFn()
+		return m.StartFn(ctx)
 	}
 	return nil
 }

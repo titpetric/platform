@@ -1,5 +1,7 @@
 package platform
 
+import "context"
+
 // Module is the implementation contract for modules.
 //
 // The interface should only be used to enforce the API contract as
@@ -11,7 +13,7 @@ type Module interface {
 	// Start is used to create any goroutines or otherwise
 	// set up the module by starting a server. It allows
 	// to implement a lifecycle of the service.
-	Start() error
+	Start(context.Context) error
 
 	// Stop should clean up any goroutines, clean up leaks.
 	Stop() error
