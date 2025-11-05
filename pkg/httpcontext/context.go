@@ -5,24 +5,31 @@ import (
 	"net/http"
 )
 
-type ContextValue[T any] struct {
+type Value[T any] struct {
 	Key any
 }
 
-func NewContextValue[T any](key any) *ContextValue[T] {
-	return &ContextValue[T]{Key: key}
+func NewValue[T any](key any) *Value[T] {
+	return &Value[T]{Key: key}
 }
 
-func (v *ContextValue[T]) Get(r *http.Request) (res T) {
-	if val := r.Context().Value(v.Key); val != nil {
+func (v *Value[T]) Get(r *http.Request) T {
+	return v.GetContext(r.Context())
+}
+
+func (v *Value[T]) GetContext(ctx context.Context) (res T) {
+	if val := ctx.Value(v.Key); val != nil {
 		res, _ = val.(T)
 	}
 	return
 }
 
-func (v *ContextValue[T]) Set(r *http.Request, val T) *http.Request {
-	ctx := context.WithValue(r.Context(), v.Key, val)
-	h := r.WithContext(ctx)
-	*r = *h
-	return h
+
+func (v *Value[T]) Set(r *http.Request, val T) *http.Request {
+	*r = *r.WithContext(v.SetContext(r.Context(), val))
+	return r
+}
+
+func (v *Value[T]) SetContext(ctx context.Context, val T) context.Context {
+	return context.WithValue(ctx, v.Key, val)
 }

@@ -20,7 +20,7 @@ func TestContextValue_GetSet(t *testing.T) {
 	key := testContextKey{}
 
 	// create manager for *TestContext values (pointer type)
-	manager := httpcontext.NewContextValue[*TestContext](key)
+	manager := httpcontext.NewValue[*TestContext](key)
 
 	// create request
 	req := httptest.NewRequest("GET", "/", nil)
