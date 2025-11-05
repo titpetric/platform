@@ -2,6 +2,7 @@ package platform
 
 import (
 	"log"
+	"reflect"
 	"runtime/debug"
 	"sync"
 )
@@ -21,6 +22,41 @@ func (r *Registry) Register(m Module) {
 	defer r.mu.Unlock()
 
 	r.modules = append(r.modules, m)
+}
+
+// Find gets a Module from the registry.
+// The target argument can be a pointer or an interface. The function returns true
+// if a module matching the type or interface was found and assigned to `target`.
+func (r *Registry) Find(target any) bool {
+	// target must be a pointer so we can set its underlying value
+	targetVal := reflect.ValueOf(target)
+	if targetVal.Kind() != reflect.Ptr || targetVal.IsNil() {
+		return false
+	}
+	targetElemType := targetVal.Elem().Type()
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, plugin := range r.modules {
+		pluginVal := reflect.ValueOf(plugin)
+		pluginType := pluginVal.Type()
+
+		// Direct assignable (plugin value can be assigned to the target element)
+		if pluginType.AssignableTo(targetElemType) {
+			targetVal.Elem().Set(pluginVal)
+			return true
+		}
+
+		// If target is an interface type, check if plugin implements it.
+		// (AssignableTo above already covers the case where targetElemType is
+		// the same concrete type; this handles interface implementations.)
+		if targetElemType.Kind() == reflect.Interface && pluginType.Implements(targetElemType) {
+			targetVal.Elem().Set(pluginVal)
+			return true
+		}
+	}
+	return false
 }
 
 // Use adds a Middleware to the registry.
