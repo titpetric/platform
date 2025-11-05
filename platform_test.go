@@ -27,6 +27,9 @@ func TestPlatform(t *testing.T) {
 		defer svc.Stop()
 
 		svc.Register(&platform.UnimplementedModule{
+			NameFn: func() string {
+				return "TestPlatform"
+			},
 			MountFn: func(r platform.Router) error {
 				r.Get("/404", func(w http.ResponseWriter, r *http.Request) {
 					w.Write([]byte("You found a valid route"))
@@ -35,6 +38,13 @@ func TestPlatform(t *testing.T) {
 			},
 		})
 		svc.Use(platform.TestMiddleware())
+
+		t.Run("find", func(t *testing.T) {
+			var mod *platform.UnimplementedModule
+
+			require.True(t, svc.Find(&mod))
+			require.Equal(t, "TestPlatform", mod.Name())
+		})
 
 		plugins, mws := svc.Stats()
 		require.Equal(t, 1, plugins)

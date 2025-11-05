@@ -13,7 +13,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ❌      | titpetric/platform                 | 79.41%   | 51        | 439   |
+| ✅      | titpetric/platform                 | 83.47%   | 51        | 439   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
 | ✅      | titpetric/platform/internal        | 93.16%   | 19        | 135   |
@@ -38,7 +38,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | NewTestOptions                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Options.env                      | 75.00%   | 1         |
 | ✅      | titpetric/platform                 | Platform.Context                 | 0.00%    | 0         |
-| ✅      | titpetric/platform                 | Platform.Find                    | 0.00%    | 0         |
+| ✅      | titpetric/platform                 | Platform.Find                    | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.Register                | 100.00%  | 0         |
 | ❌      | titpetric/platform                 | Platform.Start                   | 73.30%   | 7         |
 | ✅      | titpetric/platform                 | Platform.Stats                   | 100.00%  | 0         |
@@ -64,7 +64,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | TestMiddleware                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Transaction                      | 66.70%   | 3         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Mount        | 100.00%  | 1         |
-| ❌      | titpetric/platform                 | UnimplementedModule.Name         | 0.00%    | 1         |
+| ✅      | titpetric/platform                 | UnimplementedModule.Name         | 66.70%   | 1         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Start        | 66.70%   | 1         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Stop         | 66.70%   | 1         |
 | ✅      | titpetric/platform                 | Use                              | 100.00%  | 0         |
