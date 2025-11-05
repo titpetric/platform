@@ -49,7 +49,7 @@ The module can implement it's background job lifecycle by providing a
 operation. For example, with `robfig/cron`:
 
 ```go
-func (c *Crontab) Start() error {
+func (c *Crontab) Start(context.Context) error {
 	_, err := c.scheduler.AddFunc("@every 5s", func() {
 		log.Printf("This is your cron job starting.")
 		time.Sleep(3 * time.Second)
@@ -76,5 +76,5 @@ running scheduled task is completed before exiting.
 ## Middleware
 
 - Add global middleware via `platform.Use()` (package) or `(*Platform).Use()` (instance).
-- Middleware should be added **before** `Start()`.
+- Middleware should be added **before** `Start(context.Context)`.
 - You can use any existing middleware as long as it implements the `Middleware` interface.

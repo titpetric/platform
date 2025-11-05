@@ -1,0 +1,28 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    networks:
+    - elastic
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - $PWD/docker/dev/otel-collector-config.yml:/etc/otel-collector-config.yml
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+
+  jaeger:
+    image: jaegertracing/jaeger:latest
+    networks:
+    - elastic
+    ports:
+      - "6831:6831/udp" # UDP port for Jaeger agent
+      - "16686:16686" # Web UI
+      - "14268:14268" # HTTP port for spans
+
+  prometheus:
+    image: prom/prometheus:latest
+    networks:
+    - elastic
+    volumes:
+      - $PWD/docker/dev/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"

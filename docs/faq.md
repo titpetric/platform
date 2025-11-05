@@ -2,7 +2,7 @@
 
 ## How do I register a middleware?
 
-Use `platform.Use` (package) or `(*Platform).Use` (instance). Add before calling `Start()`.
+Use `platform.Use` (package) or `(*Platform).Use` (instance). Add before calling `Start(context.Context)`.
 
 ## How do I register a module?
 
@@ -22,7 +22,7 @@ Embed `platform.UnimplementedModule` and override only the methods you need.
 
 ## How do I start/stop a platform instance?
 
-The package provides a `Start` function, wrapping a
+The package provides a `Start(context.Context)` function, wrapping a
 `StartPlatform(context.Context, *Options)`. Using `StartPlatform` allows
 to configure how the platform starts by providing an options object.
 
@@ -30,7 +30,7 @@ The platform is shut down when the context passed to `StartPlatform` is
 cancelled or when a SIGTERM signal is intercepted in the system.
 
 ```go
-if err := platform.Start(); err != nil {
+if err := platform.Start(ctx); err != nil {
 	return log.Fatalf("exit error: %v", err)
 }
 ```
@@ -45,7 +45,7 @@ if err != nil {
 	return err
 }
 
-if err := p.Start(); err != nil {
+if err := p.Start(ctx); err != nil {
 	return err
 }
 
@@ -71,3 +71,7 @@ cancel any goroutines needed by your module.
 
 The platform will shut itself down if a `SIGTERM` is caught. For testing,
 the passed context is expected to be a `t.Context()` (for `testing.TB`).
+
+Start has a platform instance attached to the context, and can use
+`platform.FromContext` to get the instance, and the `Find` function on
+the instance to get a reference to any side loaded module.

@@ -2,3 +2,4 @@
 /platform.db
 /*.cov
 /*.json
+/docs/.flatnotes

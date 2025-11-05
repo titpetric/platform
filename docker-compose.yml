@@ -1,3 +1,9 @@
+name: platform
+
+include:
+  - docker/service/flatnotes.yml
+  - docker/service/opentelemetry.yml
+
 services:
   platform:
     image: titpetric/platform
@@ -13,34 +19,6 @@ services:
       - PLATFORM_ENABLE_OTEL=true
       - OTEL_SERVICE_NAME=platform
       - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
-
-  otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
-    networks:
-    - elastic
-    command: ["--config=/etc/otel-collector-config.yml"]
-    volumes:
-      - ./docker/dev/otel-collector-config.yml:/etc/otel-collector-config.yml
-    ports:
-      - "4317:4317" # OTLP gRPC receiver
-
-  jaeger:
-    image: jaegertracing/jaeger:latest
-    networks:
-    - elastic
-    ports:
-      - "6831:6831/udp" # UDP port for Jaeger agent
-      - "16686:16686" # Web UI
-      - "14268:14268" # HTTP port for spans
-
-  prometheus:
-    image: prom/prometheus:latest
-    networks:
-    - elastic
-    volumes:
-      - ./docker/dev/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
 
 networks:
   db_storage:

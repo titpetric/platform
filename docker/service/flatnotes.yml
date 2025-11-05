@@ -1,0 +1,14 @@
+services:
+  flatnotes:
+    container_name: flatnotes
+    image: dullage/flatnotes:latest
+    environment:
+      PUID: 1000
+      PGID: 1000
+      FLATNOTES_AUTH_TYPE: "none"
+      FLATNOTES_SECRET_KEY: "aLongRandomSeriesOfCharacters"
+    volumes:
+      - "$PWD/docs:/data"
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
