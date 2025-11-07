@@ -12,11 +12,7 @@ vars:
 tasks:
   default:
     desc: "Run platform base"
-    env:
-      PLATFORM_SERVER_ADDR: ":0"
-      PLATFORM_DB_DEFAULT: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
-      PLATFORM_DB_USER: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
-      PLATFORM_ENABLE_EXPVAR: "true"
+    dotenv: [.env.run]
     cmds:
       - task: fmt
       - CGO_ENABLED=0 go run ./cmd/platform
@@ -53,16 +49,16 @@ tasks:
 
   bench:
     desc: "Run benchmarks"
+    dotfile: [.env.test]
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
     cmd: go test -failfast -run='Bench.+' -bench=. -benchmem -cpu 1,2,4 -race -v ./...
 
   test:
     desc: "Run tests and collect coverage"
+    dotfile: [.env.test]
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
-      PLATFORM_ENABLE_EXPVAR: "true"
-      PLATFORM_ENABLE_OTEL: "true"
     cmds:
       - task: fmt
       - go test -failfast -race -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
@@ -71,6 +67,7 @@ tasks:
     desc: "Run integration tests"
     vars:
       tags: integration
+    dotfile: [.env.test]
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
       PLATFORM_ENABLE_EXPVAR: "true"

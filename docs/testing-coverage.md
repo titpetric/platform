@@ -68,7 +68,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | UnimplementedModule.Start        | 66.70%   | 1         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Stop         | 66.70%   | 1         |
 | ✅      | titpetric/platform                 | Use                              | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | init                             | 100.00%  | 0         |
+| ✅      | titpetric/platform                 | init                             | 0.00%    | 0         |
 | ✅      | titpetric/platform                 | setupConnections                 | 100.00%  | 4         |
 | ✅      | titpetric/platform/cmd             | Main                             | 87.50%   | 2         |
 | ✅      | titpetric/platform/cmd/platform    | main                             | 0.00%    | 0         |
@@ -102,7 +102,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform/pkg/telemetry   | Start                            | 100.00%  | 0         |
 | ✅      | titpetric/platform/pkg/telemetry   | StartAuto                        | 0.00%    | 0         |
 | ✅      | titpetric/platform/pkg/telemetry   | StartRequest                     | 0.00%    | 0         |
-| ✅      | titpetric/platform/pkg/telemetry   | init                             | 66.70%   | 2         |
+| ❌      | titpetric/platform/pkg/telemetry   | init                             | 0.00%    | 2         |
 | ✅      | titpetric/platform/pkg/telemetry   | initOpenTelemetry                | 80.00%   | 3         |
 | ✅      | titpetric/platform/pkg/ulid        | Parse                            | 100.00%  | 0         |
 | ✅      | titpetric/platform/pkg/ulid        | String                           | 100.00%  | 0         |
