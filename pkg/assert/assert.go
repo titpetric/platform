@@ -14,4 +14,6 @@ var (
 	NoError       = assert.NoError
 	Nil           = assert.Nil
 	NotNil        = assert.NotNil
+	Empty         = assert.Empty
+	NotEmpty      = assert.NotEmpty
 )

@@ -14,4 +14,6 @@ var (
 	NoError       = require.NoError
 	Nil           = require.Nil
 	NotNil        = require.NotNil
+	Empty         = require.Empty
+	NotEmpty      = require.NotEmpty
 )
