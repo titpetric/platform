@@ -5,6 +5,8 @@ version: "3"
 # https://github.com/golang/go/issues/75031#issuecomment-3195256688
 
 vars:
+  name: platform
+  docker_image: titpetric/{{.name}}
   goversion:
     sh: go env GOVERSION
   toolchain: '{{.goversion}}+auto'
@@ -14,8 +16,9 @@ tasks:
     desc: "Run platform base"
     dotenv: [.env.run]
     cmds:
+      - task: gen
       - task: fmt
-      - CGO_ENABLED=0 go run ./cmd/platform
+      - CGO_ENABLED=0 go run ./cmd/{{.name}}
 
   fmt:
     desc: "Source code formatting"
@@ -25,39 +28,38 @@ tasks:
       - gofumpt -w .
       - go mod tidy
 
+  gen:
+    desc: "Generate code"
+    cmds:
+      - go generate ./...
+
   docker:
     desc: "Build docker image"
     cmds:
-      - defer: rm platform -f
-      - CGO_ENABLED=0 go build ./cmd/platform
-      - docker build --no-cache -t titpetric/platform -f docker/Dockerfile .
+      - defer: rm {{.name}} -f
+      - CGO_ENABLED=0 go build ./cmd/{{.name}}
+      - docker build --no-cache -t {{.docker_image}} -f docker/Dockerfile .
 
   clean:
     desc: "Clean build assets"
     cmds:
+      - task: gen
       - task: fmt
       - go clean -cache
       - go clean -testcache
-      - rm -f ./platform pkg.cov go-fsck.json
-      - docker rmi -f titpetric/platform
-
-  migrate:
-    desc: "Run migrations"
-    cmds:
-      - mig lint --db-dsn="platform:platform@tcp(127.0.0.1:3306)/platform" --schema platform
-      - mig docs --db-dsn="platform:platform@tcp(127.0.0.1:3306)/platform" --schema platform --output=./module/user/docs
-      - mig gen --db-dsn="platform:platform@tcp(127.0.0.1:3306)/platform" --go.skip-json --schema platform --output=./module/user/model
+      - rm -f ./{{.name}} pkg.cov pkg.cov.json go-fsck.json
+      - docker rmi -f {{.docker_image}}
 
   bench:
     desc: "Run benchmarks"
-    dotfile: [.env.test]
+    dotenv: [.env.test]
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
     cmd: go test -failfast -run='Bench.+' -bench=. -benchmem -cpu 1,2,4 -race -v ./...
 
   test:
     desc: "Run tests and collect coverage"
-    dotfile: [.env.test]
+    dotenv: [.env.test]
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
     cmds:
@@ -68,13 +70,9 @@ tasks:
     desc: "Run integration tests"
     vars:
       tags: integration
-    dotfile: [.env.test]
+    dotenv: [.env.test]
     env:
       GOTOOLCHAIN: '{{.toolchain}}'
-      PLATFORM_ENABLE_EXPVAR: "true"
-      PLATFORM_ENABLE_OTEL: "true"
-      PLATFORM_DB_DEFAULT: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
-      PLATFORM_DB_USER: "mysql://platform:platform@tcp(127.0.0.1:3306)/platform"
     cmds:
       - task: fmt
       - go test -tags '{{.tags}}' -failfast -race -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
@@ -82,7 +80,6 @@ tasks:
   cover:
     desc: "Show source coverage"
     cmds:
-      - defer: rm -f pkg.cov.json
       - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
       - go-fsck extract ./...
       - go-fsck coverage -c pkg.cov.json -o go-fsck.json
