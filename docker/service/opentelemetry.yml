@@ -14,6 +14,7 @@ services:
     networks:
     - elastic
     ports:
+      - "4318:4318"
       - "6831:6831/udp" # UDP port for Jaeger agent
       - "16686:16686" # Web UI
       - "14268:14268" # HTTP port for spans
