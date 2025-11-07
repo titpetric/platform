@@ -13,7 +13,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                 | 83.47%   | 51        | 439   |
+| ✅      | titpetric/platform                 | 84.60%   | 52        | 454   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
 | ✅      | titpetric/platform/internal        | 93.16%   | 19        | 135   |
@@ -37,6 +37,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | NewOptions                       | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | NewTestOptions                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Options.env                      | 75.00%   | 1         |
+| ✅      | titpetric/platform                 | Param                            | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | Platform.Context                 | 0.00%    | 0         |
 | ✅      | titpetric/platform                 | Platform.Find                    | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.Register                | 100.00%  | 0         |
@@ -50,6 +51,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Platform.setup                   | 71.40%   | 2         |
 | ✅      | titpetric/platform                 | Platform.setupListener           | 71.40%   | 2         |
 | ✅      | titpetric/platform                 | Platform.setupRequestContext     | 100.00%  | 0         |
+| ✅      | titpetric/platform                 | QueryParam                       | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Register                         | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Clone                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Close                   | 86.70%   | 8         |
@@ -63,6 +65,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Start                            | 75.00%   | 1         |
 | ✅      | titpetric/platform                 | TestMiddleware                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Transaction                      | 66.70%   | 3         |
+| ✅      | titpetric/platform                 | URLParam                         | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Mount        | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Name         | 66.70%   | 1         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Start        | 66.70%   | 1         |

@@ -21,6 +21,7 @@ tasks:
     desc: "Source code formatting"
     cmds:
       - goimports -w -local $(go list .) .
+      - goimports-reviser -set-alias -format -imports-order "std,blanked,general,company,project" ./...
       - gofumpt -w .
       - go mod tidy
 
@@ -99,6 +100,7 @@ tasks:
     cmds:
       - go install github.com/gregoryv/uncover/...@latest
       - go install mvdan.cc/gofumpt@latest
+      - go install -v github.com/incu6us/goimports-reviser/v3@latest
 
   up:
     desc: "Bring up docker env"

@@ -33,7 +33,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/go-chi/chi/v5"
+	chi "github.com/go-chi/chi/v5"
 
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/pkg/telemetry"

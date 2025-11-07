@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"testing"
 
+	_ "github.com/titpetric/platform/pkg/drivers"
+
 	"github.com/jmoiron/sqlx"
 
 	"github.com/titpetric/platform/internal"
-	_ "github.com/titpetric/platform/pkg/drivers"
 	"github.com/titpetric/platform/pkg/require"
 )
 

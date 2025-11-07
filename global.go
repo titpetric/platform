@@ -3,7 +3,7 @@ package platform
 import (
 	"context"
 
-	"github.com/go-chi/chi/v5"
+	chi "github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/titpetric/platform/internal"

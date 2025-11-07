@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/oklog/ulid/v2"
+	ulid "github.com/oklog/ulid/v2"
 )
 
 // ULID will return a new ulid.ULID value.

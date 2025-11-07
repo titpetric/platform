@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"sync/atomic"
 
-	"github.com/go-chi/chi/v5"
+	chi "github.com/go-chi/chi/v5"
 )
 
 // CountRoutes returns the total number of routes, and the total number of known middlewares.
