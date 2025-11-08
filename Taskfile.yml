@@ -81,10 +81,14 @@ tasks:
     desc: "Show source coverage"
     cmds:
       - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
-      - go-fsck extract ./...
+      - go-fsck extract --pretty-json ./...
       - go-fsck coverage -c pkg.cov.json -o go-fsck.json
       - go-fsck coverage --template=docs/testing-coverage.md.tpl -v > docs/testing-coverage.md
       - perl -pi -e 's/github.com\/titpetric/titpetric/g' docs/testing-coverage.md
+      - go-fsck docs --render imports > docs/imports.puml
+      - go-fsck docs --render puml > docs/structure.puml
+      - plantuml -tsvg docs/structure.puml
+      - plantuml -tsvg docs/imports.puml
 
   uncover:
     desc: "Show uncovered source"
