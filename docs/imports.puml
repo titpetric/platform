@@ -1,0 +1,10 @@
+@startuml
+[github.com/titpetric/platform/pkg/telemetry] --|> [github.com/titpetric/platform/pkg/reflect]
+[github.com/titpetric/platform] --|> [github.com/titpetric/platform/internal]
+[github.com/titpetric/platform] --|> [github.com/titpetric/platform/pkg/telemetry]
+[github.com/titpetric/platform] --|> [github.com/titpetric/platform/pkg/httpcontext]
+[github.com/titpetric/platform/cmd] --|> [github.com/titpetric/platform]
+[github.com/titpetric/platform/cmd] --|> [github.com/titpetric/platform/pkg/drivers]
+[github.com/titpetric/platform/cmd] --|> [github.com/titpetric/platform/pkg/telemetry]
+[github.com/titpetric/platform/cmd/platform] --|> [github.com/titpetric/platform/cmd]
+@enduml

@@ -1,0 +1,114 @@
+@startuml
+
+class "internal.DatabaseOption" {
+  + MaxOpenConns: int
+  + MaxIdleConns: int
+  + Apply (client *sqlx.DB)
+}
+
+interface "internal.DatabaseProvider" {
+  - open: func(string, string) (*sqlx.DB, error)
+  - mu: sync.Mutex
+  - cache: map[string]*sqlx.DB
+  - credentials: map[string]string
+}
+
+class "pkg.httpcontext.Value[T any]" {
+  + Key: any
+}
+
+class "pkg.telemetry.Monitor" {
+  - mu: sync.Mutex
+  - enabled: bool
+  - state: map[string]*expvar.Int
+  + Enabled () bool
+  + SetEnabled (enabled bool)
+  + Touch (name string)
+}
+
+interface "platform.DatabaseProvider" {
+  + Open: Open (...string) (*sqlx.DB, error)
+  + Connect: Connect (context.Context, ...string) (*sqlx.DB, error)
+}
+
+class "platform.ErrorResponse" {
+  + Error: ErrorResponseBody
+}
+
+class "platform.ErrorResponseBody" {
+  + Code: int
+  + Message: string
+}
+
+interface "platform.Middleware" {
+  - type: func(http.Handler) http.Handler
+}
+
+interface "platform.Module" {
+  + Name: Name () string
+  + Start: Start (context.Context) error
+  + Stop: Stop () error
+  + Mount: Mount (Router) error
+}
+
+class "platform.Options" {
+  + ServerAddr: string
+  + Quiet: bool
+}
+
+interface "platform.Platform" {
+  - options: *Options
+  - router: *chi.Mux
+  - server: *http.Server
+  - listener: net.Listener
+  - context: context.Context
+  - cancel: context.CancelFunc
+  - stop: func()
+  - once: sync.Once
+  - registry: *Registry
+}
+
+class "platform.Registry" {
+  - mu: sync.RWMutex
+  - modules: []Module
+  - middleware: []Middleware
+  + Clone () *Registry
+  + Close ()
+  + Find (target any) bool
+  + Register (m Module)
+  + Start (ctx context.Context, mux Router) error
+  + Stats () int
+  + Use (f Middleware)
+}
+
+class "platform.Router" {
+  - type: chi.Router
+}
+
+interface "platform.UnimplementedModule" {
+  + NameFn: func() string
+  + StartFn: func(context.Context) error
+  + StopFn: func() error
+  + MountFn: func(Router) error
+}
+
+
+
+"pkg.httpcontext.Value[T any]" --> "pkg.httpcontext.any" : .Key
+
+
+
+"platform.ErrorResponse" --> "platform.ErrorResponseBody" : .Error
+
+
+
+
+
+
+"platform.Registry" --> "platform.Module" : .modules
+"platform.Registry" --> "platform.Middleware" : .middleware
+
+
+
+
+@enduml
