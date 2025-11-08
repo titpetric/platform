@@ -37,6 +37,7 @@ For more detail, see: [Testing Coverage](./docs/testing-coverage.md).
 ## Development docs
 
 - [The Platform](./docs/platform.md) — key concepts, structure, and lifecycle overview.
+- [API documentation](./docs/api.md) - the api documentation for the platform package.
 - [Creating Modules](./docs/modules.md) — module API, lifecycle, and using `UnimplementedModule`.
 - [Common Patterns](./docs/patterns.md) — routing, GET/POST, background jobs and validation patterns.
 - [SQL Database Usage](./docs/database.md) — named connections, DSN examples, and `Connect()` vs `Open()`.
