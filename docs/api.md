@@ -75,11 +75,11 @@ type Module interface {
 	Start(context.Context) error
 
 	// Stop should clean up any goroutines, clean up leaks.
-	Stop() error
+	Stop(context.Context) error
 
 	// Mount runs before the server starts, and allows you to
 	// register new routes to your module.
-	Mount(Router) error
+	Mount(context.Context, Router) error
 }
 ```
 
@@ -139,8 +139,8 @@ type Router = chi.Router
 type UnimplementedModule struct {
 	NameFn	func() string
 	StartFn	func(context.Context) error
-	StopFn	func() error
-	MountFn	func(Router) error
+	StopFn	func(context.Context) error
+	MountFn	func(context.Context, Router) error
 }
 ```
 
@@ -184,10 +184,10 @@ var Database DatabaseProvider = global.db
 - `func (*Registry) Start (ctx context.Context, mux Router) error`
 - `func (*Registry) Stats () int`
 - `func (*Registry) Use (f Middleware)`
-- `func (UnimplementedModule) Mount (r Router) error`
+- `func (UnimplementedModule) Mount (ctx context.Context, r Router) error`
 - `func (UnimplementedModule) Name () string`
 - `func (UnimplementedModule) Start (ctx context.Context) error`
-- `func (UnimplementedModule) Stop () error`
+- `func (UnimplementedModule) Stop (ctx context.Context) error`
 
 ### Error
 
@@ -470,7 +470,7 @@ func (*Registry) Use (f Middleware)
 Mount returns nil (no error).
 
 ```go
-func (UnimplementedModule) Mount (r Router) error
+func (UnimplementedModule) Mount (ctx context.Context, r Router) error
 ```
 
 ### Name
@@ -494,7 +494,7 @@ func (UnimplementedModule) Start (ctx context.Context) error
 Stop returns nil (no error).
 
 ```go
-func (UnimplementedModule) Stop () error
+func (UnimplementedModule) Stop (ctx context.Context) error
 ```
 
 

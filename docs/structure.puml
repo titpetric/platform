@@ -47,8 +47,8 @@ interface "platform.Middleware" {
 interface "platform.Module" {
   + Name: Name () string
   + Start: Start (context.Context) error
-  + Stop: Stop () error
-  + Mount: Mount (Router) error
+  + Stop: Stop (context.Context) error
+  + Mount: Mount (context.Context, Router) error
 }
 
 class "platform.Options" {
@@ -88,8 +88,8 @@ class "platform.Router" {
 interface "platform.UnimplementedModule" {
   + NameFn: func() string
   + StartFn: func(context.Context) error
-  + StopFn: func() error
-  + MountFn: func(Router) error
+  + StopFn: func(context.Context) error
+  + MountFn: func(context.Context, Router) error
 }
 
 

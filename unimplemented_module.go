@@ -10,8 +10,8 @@ import (
 type UnimplementedModule struct {
 	NameFn  func() string
 	StartFn func(context.Context) error
-	StopFn  func() error
-	MountFn func(Router) error
+	StopFn  func(context.Context) error
+	MountFn func(context.Context, Router) error
 }
 
 // Name returns an empty string.
@@ -31,17 +31,17 @@ func (m UnimplementedModule) Start(ctx context.Context) error {
 }
 
 // Stop returns nil (no error).
-func (m UnimplementedModule) Stop() error {
+func (m UnimplementedModule) Stop(ctx context.Context) error {
 	if m.StopFn != nil {
-		return m.StopFn()
+		return m.StopFn(ctx)
 	}
 	return nil
 }
 
 // Mount returns nil (no error).
-func (m UnimplementedModule) Mount(r Router) error {
+func (m UnimplementedModule) Mount(ctx context.Context, r Router) error {
 	if m.MountFn != nil {
-		return m.MountFn(r)
+		return m.MountFn(ctx, r)
 	}
 	return nil
 }

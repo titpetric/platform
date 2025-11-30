@@ -13,7 +13,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                 | 84.60%   | 52        | 454   |
+| ✅      | titpetric/platform                 | 85.19%   | 52        | 456   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
 | ✅      | titpetric/platform/internal        | 93.16%   | 19        | 135   |
@@ -22,7 +22,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform/pkg/httpcontext | 100.00%  | 1         | 22    |
 | ✅      | titpetric/platform/pkg/reflect     | 100.00%  | 7         | 31    |
 | ✅      | titpetric/platform/pkg/require     | 0.00%    | 0         | 0     |
-| ❌      | titpetric/platform/pkg/telemetry   | 57.44%   | 8         | 130   |
+| ❌      | titpetric/platform/pkg/telemetry   | 51.28%   | 8         | 130   |
 | ✅      | titpetric/platform/pkg/ulid        | 100.00%  | 0         | 20    |
 
 ## Functions
@@ -36,7 +36,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | New                              | 83.30%   | 1         |
 | ✅      | titpetric/platform                 | NewOptions                       | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | NewTestOptions                   | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | Options.env                      | 75.00%   | 1         |
+| ✅      | titpetric/platform                 | Options.env                      | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | Param                            | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | Platform.Context                 | 0.00%    | 0         |
 | ✅      | titpetric/platform                 | Platform.Find                    | 100.00%  | 0         |
@@ -54,7 +54,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | QueryParam                       | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Register                         | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Clone                   | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | Registry.Close                   | 86.70%   | 8         |
+| ✅      | titpetric/platform                 | Registry.Close                   | 87.50%   | 8         |
 | ✅      | titpetric/platform                 | Registry.Find                    | 81.20%   | 8         |
 | ✅      | titpetric/platform                 | Registry.Register                | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Start                   | 80.00%   | 1         |
@@ -106,7 +106,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform/pkg/telemetry   | StartAuto                        | 0.00%    | 0         |
 | ✅      | titpetric/platform/pkg/telemetry   | StartRequest                     | 0.00%    | 0         |
 | ❌      | titpetric/platform/pkg/telemetry   | init                             | 0.00%    | 2         |
-| ✅      | titpetric/platform/pkg/telemetry   | initOpenTelemetry                | 80.00%   | 3         |
+| ❌      | titpetric/platform/pkg/telemetry   | initOpenTelemetry                | 0.00%    | 3         |
 | ✅      | titpetric/platform/pkg/ulid        | Parse                            | 100.00%  | 0         |
 | ✅      | titpetric/platform/pkg/ulid        | String                           | 100.00%  | 0         |
 | ✅      | titpetric/platform/pkg/ulid        | ULID                             | 100.00%  | 0         |

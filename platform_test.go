@@ -1,6 +1,7 @@
 package platform_test
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"runtime"
@@ -30,7 +31,7 @@ func TestPlatform(t *testing.T) {
 			NameFn: func() string {
 				return "TestPlatform"
 			},
-			MountFn: func(r platform.Router) error {
+			MountFn: func(_ context.Context, r platform.Router) error {
 				r.Get("/404", func(w http.ResponseWriter, r *http.Request) {
 					w.Write([]byte("You found a valid route"))
 				})

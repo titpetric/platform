@@ -30,7 +30,6 @@ import (
 	"os"
 	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	chi "github.com/go-chi/chi/v5"
@@ -112,7 +111,7 @@ func (p *Platform) Start(ctx context.Context) error {
 	}
 
 	// If the program receives a SIGTERM, trigger shutdown.
-	sigctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	sigctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
 	p.stop = stop
 
 	go func() {

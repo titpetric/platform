@@ -16,9 +16,9 @@ type Module interface {
 	Start(context.Context) error
 
 	// Stop should clean up any goroutines, clean up leaks.
-	Stop() error
+	Stop(context.Context) error
 
 	// Mount runs before the server starts, and allows you to
 	// register new routes to your module.
-	Mount(Router) error
+	Mount(context.Context, Router) error
 }

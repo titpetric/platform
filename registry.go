@@ -79,16 +79,16 @@ func (r *Registry) Start(ctx context.Context, mux Router) error {
 		return err
 	}
 
-	return r.mount(mux)
+	return r.mount(ctx, mux)
 }
 
-func (r *Registry) mount(mux Router) error {
+func (r *Registry) mount(ctx context.Context, mux Router) error {
 	for _, mw := range r.middleware {
 		mux.Use(mw)
 	}
 
 	for _, plugin := range r.modules {
-		if err := plugin.Mount(mux); err != nil {
+		if err := plugin.Mount(ctx, mux); err != nil {
 			return err
 		}
 	}
@@ -113,6 +113,8 @@ func (r *Registry) Close() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
+	ctx := context.TODO()
+
 	var wg sync.WaitGroup
 	wg.Add(len(r.modules))
 
@@ -124,7 +126,7 @@ func (r *Registry) Close() {
 					log.Printf("%s.Close recovered panic: %v\n%s", plugin.Name(), r, debug.Stack())
 				}
 			}()
-			if err := plugin.Stop(); err != nil {
+			if err := plugin.Stop(ctx); err != nil {
 				log.Printf("error in %s: %v", plugin.Name(), err)
 			}
 		}()

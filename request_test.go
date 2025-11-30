@@ -1,6 +1,7 @@
 package platform_test
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"testing"
@@ -14,7 +15,7 @@ func TestParam(t *testing.T) {
 
 	svc.Register(&platform.UnimplementedModule{
 		NameFn: func() string { return "TestParam" },
-		MountFn: func(mux platform.Router) error {
+		MountFn: func(_ context.Context, mux platform.Router) error {
 			mux.Get("/user/{id}", func(w http.ResponseWriter, r *http.Request) {
 				id := platform.Param(r, "id")
 				foo := platform.Param(r, "foo")
