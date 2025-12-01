@@ -2,10 +2,11 @@ package platform
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"reflect"
-	"runtime/debug"
 	"sync"
+
+	"github.com/titpetric/platform/pkg/telemetry"
 )
 
 // Registry provides a programmatic API to manage middleware and plugins.
@@ -75,7 +76,11 @@ func (r *Registry) Start(ctx context.Context, mux Router) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	if err := r.start(ctx); err != nil {
+	spanCtx, span := telemetry.Start(ctx, "registry.Start")
+	err := r.startPlugins(spanCtx)
+	span.End()
+
+	if err != nil {
 		return err
 	}
 
@@ -96,14 +101,24 @@ func (r *Registry) mount(ctx context.Context, mux Router) error {
 	return nil
 }
 
-func (r *Registry) start(ctx context.Context) error {
+func (r *Registry) startPlugins(ctx context.Context) error {
+	ctx, span := telemetry.Start(ctx, "registry.startPlugins")
+	defer span.End()
+
 	for _, plugin := range r.modules {
-		if err := plugin.Start(ctx); err != nil {
+		if err := r.startPlugin(ctx, plugin); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (r *Registry) startPlugin(ctx context.Context, plugin Module) error {
+	ctx, span := telemetry.Start(ctx, "plugin.start: "+plugin.Name())
+	defer span.End()
+
+	return plugin.Start(ctx)
 }
 
 // Close will invoke all the modules close functions in parallel.
@@ -113,7 +128,15 @@ func (r *Registry) Close() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	ctx := context.TODO()
+	r.stopPlugins(context.Background())
+
+	r.modules = r.modules[:0]
+	r.middleware = r.middleware[:0]
+}
+
+func (r *Registry) stopPlugins(ctx context.Context) {
+	ctx, span := telemetry.Start(ctx, "registry.stopPlugins")
+	defer span.End()
 
 	var wg sync.WaitGroup
 	wg.Add(len(r.modules))
@@ -121,25 +144,26 @@ func (r *Registry) Close() {
 	for _, plugin := range r.modules {
 		go func() {
 			defer wg.Done()
+
+			spanCtx, span := telemetry.Start(ctx, "plugin.stop: "+plugin.Name())
+			defer span.End()
+
 			defer func() {
 				if r := recover(); r != nil {
-					log.Printf("%s.Close recovered panic: %v\n%s", plugin.Name(), r, debug.Stack())
+					telemetry.CaptureError(spanCtx, fmt.Errorf("recovered panic: %v", r))
 				}
 			}()
-			if err := plugin.Stop(ctx); err != nil {
-				log.Printf("error in %s: %v", plugin.Name(), err)
+
+			if err := plugin.Stop(spanCtx); err != nil {
+				telemetry.CaptureError(spanCtx, err)
 			}
 		}()
 	}
 
 	wg.Wait()
-
-	r.modules = r.modules[:0]
-	r.middleware = r.middleware[:0]
 }
 
 // Clone provides a copy of the registry for use in the platform.
-// Closing the copy leaves the package global state alone.
 func (r *Registry) Clone() *Registry {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

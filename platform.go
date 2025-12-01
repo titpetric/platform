@@ -140,6 +140,9 @@ func (p *Platform) Start(ctx context.Context) error {
 func (p *Platform) setup() error {
 	// set up context for module start
 	ctx := p.bindContext(context.Background())
+	ctx, span := telemetry.Start(ctx, "platform.setup")
+	defer span.End()
+
 	if err := p.registry.Start(ctx, p.router); err != nil {
 		return err
 	}

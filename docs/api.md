@@ -405,7 +405,6 @@ func (*Platform) Wait ()
 ### Clone
 
 Clone provides a copy of the registry for use in the platform.
-Closing the copy leaves the package global state alone.
 
 ```go
 func (*Registry) Clone () *Registry
