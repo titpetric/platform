@@ -1,29 +1,33 @@
 package reflect_test
 
 import (
+	"net/http"
 	"testing"
 
-	"github.com/titpetric/platform"
-	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/pkg/reflect"
 	"github.com/titpetric/platform/pkg/require"
 	"github.com/titpetric/platform/pkg/telemetry"
 )
 
+type DatabaseProvider struct{}
+
+func (DatabaseProvider) Open() {
+}
+
 var SymbolName = reflect.SymbolName
 
 func TestStartAuto(t *testing.T) {
-	input := internal.NewDatabaseProvider(nil)
+	input := DatabaseProvider{}
 
 	// assert expected symbol location
-	require.Equal(t, "internal.DatabaseProvider", SymbolName(input))
-	require.Equal(t, "internal.DatabaseProvider.Open", SymbolName(input.Open))
+	require.Equal(t, "reflect_test.DatabaseProvider", SymbolName(input))
+	require.Equal(t, "reflect_test.DatabaseProvider.Open", SymbolName(input.Open))
 
 	// cross package scope doesn't change the underlying type
-	require.Equal(t, "internal.DatabaseProvider", SymbolName(platform.Database))
+	require.Equal(t, "http.NewRequest", SymbolName(http.NewRequest))
 
 	// interface reference changes the path as defined in the interface
-	require.Equal(t, "platform.DatabaseProvider.Connect", SymbolName(platform.Database.Connect))
+	require.Equal(t, "http.Client.Get", SymbolName(http.DefaultClient.Get))
 
 	// global functions work
 	require.Equal(t, "telemetry.StartAuto", SymbolName(telemetry.StartAuto))

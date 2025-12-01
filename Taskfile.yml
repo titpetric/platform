@@ -82,8 +82,8 @@ tasks:
     cmds:
       - go-fsck extract . --include-sources
       - go-fsck docs > docs/api.md
-      - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
       - go-fsck extract --pretty-json ./...
+      - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
       - go-fsck coverage -c pkg.cov.json -o go-fsck.json
       - go-fsck coverage --template=docs/testing-coverage.md.tpl -v > docs/testing-coverage.md
       - perl -pi -e 's/github.com\/titpetric/titpetric/g' docs/testing-coverage.md
