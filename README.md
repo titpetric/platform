@@ -13,7 +13,6 @@ Application examples, with database use:
 
 - A monolithic app with modules: [titpetric/platform-app](https://github.com/titpetric/platform-app).
 - Extended `titpetric/platform-app` for a Mailing list manager app: [titpetric/platform-maillist](https://github.com/titpetric/platform-maillist).
-- Miscelaneous module examples: [titpetric/platform-example](https://github.com/titpetric/platform-example).
 
 Status: the app and maillist packages still need implementation surface.
 
