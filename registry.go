@@ -107,7 +107,7 @@ func (r *Registry) startPlugins(ctx context.Context) error {
 
 	for _, plugin := range r.modules {
 		if err := r.startPlugin(ctx, plugin); err != nil {
-			return err
+			return fmt.Errorf("error starting plugin %s: %w", plugin.Name(), err)
 		}
 	}
 

@@ -24,6 +24,7 @@ package platform
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -107,7 +108,7 @@ func (p *Platform) Find(target any) bool {
 // sets up signal notification to respond to SIGTERM.
 func (p *Platform) Start(ctx context.Context) error {
 	if err := p.setup(); err != nil {
-		return err
+		return fmt.Errorf("error in platform setup: %w", err)
 	}
 
 	// If the program receives a SIGTERM, trigger shutdown.
@@ -144,11 +145,11 @@ func (p *Platform) setup() error {
 	defer span.End()
 
 	if err := p.registry.Start(ctx, p.router); err != nil {
-		return err
+		return fmt.Errorf("registry: %w", err)
 	}
 
 	if err := p.setupListener(); err != nil {
-		return err
+		return fmt.Errorf("setting up listener: %w", err)
 	}
 
 	p.server = &http.Server{
