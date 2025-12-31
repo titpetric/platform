@@ -5,7 +5,6 @@ import (
 	"github.com/titpetric/platform"
 }
 ```
-
 The platform is an extensible modular system for writing HTTP servers.
 
 1. Provides a global registry for middleware and module registration
