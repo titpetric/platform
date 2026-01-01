@@ -34,7 +34,7 @@ func TestDatabaseProvider_Open(t *testing.T) {
 	})
 	provider.Register("test", "sqlite://:memory:")
 
-	db, err := provider.Open("test")
+	db, err := provider.Open(t.Context(), "test")
 	require.Error(t, err)
 	require.Nil(t, db)
 }

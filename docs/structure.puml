@@ -27,8 +27,8 @@ class "pkg.telemetry.Monitor" {
 }
 
 interface "platform.DatabaseProvider" {
-  + Open: Open (...string) (*sqlx.DB, error)
-  + Connect: Connect (context.Context, ...string) (*sqlx.DB, error)
+  + Open: Open (ctx context.Context, names ...string) (*sqlx.DB, error)
+  + Connect: Connect (ctx context.Context, names ...string) (*sqlx.DB, error)
 }
 
 class "platform.ErrorResponse" {
