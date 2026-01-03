@@ -114,7 +114,8 @@ func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
 // filter will provide a set of enabled modules based on options
 // it prints which modules are enabled/disabled to the log
 func (r *Registry) filter(opts *Options) ([]Module, error) {
-	var enabled, disabled []Module
+	var enabled []Module
+	var disabled []string
 
 	for _, mod := range r.modules {
 		name := mod.Name()
@@ -125,7 +126,7 @@ func (r *Registry) filter(opts *Options) ([]Module, error) {
 		}
 
 		if len(opts.Modules) > 0 && !slices.Contains(opts.Modules, name) {
-			disabled = append(disabled, mod)
+			disabled = append(disabled, name)
 			continue
 		}
 		enabled = append(enabled, mod)
