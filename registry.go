@@ -78,23 +78,27 @@ func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
+	enabled := opts.Modules
+
 	spanCtx, span := telemetry.Start(ctx, "registry.Start")
-	err := r.startPlugins(spanCtx, opts.Modules, opts.Quiet)
+	err := r.startPlugins(spanCtx, enabled, opts.Quiet)
 	span.End()
 
 	if err != nil {
 		return err
 	}
 
-	return r.mount(ctx, mux)
-}
-
-func (r *Registry) mount(ctx context.Context, mux Router) error {
 	for _, mw := range r.middleware {
 		mux.Use(mw)
 	}
 
 	for _, plugin := range r.modules {
+		name := plugin.Name()
+
+		if len(enabled) > 0 && !slices.Contains(enabled, name) {
+			continue
+		}
+
 		if err := plugin.Mount(ctx, mux); err != nil {
 			return err
 		}
@@ -112,6 +116,7 @@ func (r *Registry) startPlugins(ctx context.Context, enabled []string, quiet boo
 	for _, plugin := range r.modules {
 		name := plugin.Name()
 
+		// a lifecycle test (main_test.go) catches this at test time
 		if name == "" {
 			return fmt.Errorf("module %T doesn't return name", plugin)
 		}

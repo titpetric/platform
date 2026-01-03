@@ -13,7 +13,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                 | 86.40%   | 61        | 516   |
+| ✅      | titpetric/platform                 | 86.36%   | 64        | 522   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
 | ✅      | titpetric/platform/internal        | 93.16%   | 19        | 135   |
@@ -59,10 +59,9 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Registry.Close                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Find                    | 81.20%   | 8         |
 | ✅      | titpetric/platform                 | Registry.Register                | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | Registry.Start                   | 87.50%   | 1         |
+| ✅      | titpetric/platform                 | Registry.Start                   | 82.40%   | 8         |
 | ✅      | titpetric/platform                 | Registry.Stats                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Use                     | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | Registry.mount                   | 83.30%   | 4         |
 | ✅      | titpetric/platform                 | Registry.startPlugin             | 100.00%  | 0         |
 | ❌      | titpetric/platform                 | Registry.startPlugins            | 61.10%   | 11        |
 | ✅      | titpetric/platform                 | Registry.stopPlugins             | 86.70%   | 8         |
