@@ -149,13 +149,21 @@ type Platform struct {
 ```
 
 ```go
-// Registry provides a programmatic API to manage middleware and plugins.
-// A plugin registers middleware and has a contract to enforce lifecycle.
+// Registry provides a programmatic API to manage middleware and modules.
+// A module registers middleware and has a contract to enforce lifecycle.
 type Registry struct {
 	mu	sync.RWMutex
 
+	// Modules hold a list of all modules registered. This list
+	// is filtered to start/stop only the modules that are enabled.
+	// Interacting with a module is subject to concurrency concerns.
 	modules		[]Module
 	middleware	[]Middleware
+
+	// On registry start when modules start, a cleanup service per module
+	// will be registered via this value. On registry close, the slice
+	// is cleared. The functions receive the shutdown context.
+	cleanups	[]func(context.Context)
 }
 ```
 
@@ -210,8 +218,9 @@ var Database DatabaseProvider = global.db
 - `func (*Platform) URL () string`
 - `func (*Platform) Use (m Middleware)`
 - `func (*Platform) Wait ()`
+- `func (*Registry) Cleanup (fn func(context.Context))`
 - `func (*Registry) Clone () *Registry`
-- `func (*Registry) Close ()`
+- `func (*Registry) Close (ctx context.Context)`
 - `func (*Registry) Find (target any) bool`
 - `func (*Registry) Register (m Module)`
 - `func (*Registry) Start (ctx context.Context, mux Router, opts *Options) error`
@@ -443,6 +452,15 @@ Wait will pause until the server is shut down.
 func (*Platform) Wait ()
 ```
 
+### Cleanup
+
+Cleanup is sort of a testing.T.Cleanup but for the registry.
+The cleanups are initialized in Start, and ran in Close.
+
+```go
+func (*Registry) Cleanup (fn func(context.Context))
+```
+
 ### Clone
 
 Clone provides a copy of the registry for use in the platform.
@@ -455,10 +473,10 @@ func (*Registry) Clone () *Registry
 
 Close will invoke all the modules close functions in parallel.
 When finished, it will clear the registered modules list, as
-well as any defined middleware.
+well as any defined middleware and invoked cleanups.
 
 ```go
-func (*Registry) Close ()
+func (*Registry) Close (ctx context.Context)
 ```
 
 ### Find

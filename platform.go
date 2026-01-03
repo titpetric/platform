@@ -214,16 +214,16 @@ func (p *Platform) URL() string {
 // Only after the server has fully shut down does the internal context get cancelled.
 func (p *Platform) Stop() {
 	p.once.Do(func() {
+		// Give a 5 second timeout for a graceful shutdown.
+		ctx, cancel := context.WithTimeout(p.Context(), 5*time.Second)
+		defer cancel()
+
 		// When done, exit main. It's waiting for the cancelled context there.
 		defer func() {
-			p.registry.Close()
 			p.stop()
 			p.cancel()
+			p.registry.Close(p.context)
 		}()
-
-		// Give a 5 second timeout for a graceful shutdown.
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
 
 		// Capture error to telemetry sink.
 		telemetry.CaptureError(p.context, p.server.Shutdown(ctx))

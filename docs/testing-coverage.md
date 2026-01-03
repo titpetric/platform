@@ -13,7 +13,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                 | 86.36%   | 64        | 522   |
+| ✅      | titpetric/platform                 | 88.45%   | 62        | 553   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
 | ✅      | titpetric/platform/internal        | 93.16%   | 19        | 135   |
@@ -40,7 +40,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Options.env                      | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | Options.envCSV                   | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | Param                            | 100.00%  | 1         |
-| ✅      | titpetric/platform                 | Platform.Context                 | 0.00%    | 0         |
+| ✅      | titpetric/platform                 | Platform.Context                 | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.Find                    | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.Register                | 100.00%  | 0         |
 | ❌      | titpetric/platform                 | Platform.Start                   | 73.30%   | 7         |
@@ -55,16 +55,20 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Platform.setupRequestContext     | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | QueryParam                       | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Register                         | 100.00%  | 0         |
+| ✅      | titpetric/platform                 | Registry.Cleanup                 | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Clone                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Close                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Find                    | 81.20%   | 8         |
 | ✅      | titpetric/platform                 | Registry.Register                | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | Registry.Start                   | 82.40%   | 8         |
+| ✅      | titpetric/platform                 | Registry.Start                   | 75.00%   | 3         |
 | ✅      | titpetric/platform                 | Registry.Stats                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Use                     | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | Registry.startPlugin             | 100.00%  | 0         |
-| ❌      | titpetric/platform                 | Registry.startPlugins            | 61.10%   | 11        |
-| ✅      | titpetric/platform                 | Registry.stopPlugins             | 86.70%   | 8         |
+| ✅      | titpetric/platform                 | Registry.close                   | 100.00%  | 3         |
+| ❌      | titpetric/platform                 | Registry.filter                  | 66.70%   | 8         |
+| ✅      | titpetric/platform                 | Registry.mount                   | 87.50%   | 4         |
+| ✅      | titpetric/platform                 | Registry.start                   | 81.80%   | 4         |
+| ✅      | titpetric/platform                 | Registry.startModule             | 100.00%  | 0         |
+| ✅      | titpetric/platform                 | Registry.stopModule              | 71.40%   | 3         |
 | ✅      | titpetric/platform                 | Start                            | 75.00%   | 1         |
 | ✅      | titpetric/platform                 | TestMiddleware                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Transaction                      | 66.70%   | 3         |

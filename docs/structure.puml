@@ -73,8 +73,10 @@ class "platform.Registry" {
   - mu: sync.RWMutex
   - modules: []Module
   - middleware: []Middleware
+  - cleanups: []func(context.Context)
+  + Cleanup (fn func(context.Context))
   + Clone () *Registry
-  + Close ()
+  + Close (ctx context.Context)
   + Find (target any) bool
   + Register (m Module)
   + Start (ctx context.Context, mux Router, opts *Options) error
