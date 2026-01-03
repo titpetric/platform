@@ -119,6 +119,10 @@ type Options struct {
 
 	// Quiet turns down the verbosity in the Platform logging code, set to true in tests.
 	Quiet	bool
+
+	// Modules controls which modules get loaded. If the list
+	// is empty (unconfigured, zero value), all modules load.
+	Modules	[]string
 }
 ```
 
@@ -209,7 +213,7 @@ var Database DatabaseProvider = global.db
 - `func (*Registry) Close ()`
 - `func (*Registry) Find (target any) bool`
 - `func (*Registry) Register (m Module)`
-- `func (*Registry) Start (ctx context.Context, mux Router) error`
+- `func (*Registry) Start (ctx context.Context, mux Router, opts *Options) error`
 - `func (*Registry) Stats () int`
 - `func (*Registry) Use (f Middleware)`
 - `func (UnimplementedModule) Mount (ctx context.Context, r Router) error`
@@ -473,7 +477,7 @@ If an error occurs, execution is halted and an error is returned.
 The context is passed along for observability and access to the platform.
 
 ```go
-func (*Registry) Start (ctx context.Context, mux Router) error
+func (*Registry) Start (ctx context.Context, mux Router, opts *Options) error
 ```
 
 ### Stats

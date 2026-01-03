@@ -54,6 +54,7 @@ interface "platform.Module" {
 class "platform.Options" {
   + ServerAddr: string
   + Quiet: bool
+  + Modules: []string
 }
 
 interface "platform.Platform" {
@@ -76,7 +77,7 @@ class "platform.Registry" {
   + Close ()
   + Find (target any) bool
   + Register (m Module)
-  + Start (ctx context.Context, mux Router) error
+  + Start (ctx context.Context, mux Router, opts *Options) error
   + Stats () int
   + Use (f Middleware)
 }

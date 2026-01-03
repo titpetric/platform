@@ -13,7 +13,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                 | 87.02%   | 52        | 480   |
+| ✅      | titpetric/platform                 | 86.57%   | 58        | 498   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
 | ✅      | titpetric/platform/internal        | 93.16%   | 19        | 135   |
@@ -62,7 +62,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Registry.Use                     | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.mount                   | 83.30%   | 4         |
 | ✅      | titpetric/platform                 | Registry.startPlugin             | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | Registry.startPlugins            | 83.30%   | 3         |
+| ❌      | titpetric/platform                 | Registry.startPlugins            | 62.50%   | 9         |
 | ✅      | titpetric/platform                 | Registry.stopPlugins             | 86.70%   | 8         |
 | ✅      | titpetric/platform                 | Start                            | 75.00%   | 1         |
 | ✅      | titpetric/platform                 | TestMiddleware                   | 100.00%  | 0         |

@@ -144,7 +144,7 @@ func (p *Platform) setup() error {
 	ctx, span := telemetry.Start(ctx, "platform.setup")
 	defer span.End()
 
-	if err := p.registry.Start(ctx, p.router); err != nil {
+	if err := p.registry.Start(ctx, p.router, p.options); err != nil {
 		return fmt.Errorf("registry: %w", err)
 	}
 

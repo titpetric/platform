@@ -3,7 +3,9 @@ package platform
 import (
 	"context"
 	"fmt"
+	"log"
 	"reflect"
+	"slices"
 	"sync"
 
 	"github.com/titpetric/platform/pkg/telemetry"
@@ -72,12 +74,12 @@ func (r *Registry) Use(f Middleware) {
 // Start will invoke all the modules start functions sequentially.
 // If an error occurs, execution is halted and an error is returned.
 // The context is passed along for observability and access to the platform.
-func (r *Registry) Start(ctx context.Context, mux Router) error {
+func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	spanCtx, span := telemetry.Start(ctx, "registry.Start")
-	err := r.startPlugins(spanCtx)
+	err := r.startPlugins(spanCtx, opts.Modules, opts.Quiet)
 	span.End()
 
 	if err != nil {
@@ -101,13 +103,30 @@ func (r *Registry) mount(ctx context.Context, mux Router) error {
 	return nil
 }
 
-func (r *Registry) startPlugins(ctx context.Context) error {
+func (r *Registry) startPlugins(ctx context.Context, enabled []string, quiet bool) error {
+	var started, disabled []string
+
 	ctx, span := telemetry.Start(ctx, "registry.startPlugins")
 	defer span.End()
 
 	for _, plugin := range r.modules {
+		name := plugin.Name()
+
+		if len(enabled) > 0 && !slices.Contains(enabled, name) {
+			disabled = append(disabled, name)
+			continue
+		}
+
 		if err := r.startPlugin(ctx, plugin); err != nil {
-			return fmt.Errorf("error starting plugin %s: %w", plugin.Name(), err)
+			return fmt.Errorf("error starting plugin %s: %w", name, err)
+		}
+		started = append(started, name)
+	}
+
+	if !quiet {
+		log.Printf("[platform] started %d modules: %s", len(started), started)
+		if len(disabled) > 0 {
+			log.Printf("[platform] disabled %d modules: %s", len(disabled), disabled)
 		}
 	}
 
