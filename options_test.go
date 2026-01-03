@@ -8,10 +8,17 @@ import (
 )
 
 func TestNewOptions(t *testing.T) {
-	t.Setenv("PLATFORM_MODULES", "user,blog")
+	t.Run("filled env", func(t *testing.T) {
+		t.Setenv("PLATFORM_MODULES", "user,blog")
 
-	opt := platform.NewOptions()
-	assert.NotNil(t, opt)
+		opt := platform.NewOptions()
+		assert.Equal(t, opt.Modules, []string{"user", "blog"})
+	})
 
-	assert.Equal(t, opt.Modules, []string{"user", "blog"})
+	t.Run("empty env", func(t *testing.T) {
+		t.Setenv("PLATFORM_MODULES", "")
+
+		opt := platform.NewOptions()
+		assert.Empty(t, opt.Modules)
+	})
 }

@@ -22,8 +22,15 @@ type Options struct {
 func NewOptions() *Options {
 	opt := &Options{}
 	opt.ServerAddr = opt.env("PLATFORM_SERVER_ADDR", ":8080")
-	opt.Modules = strings.Split(os.Getenv("PLATFORM_MODULES"), ",")
+	opt.Modules = opt.envCSV("PLATFORM_MODULES")
 	return opt
+}
+
+func (*Options) envCSV(name string) []string {
+	if v := os.Getenv(name); v != "" {
+		return strings.Split(v, ",")
+	}
+	return nil
 }
 
 func (*Options) env(name string, def string) string {
