@@ -13,7 +13,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                 | 86.85%   | 59        | 504   |
+| ✅      | titpetric/platform                 | 86.40%   | 61        | 516   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
 | ✅      | titpetric/platform/internal        | 93.16%   | 19        | 135   |
@@ -36,6 +36,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | New                              | 83.30%   | 1         |
 | ✅      | titpetric/platform                 | NewOptions                       | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | NewTestOptions                   | 100.00%  | 0         |
+| ✅      | titpetric/platform                 | NewUnimplementedModule           | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Options.env                      | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | Options.envCSV                   | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | Param                            | 100.00%  | 1         |
@@ -63,14 +64,14 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Registry.Use                     | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.mount                   | 83.30%   | 4         |
 | ✅      | titpetric/platform                 | Registry.startPlugin             | 100.00%  | 0         |
-| ❌      | titpetric/platform                 | Registry.startPlugins            | 62.50%   | 9         |
+| ❌      | titpetric/platform                 | Registry.startPlugins            | 61.10%   | 11        |
 | ✅      | titpetric/platform                 | Registry.stopPlugins             | 86.70%   | 8         |
 | ✅      | titpetric/platform                 | Start                            | 75.00%   | 1         |
 | ✅      | titpetric/platform                 | TestMiddleware                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Transaction                      | 66.70%   | 3         |
 | ✅      | titpetric/platform                 | URLParam                         | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Mount        | 100.00%  | 1         |
-| ✅      | titpetric/platform                 | UnimplementedModule.Name         | 100.00%  | 1         |
+| ✅      | titpetric/platform                 | UnimplementedModule.Name         | 66.70%   | 1         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Start        | 66.70%   | 1         |
 | ✅      | titpetric/platform                 | UnimplementedModule.Stop         | 66.70%   | 1         |
 | ✅      | titpetric/platform                 | Use                              | 100.00%  | 0         |

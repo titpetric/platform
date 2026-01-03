@@ -192,6 +192,7 @@ var Database DatabaseProvider = global.db
 - `func New (options *Options) *Platform`
 - `func NewOptions () *Options`
 - `func NewTestOptions () *Options`
+- `func NewUnimplementedModule (name string) *UnimplementedModule`
 - `func Param (r *http.Request, name string) string`
 - `func QueryParam (r *http.Request, name string) string`
 - `func Register (m Module)`
@@ -278,6 +279,14 @@ NewTestOptions produces default options for tests.
 
 ```go
 func NewTestOptions () *Options
+```
+
+### NewUnimplementedModule
+
+NewUnimplementedModule will fill the module name.
+
+```go
+func NewUnimplementedModule (name string) *UnimplementedModule
 ```
 
 ### Param

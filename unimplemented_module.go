@@ -14,6 +14,15 @@ type UnimplementedModule struct {
 	MountFn func(context.Context, Router) error
 }
 
+// NewUnimplementedModule will fill the module name.
+func NewUnimplementedModule(name string) *UnimplementedModule {
+	return &UnimplementedModule{
+		NameFn: func() string {
+			return name
+		},
+	}
+}
+
 // Name returns an empty string.
 func (m UnimplementedModule) Name() string {
 	if m.NameFn != nil {
