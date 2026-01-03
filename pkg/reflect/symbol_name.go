@@ -9,6 +9,7 @@ import (
 
 var symbolCleanup = regexp.MustCompile(`[()*]`)
 
+// SymbolName returns a cleaned symbol name from a function, type, or string.
 func SymbolName(in any) string {
 	raw := readSymbolName(in)
 	if idx := strings.LastIndex(raw, "/"); idx != -1 {

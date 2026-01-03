@@ -33,6 +33,11 @@ tasks:
     cmds:
       - go generate ./...
 
+  lint:
+    desc: "Run linters"
+    cmds:
+      - go-fsck lint ./...
+
   docker:
     desc: "Build docker image"
     cmds:

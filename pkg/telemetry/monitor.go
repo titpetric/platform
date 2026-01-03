@@ -14,20 +14,24 @@ type Monitor struct {
 	state   map[string]*expvar.Int
 }
 
+// NewMonitor creates a new Monitor for telemetry tracking.
 func NewMonitor() *Monitor {
 	return &Monitor{
 		state: make(map[string]*expvar.Int),
 	}
 }
 
+// SetEnabled enables or disables telemetry monitoring.
 func (m *Monitor) SetEnabled(enabled bool) {
 	m.enabled = enabled
 }
 
+// Enabled reports whether telemetry monitoring is enabled.
 func (m *Monitor) Enabled() bool {
 	return m.enabled
 }
 
+// Touch increments the counter for a telemetry event name.
 func (m *Monitor) Touch(name string) {
 	if !m.enabled {
 		return

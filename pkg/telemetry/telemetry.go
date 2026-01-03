@@ -21,6 +21,7 @@ import (
 
 var tracer trace.Tracer
 
+// Name is the instrumentation scope name for telemetry.
 const Name = "internal/telemetry"
 
 func init() {

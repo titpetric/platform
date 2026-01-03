@@ -13,16 +13,16 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                 | 88.45%   | 62        | 553   |
+| ✅      | titpetric/platform                 | 88.50%   | 62        | 554   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
-| ✅      | titpetric/platform/internal        | 93.16%   | 19        | 135   |
+| ✅      | titpetric/platform/internal        | 93.16%   | 19        | 136   |
 | ✅      | titpetric/platform/pkg/assert      | 0.00%    | 0         | 0     |
 | ✅      | titpetric/platform/pkg/drivers     | 0.00%    | 0         | 0     |
 | ✅      | titpetric/platform/pkg/httpcontext | 100.00%  | 1         | 22    |
-| ✅      | titpetric/platform/pkg/reflect     | 100.00%  | 7         | 31    |
+| ✅      | titpetric/platform/pkg/reflect     | 100.00%  | 7         | 32    |
 | ✅      | titpetric/platform/pkg/require     | 0.00%    | 0         | 0     |
-| ❌      | titpetric/platform/pkg/telemetry   | 51.28%   | 8         | 130   |
+| ❌      | titpetric/platform/pkg/telemetry   | 51.28%   | 8         | 134   |
 | ✅      | titpetric/platform/pkg/ulid        | 100.00%  | 0         | 20    |
 
 ## Functions
@@ -64,7 +64,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Registry.Stats                   | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.Use                     | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Registry.close                   | 100.00%  | 3         |
-| ❌      | titpetric/platform                 | Registry.filter                  | 66.70%   | 8         |
+| ❌      | titpetric/platform                 | Registry.filter                  | 69.20%   | 8         |
 | ✅      | titpetric/platform                 | Registry.mount                   | 87.50%   | 4         |
 | ✅      | titpetric/platform                 | Registry.start                   | 81.80%   | 4         |
 | ✅      | titpetric/platform                 | Registry.startModule             | 100.00%  | 0         |

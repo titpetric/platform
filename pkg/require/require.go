@@ -1,7 +1,9 @@
+// Package require provides test requirement helpers re-exported from testify/require.
 package require
 
 import "github.com/stretchr/testify/require"
 
+// Exported requirement functions from testify/require.
 var (
 	New           = require.New
 	True          = require.True
