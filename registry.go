@@ -112,6 +112,10 @@ func (r *Registry) startPlugins(ctx context.Context, enabled []string, quiet boo
 	for _, plugin := range r.modules {
 		name := plugin.Name()
 
+		if name == "" {
+			return fmt.Errorf("module %T doesn't return name", plugin)
+		}
+
 		if len(enabled) > 0 && !slices.Contains(enabled, name) {
 			disabled = append(disabled, name)
 			continue
