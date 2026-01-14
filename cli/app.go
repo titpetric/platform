@@ -11,9 +11,7 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-var (
-	errNoCommand = errors.New("no command found")
-)
+var errNoCommand = errors.New("no command found")
 
 // App is the cli entrypoint.
 type App struct {
@@ -155,7 +153,6 @@ func (app *App) findCommand(commands []string, fallback string) (*Command, error
 		return nil, fmt.Errorf("unknown command: %q", commands[0])
 	}
 	return nil, fmt.Errorf("no command specified")
-
 }
 
 // parseCommand cleans up args[], returning only commands
