@@ -14,7 +14,6 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
 | ✅      | titpetric/platform                 | 88.50%   | 62        | 554   |
-| ❌      | titpetric/platform/cli             | 59.10%   | 38        | 173   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
 | ✅      | titpetric/platform/internal        | 93.16%   | 19        | 136   |
@@ -81,15 +80,6 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Use                              | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | init                             | 0.00%    | 0         |
 | ✅      | titpetric/platform                 | setupConnections                 | 100.00%  | 4         |
-| ✅      | titpetric/platform/cli             | App.AddCommand                   | 100.00%  | 0         |
-| ❌      | titpetric/platform/cli             | App.Help                         | 0.00%    | 4         |
-| ✅      | titpetric/platform/cli             | App.HelpCommand                  | 0.00%    | 0         |
-| ✅      | titpetric/platform/cli             | App.Run                          | 0.00%    | 0         |
-| ❌      | titpetric/platform/cli             | App.RunWithArgs                  | 67.90%   | 10        |
-| ✅      | titpetric/platform/cli             | App.findCommand                  | 87.50%   | 9         |
-| ✅      | titpetric/platform/cli             | NewApp                           | 100.00%  | 0         |
-| ❌      | titpetric/platform/cli             | ParseWithFlagSet                 | 76.50%   | 11        |
-| ✅      | titpetric/platform/cli             | parseCommands                    | 100.00%  | 4         |
 | ✅      | titpetric/platform/cmd             | Main                             | 87.50%   | 2         |
 | ✅      | titpetric/platform/cmd/platform    | main                             | 0.00%    | 0         |
 | ✅      | titpetric/platform/internal        | CountRoutes                      | 100.00%  | 2         |

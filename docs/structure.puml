@@ -95,32 +95,6 @@ interface "platform.UnimplementedModule" {
   + MountFn: func(context.Context, Router) error
 }
 
-class "cli.App" {
-  + Name: string
-  - commands: map[string]CommandInfo
-  + AddCommand (name,title string, constructor func() *Command)
-  + Help ()
-  + HelpCommand (fs *flag.FlagSet, command *Command)
-  + Run () error
-  + RunWithArgs (args []string) error
-}
-
-interface "cli.Command" {
-  + Name: string
-  + Bind: func(*flag.FlagSet)
-  + Run: func(context.Context, []string) error
-  + Name: string
-  + Title: string
-  + New: func() *Command
-interface "cli.CommandInfo" {
-  + Name: string
-  + Bind: func(*flag.FlagSet)
-  + Run: func(context.Context, []string) error
-  + Name: string
-  + Title: string
-  + New: func() *Command
-}
-
 
 
 "pkg.httpcontext.Value[T any]" --> "pkg.httpcontext.any" : .Key
@@ -136,10 +110,6 @@ interface "cli.CommandInfo" {
 
 "platform.Registry" --> "platform.Module" : .modules
 "platform.Registry" --> "platform.Middleware" : .middleware
-
-
-
-"cli.App" --> "cli.CommandInfo" : .commands
 
 
 
