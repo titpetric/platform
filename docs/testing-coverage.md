@@ -13,7 +13,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                 | 88.50%   | 62        | 554   |
+| ✅      | titpetric/platform                 | 88.27%   | 62        | 551   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
 | ✅      | titpetric/platform/internal        | 93.16%   | 19        | 136   |
@@ -49,7 +49,6 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Platform.URL                     | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.Use                     | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.Wait                    | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | Platform.bindContext             | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.setup                   | 77.80%   | 2         |
 | ✅      | titpetric/platform                 | Platform.setupListener           | 71.40%   | 2         |
 | ✅      | titpetric/platform                 | Platform.setupRequestContext     | 100.00%  | 0         |

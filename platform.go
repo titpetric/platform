@@ -12,7 +12,7 @@
 // It's possible to use the platform in an emperative way.
 //
 // ```go
-// svc := platform.New(context.Background())
+// svc := platform.New(platform.NewOptions())
 // svg.Use(middleware.Logger)
 // svc.Register(user.NewModule())
 // ```
@@ -107,7 +107,7 @@ func (p *Platform) Find(target any) bool {
 // It respects cancellation from the passed context, as well as
 // sets up signal notification to respond to SIGTERM.
 func (p *Platform) Start(ctx context.Context) error {
-	if err := p.setup(); err != nil {
+	if err := p.setup(ctx); err != nil {
 		return fmt.Errorf("error in platform setup: %w", err)
 	}
 
@@ -138,9 +138,9 @@ func (p *Platform) Start(ctx context.Context) error {
 	return nil
 }
 
-func (p *Platform) setup() error {
+func (p *Platform) setup(startCtx context.Context) error {
 	// set up context for module start
-	ctx := p.bindContext(context.Background())
+	ctx := platformContext.SetContext(startCtx, p)
 	ctx, span := telemetry.Start(ctx, "platform.setup")
 	defer span.End()
 
@@ -157,10 +157,6 @@ func (p *Platform) setup() error {
 	}
 
 	return nil
-}
-
-func (p *Platform) bindContext(ctx context.Context) context.Context {
-	return platformContext.SetContext(ctx, p)
 }
 
 // setupRequestContext will bind *Platform to the request context.

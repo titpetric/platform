@@ -19,7 +19,7 @@ as they create a shared state.
 It's possible to use the platform in an emperative way.
 
 ```go
-svc := platform.New(context.Background())
+svc := platform.New(platform.NewOptions())
 svg.Use(middleware.Logger)
 svc.Register(user.NewModule())
 ```
