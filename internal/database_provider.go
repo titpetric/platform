@@ -27,6 +27,15 @@ func NewDatabaseProvider(open func(string, string) (*sqlx.DB, error)) *DatabaseP
 	}
 }
 
+// List will return the list of credential names.
+func (r *DatabaseProvider) List() []string {
+	result := make([]string, 0, len(r.credentials))
+	for k := range r.credentials {
+		result = append(result, k)
+	}
+	return result
+}
+
 // Register will add a new named credential into the provider.
 // The function is not concurrency safe, database credentials
 // can't be changed during the lifetime of the provider.
