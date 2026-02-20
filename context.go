@@ -20,3 +20,17 @@ func FromRequest(r *http.Request) *Platform {
 func FromContext(ctx context.Context) *Platform {
 	return platformContext.GetContext(ctx)
 }
+
+type optionsKey struct{}
+
+var optionsContext = httpcontext.NewValue[*Options](optionsKey{})
+
+// OptionsFromRequest returns the *Options instance attached to the request.
+func OptionsFromRequest(r *http.Request) *Options {
+	return optionsContext.Get(r)
+}
+
+// OptionsFromContext returns the *Options instance attached to the context.
+func OptionsFromContext(ctx context.Context) *Options {
+	return optionsContext.GetContext(ctx)
+}

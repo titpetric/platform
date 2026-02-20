@@ -40,10 +40,6 @@ class "platform.ErrorResponseBody" {
   + Message: string
 }
 
-interface "platform.Middleware" {
-  - type: func(http.Handler) http.Handler
-}
-
 interface "platform.Module" {
   + Name: Name () string
   + Start: Start (context.Context) error
@@ -55,6 +51,7 @@ class "platform.Options" {
   + ServerAddr: string
   + Quiet: bool
   + Modules: []string
+  + ThemeFS: fs.FS
 }
 
 interface "platform.Platform" {
@@ -84,10 +81,6 @@ class "platform.Registry" {
   + Use (f Middleware)
 }
 
-class "platform.Router" {
-  - type: chi.Router
-}
-
 interface "platform.UnimplementedModule" {
   + NameFn: func() string
   + StartFn: func(context.Context) error
@@ -107,10 +100,8 @@ interface "platform.UnimplementedModule" {
 
 
 
-
 "platform.Registry" --> "platform.Module" : .modules
 "platform.Registry" --> "platform.Middleware" : .middleware
-
 
 
 

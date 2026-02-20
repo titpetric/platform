@@ -141,6 +141,7 @@ func (p *Platform) Start(ctx context.Context) error {
 func (p *Platform) setup(startCtx context.Context) error {
 	// set up context for module start
 	ctx := platformContext.SetContext(startCtx, p)
+	ctx = optionsContext.SetContext(ctx, p.options)
 	ctx, span := telemetry.Start(ctx, "platform.setup")
 	defer span.End()
 
@@ -163,6 +164,7 @@ func (p *Platform) setup(startCtx context.Context) error {
 func (p *Platform) setupRequestContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		platformContext.Set(r, p)
+		optionsContext.Set(r, p.options)
 
 		next.ServeHTTP(w, r)
 	})

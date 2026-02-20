@@ -123,6 +123,10 @@ type Options struct {
 	// Modules controls which modules get loaded. If the list
 	// is empty (unconfigured, zero value), all modules load.
 	Modules	[]string
+
+	// ThemeFS provides access to application-level theme files (theme.yml, data/*.yml).
+	// It can be used for configuration purposes by modules. It's optional and may be nil.
+	ThemeFS	fs.FS
 }
 ```
 
@@ -201,6 +205,8 @@ var Database DatabaseProvider = global.db
 - `func NewOptions () *Options`
 - `func NewTestOptions () *Options`
 - `func NewUnimplementedModule (name string) *UnimplementedModule`
+- `func OptionsFromContext (ctx context.Context) *Options`
+- `func OptionsFromRequest (r *http.Request) *Options`
 - `func Param (r *http.Request, name string) string`
 - `func QueryParam (r *http.Request, name string) string`
 - `func Register (m Module)`
@@ -296,6 +302,22 @@ NewUnimplementedModule will fill the module name.
 
 ```go
 func NewUnimplementedModule (name string) *UnimplementedModule
+```
+
+### OptionsFromContext
+
+OptionsFromContext returns the *Options instance attached to the context.
+
+```go
+func OptionsFromContext (ctx context.Context) *Options
+```
+
+### OptionsFromRequest
+
+OptionsFromRequest returns the *Options instance attached to the request.
+
+```go
+func OptionsFromRequest (r *http.Request) *Options
 ```
 
 ### Param

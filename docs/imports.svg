@@ -14,7 +14,7 @@ link github.com/titpetric/platform/cmd to github.com/titpetric/platform--><path 
 link github.com/titpetric/platform/cmd to github.com/titpetric/platform/pkg/drivers--><path d="M830.14,146.2 C860.33,160.63 902.54,180.8 936.55,197.05 " fill="none" id="github.com/titpetric/platform/cmd-&gt;github.com/titpetric/platform/pkg/drivers" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="none" points="939.95,190.92,954.98,205.85,933.92,203.55,939.95,190.92" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[41fdc8ce4cc01caaa97b154b50fc68b7]
 link github.com/titpetric/platform/cmd to github.com/titpetric/platform/pkg/telemetry--><path d="M795.79,146.29 C803.93,178.2 820.6,243.55 831.27,285.35 " fill="none" id="github.com/titpetric/platform/cmd-&gt;github.com/titpetric/platform/pkg/telemetry" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="none" points="838.06,283.65,836.22,304.76,824.49,287.11,838.06,283.65" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[24603e83d3c7cfebeacc367df51bdd29]
 link github.com/titpetric/platform/cmd/platform to github.com/titpetric/platform/cmd--><path d="M791,47.2 C791,58.34 791,72.9 791,86.44 " fill="none" id="github.com/titpetric/platform/cmd/platform-&gt;github.com/titpetric/platform/cmd" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="none" points="798,86.85,791,106.85,784,86.85,798,86.85" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[437e403c661466b026960eefce02ffaa]
-link github.com/titpetric/platform/pkg/telemetry to github.com/titpetric/platform/pkg/reflect--><path d="M841,344.2 C841,355.34 841,369.9 841,383.44 " fill="none" id="github.com/titpetric/platform/pkg/telemetry-&gt;github.com/titpetric/platform/pkg/reflect" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="none" points="848,383.85,841,403.85,834,383.85,848,383.85" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[3406b5fe093a4e4bc55dc5f716460fb2]
+link github.com/titpetric/platform/pkg/telemetry to github.com/titpetric/platform/pkg/reflect--><path d="M841,344.2 C841,355.34 841,369.9 841,383.44 " fill="none" id="github.com/titpetric/platform/pkg/telemetry-&gt;github.com/titpetric/platform/pkg/reflect" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="none" points="848,383.85,841,403.85,834,383.85,848,383.85" style="stroke: #A80036; stroke-width: 1.0;"/><!--MD5=[7fcce8f6f586604f4390a964efb3c74e]
 @startuml
 [github.com/titpetric/platform] - -|> [github.com/titpetric/platform/internal]
 [github.com/titpetric/platform] - -|> [github.com/titpetric/platform/pkg/httpcontext]
@@ -30,7 +30,7 @@ PlantUML version 1.2020.02(Sun Mar 01 11:22:07 CET 2020)
 (GPL source distribution)
 Java Runtime: OpenJDK Runtime Environment
 JVM: OpenJDK 64-Bit Server VM
-Java Version: 21.0.9+10-Ubuntu-125.10
+Java Version: 21.0.10+7-Ubuntu-125.10
 Operating System: Linux
 Default Encoding: UTF-8
 Language: en

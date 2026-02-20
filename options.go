@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"io/fs"
 	"os"
 	"strings"
 )
@@ -16,6 +17,10 @@ type Options struct {
 	// Modules controls which modules get loaded. If the list
 	// is empty (unconfigured, zero value), all modules load.
 	Modules []string
+
+	// ThemeFS provides access to application-level theme files (theme.yml, data/*.yml).
+	// It can be used for configuration purposes by modules. It's optional and may be nil.
+	ThemeFS fs.FS
 }
 
 // NewOptions provides default options for the platform.

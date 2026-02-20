@@ -13,10 +13,10 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 | ------ | --------------------------------------------- | -------- | --------- | ----- |
-| ✅      | titpetric/platform                 | 88.27%   | 62        | 551   |
+| ✅      | titpetric/platform                 | 84.92%   | 62        | 561   |
 | ✅      | titpetric/platform/cmd             | 87.50%   | 2         | 23    |
 | ✅      | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
-| ✅      | titpetric/platform/internal        | 93.16%   | 19        | 136   |
+| ✅      | titpetric/platform/internal        | 85.99%   | 20        | 144   |
 | ✅      | titpetric/platform/pkg/assert      | 0.00%    | 0         | 0     |
 | ✅      | titpetric/platform/pkg/drivers     | 0.00%    | 0         | 0     |
 | ✅      | titpetric/platform/pkg/httpcontext | 100.00%  | 1         | 22    |
@@ -39,6 +39,8 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | NewUnimplementedModule           | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Options.env                      | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | Options.envCSV                   | 100.00%  | 1         |
+| ✅      | titpetric/platform                 | OptionsFromContext               | 0.00%    | 0         |
+| ✅      | titpetric/platform                 | OptionsFromRequest               | 0.00%    | 0         |
 | ✅      | titpetric/platform                 | Param                            | 100.00%  | 1         |
 | ✅      | titpetric/platform                 | Platform.Context                 | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.Find                    | 100.00%  | 0         |
@@ -49,7 +51,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform                 | Platform.URL                     | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.Use                     | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | Platform.Wait                    | 100.00%  | 0         |
-| ✅      | titpetric/platform                 | Platform.setup                   | 77.80%   | 2         |
+| ✅      | titpetric/platform                 | Platform.setup                   | 80.00%   | 2         |
 | ✅      | titpetric/platform                 | Platform.setupListener           | 71.40%   | 2         |
 | ✅      | titpetric/platform                 | Platform.setupRequestContext     | 100.00%  | 0         |
 | ✅      | titpetric/platform                 | QueryParam                       | 100.00%  | 0         |
@@ -84,6 +86,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform/internal        | CountRoutes                      | 100.00%  | 2         |
 | ✅      | titpetric/platform/internal        | DatabaseOption.Apply             | 75.00%   | 1         |
 | ✅      | titpetric/platform/internal        | DatabaseProvider.Connect         | 66.70%   | 2         |
+| ❌      | titpetric/platform/internal        | DatabaseProvider.List            | 0.00%    | 1         |
 | ✅      | titpetric/platform/internal        | DatabaseProvider.Open            | 100.00%  | 0         |
 | ✅      | titpetric/platform/internal        | DatabaseProvider.Register        | 100.00%  | 0         |
 | ✅      | titpetric/platform/internal        | DatabaseProvider.cached          | 92.90%   | 5         |
