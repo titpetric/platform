@@ -18,9 +18,10 @@ type Options struct {
 	// is empty (unconfigured, zero value), all modules load.
 	Modules []string
 
-	// ThemeFS provides access to application-level theme files (theme.yml, data/*.yml).
-	// It can be used for configuration purposes by modules. It's optional and may be nil.
-	ThemeFS fs.FS
+	// ConfigFS can be used for configuration purposes by modules. It's optional and may be nil.
+	// The application running with the platform may use `go:embed` to carry config for the
+	// composed service.
+	ConfigFS fs.FS
 }
 
 // NewOptions provides default options for the platform.

@@ -51,7 +51,7 @@ class "platform.Options" {
   + ServerAddr: string
   + Quiet: bool
   + Modules: []string
-  + ThemeFS: fs.FS
+  + ConfigFS: fs.FS
 }
 
 interface "platform.Platform" {
