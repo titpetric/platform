@@ -6,7 +6,7 @@ require (
 	github.com/XSAM/otelsql v0.41.0
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-sql-driver/mysql v1.9.3
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.9.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/riandyrn/otelchi v0.12.2
