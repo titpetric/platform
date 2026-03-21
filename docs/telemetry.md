@@ -114,13 +114,13 @@ setup for other observability components.
 
 The OpenTelemetry stack includes their collector service, prometheus and jaeger.
 
-1. **APM Tracing**: Requests to the platform app are automatically traced in Jaeger. Other OpenTelemetry monitoring tooling exists.
+1. APM Tracing: Requests to the platform app are automatically traced in Jaeger. Other OpenTelemetry monitoring tooling exists.
 
-2. **Database Instrumentation**: Any database driver in use is instrumented with telemetry. 
+2. Database Instrumentation: Any database driver in use is instrumented with telemetry.
 
    Supported drivers (SQLite, MySQL) are instrumented. Queries executed via the platform modules are automatically captured as spans.
 
-3. **Explicit Error Capture**:
+3. Explicit Error Capture:
    Any error you want to log to the observability platform can be captured explicitly:
 
 ```go
