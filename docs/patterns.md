@@ -44,7 +44,7 @@ func (m *Module) PostItem(w http.ResponseWriter, r *http.Request) {
 
 ## Background jobs
 
-The module can implement it's background job lifecycle by providing a
+The module can implement its background job lifecycle by providing a
 `Start` and `Stop` function. Invoking `Stop` should be a blocking
 operation. For example, with `robfig/cron`:
 

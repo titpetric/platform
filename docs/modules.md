@@ -1,4 +1,4 @@
-# Creating with Modules
+# Creating Modules
 
 ## Module Contract
 
@@ -13,11 +13,11 @@ type Module interface {
 }
 ```
 
-The functions are ran in this order; If `Mount` runs, `Start` has completed.
+The functions run in this order. If `Mount` runs, `Start` has completed.
 
-- `Start(context.Context)` — start background goroutines or services.
-- `Mount(Router)` — attach HTTP routes.
-- `Stop()` — clean up and stop all background work.
+- `Start(context.Context)` - start background goroutines or services.
+- `Mount(Router)` - attach HTTP routes.
+- `Stop()` - clean up and stop all background work.
 
 ### Firewalling modules
 
@@ -36,7 +36,7 @@ var api SessionService
 ok := platform.FromContext(r.Context()).Find(&api)
 ```
 
-Or it may expose it's complete storage API:
+Or it may expose its complete storage API:
 
 ```go
 type UserService interface {
@@ -73,7 +73,7 @@ func (m *StaticModule) Mount(r platform.Router) error {
 ```go
 func main() {
 	// Register common middleware.
-	platform.Use(loggingMiddleare)
+	platform.Use(loggingMiddleware)
 	platform.Register(&StaticModule{})
 
 	if err := platform.Start(); err != nil {

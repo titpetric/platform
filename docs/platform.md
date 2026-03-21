@@ -13,10 +13,10 @@ Each `Platform` instance clones the global registry, enabling isolated test inst
 
 ## Key Concepts
 
-- Module — implements `Name()`, `Mount(Router)`, `Start(context.Context)`, `Stop()`.
-- Middleware — type `func(http.Handler) http.Handler`, added via `platform.Use()` or `(*Platform).Use()`.
-- Registry — package and instance level container value managing modules and middleware; enables `init` usage via package API.
-- Database — named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed.
+- Module - implements `Name()`, `Mount(Router)`, `Start(context.Context)`, `Stop()`.
+- Middleware - type `func(http.Handler) http.Handler`, added via `platform.Use()` or `(*Platform).Use()`.
+- Registry - package and instance level container value managing modules and middleware; enables `init` usage via package API.
+- Database - named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed.
 
 ## Lifecycle
 

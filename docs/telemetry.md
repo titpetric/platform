@@ -30,7 +30,7 @@ func StartAuto(ctx context.Context, symbol any) (context.Context, trace.Span)
     internal/reflect for more information.
 
 func StartRequest(r *http.Request, name string) (*http.Request, trace.Span)
-    StartRequest is an utility to take the http.Request and update it's context.
+    StartRequest is a utility that takes the http.Request and updates its context.
 
 ```
 

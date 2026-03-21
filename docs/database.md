@@ -1,6 +1,6 @@
 # SQL Database Usage
 
-The platform package implements **named database provider**:
+The platform package implements a **named database provider**:
 
 ```go
 type DatabaseProvider interface {
@@ -14,8 +14,8 @@ module to use a named connection, as an example of a business domain
 boundary, and least privilege access.
 
 In practice, a singular modular monolith may share the complete schema
-and no named connections need to be used. In your modules `Start`
-function you only need this if you're working on shared schema:
+and no named connections need to be used. In your module's `Start`
+function you only need this if you're working on a shared schema:
 
 ```go
 db, err := platform.Database.Get()
