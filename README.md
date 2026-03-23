@@ -1,4 +1,4 @@
-# Platform Documentation
+# platform - A modular system for building Go applications
 
 ## Motivation
 
