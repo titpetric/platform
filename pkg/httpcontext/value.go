@@ -33,6 +33,7 @@ func (v *Value[T]) Set(r *http.Request, val T) {
 	*r = *r.WithContext(v.SetContext(r.Context(), val))
 }
 
+// SetContext will update a context value in the passed context.
 func (v *Value[T]) SetContext(ctx context.Context, val T) context.Context {
 	return context.WithValue(ctx, v.Key, val)
 }
