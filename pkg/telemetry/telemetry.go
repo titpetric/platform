@@ -15,6 +15,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/titpetric/platform/pkg/reflect"
 )
@@ -30,17 +31,18 @@ func init() {
 	}
 
 	if os.Getenv("PLATFORM_ENABLE_OTEL") != "true" {
-		tracer = trace.NewNoopTracerProvider().Tracer(Name)
+		tracer = noop.NewTracerProvider().Tracer(Name)
 		return
 	}
 
 	initOpenTelemetry()
 }
 
+// initOpenTelemetry only gets called if OTEL is enabled.
 func initOpenTelemetry() {
 	// instrument sql
-	sql_open = func(driver, dsn string) (*sql.DB, error) {
-		return otelsql.Open(driver, dsn)
+	sqlOpen = func(driver, dsn string) (*sql.DB, error) {
+		return otelsql.Open(driver, dsn, otelsql.WithDisableSkipErrMeasurement(true), otelsql.WithSpanOptions(otelsql.SpanOptions{DisableErrSkip: true}))
 	}
 
 	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
