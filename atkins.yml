@@ -1,0 +1,55 @@
+name: Platform test pipeline
+
+vars:
+  name: platform
+  image: titpetric/${{name}}
+
+env:
+  include:
+    - .env.test
+
+jobs:
+  default:
+    desc: "Format, lint and test"
+    steps:
+      - task: go:generate
+      - task: go:fmt
+      - task: go:lint
+      - task: go:test
+
+  test:
+    desc: "Run tests with coverage"
+    passthru: true
+    tty: true
+    steps:
+      - go test -failfast -race -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
+
+  integration:
+    desc: "Run integration tests"
+    passthru: true
+    tty: true
+    steps:
+      - go test -tags integration -failfast -race -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
+
+  bench:
+    desc: "Run benchmarks"
+    passthru: true
+    tty: true
+    steps:
+      - go test -failfast -run='Bench.+' -bench=. -benchmem -cpu 1,2,4 -race -v ./...
+
+  cover:
+    desc: "Generate coverage reports"
+    steps:
+      - go-fsck extract . --include-sources
+      - go-fsck docs > docs/api.md
+      - go-fsck extract --pretty-json ./...
+      - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
+      - go-fsck coverage -c pkg.cov.json -o go-fsck.json
+
+  clean:
+    desc: "Clean build assets"
+    steps:
+      - go clean -cache
+      - go clean -testcache
+      - rm -f ./${{name}} pkg.cov pkg.cov.json go-fsck.json
