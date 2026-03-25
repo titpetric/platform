@@ -18,17 +18,6 @@ func JSON(w http.ResponseWriter, r *http.Request, status int, data any) {
 	}
 }
 
-// ErrorResponse is our JSON choice of an error response.
-type ErrorResponse struct {
-	Error ErrorResponseBody `json:"error"`
-}
-
-// ErrorResponseBody is an inner type for ErrorResponse.Error.
-type ErrorResponseBody struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-}
-
 // Error writes an error payload as JSON.
 func Error(w http.ResponseWriter, r *http.Request, status int, data error) {
 	var response ErrorResponse

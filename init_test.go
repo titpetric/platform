@@ -19,7 +19,7 @@ func TestDatabaseEnv(t *testing.T) {
 		got[key] = value
 	}
 
-	setupConnections(collect, env)
+	setupConnections(env, collect)
 
 	want := map[string]string{
 		"xxx":     "sqlite://:memory:",

@@ -1,9 +1,13 @@
 package platform
 
 import (
+	"context"
 	"io/fs"
+	"net/http"
 	"os"
 	"strings"
+
+	"github.com/titpetric/platform/pkg/httpcontext"
 )
 
 // Options is a configuration struct for platform behaviour.
@@ -53,4 +57,18 @@ func NewTestOptions() *Options {
 		ServerAddr: "127.0.0.1:0",
 		Quiet:      true,
 	}
+}
+
+type optionsKey struct{}
+
+var optionsContext = httpcontext.NewValue[*Options](optionsKey{})
+
+// OptionsFromRequest returns the *Options instance attached to the request.
+func OptionsFromRequest(r *http.Request) *Options {
+	return optionsContext.Get(r)
+}
+
+// OptionsFromContext returns the *Options instance attached to the context.
+func OptionsFromContext(ctx context.Context) *Options {
+	return optionsContext.GetContext(ctx)
 }

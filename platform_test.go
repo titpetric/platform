@@ -25,7 +25,7 @@ func NewTestPlatform(tb testing.TB) *platform.Platform {
 func TestPlatform(t *testing.T) {
 	t.Run("single", func(t *testing.T) {
 		svc := platform.New(platform.NewTestOptions())
-		defer svc.Stop()
+		t.Cleanup(svc.Stop)
 
 		svc.Register(&platform.UnimplementedModule{
 			NameFn: func() string {
@@ -33,7 +33,7 @@ func TestPlatform(t *testing.T) {
 			},
 			MountFn: func(_ context.Context, r platform.Router) error {
 				r.Get("/404", func(w http.ResponseWriter, r *http.Request) {
-					w.Write([]byte("You found a valid route"))
+					_, _ = w.Write([]byte("You found a valid route"))
 				})
 				return nil
 			},
@@ -55,7 +55,7 @@ func TestPlatform(t *testing.T) {
 
 		resp, err := http.Get(svc.URL() + "/404")
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		t.Cleanup(func() { require.NoError(t, resp.Body.Close()) })
 
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 

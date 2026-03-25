@@ -69,7 +69,7 @@ type DatabaseProvider interface {
 ```
 
 ```go
-// ErrorResponse is our JSON choice of an error response.
+// ErrorResponse is the JSON structure for error responses.
 type ErrorResponse struct {
 	Error ErrorResponseBody `json:"error"`
 }

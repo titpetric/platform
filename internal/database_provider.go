@@ -100,12 +100,12 @@ func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error)
 				return nil, err
 			}
 
-			opt, _ := databaseOptions[driver]
+			opt := databaseOptions[driver]
 			opt.Apply(client)
 			return client, nil
 		}
 	}
-	return nil, fmt.Errorf("No configuration found for database: %v", names)
+	return nil, fmt.Errorf("no configuration found for database: %v", names)
 }
 
 func (r *DatabaseProvider) parseCredential(credential string) (driver string, dsn string) {

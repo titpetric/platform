@@ -17,7 +17,7 @@ func CountRoutes(r chi.Routes) (int, int) {
 		mwCount    = new(atomic.Int32)
 	)
 
-	chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+	_ = chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
 		routeCount.Add(1)
 		if len(middlewares) > 0 {
 			mwCount.Add(int32(len(middlewares)))
@@ -33,7 +33,7 @@ func PrintRoutes(r chi.Routes) {
 	routes, mws := CountRoutes(r)
 	log.Printf("[router] registered %d routes and %d middlewares\n", routes, mws)
 
-	chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
+	_ = chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
 		log.Printf("%s %s -> %s\n", method, route, runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name())
 		return nil
 	})

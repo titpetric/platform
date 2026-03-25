@@ -36,6 +36,7 @@ import (
 	chi "github.com/go-chi/chi/v5"
 
 	"github.com/titpetric/platform/internal"
+	"github.com/titpetric/platform/pkg/httpcontext"
 	"github.com/titpetric/platform/pkg/telemetry"
 )
 
@@ -226,5 +227,28 @@ func (p *Platform) Stop() {
 		// Capture error to telemetry sink.
 		telemetry.CaptureError(p.context, p.server.Shutdown(ctx))
 	})
-	return
+}
+
+type platformKey struct{}
+
+var platformContext = httpcontext.NewValue[*Platform](platformKey{})
+
+// FromRequest returns the *Platform instance attached to the request.
+func FromRequest(r *http.Request) *Platform {
+	return platformContext.Get(r)
+}
+
+// FromContext returns the *Platform instance attached to the context.
+func FromContext(ctx context.Context) *Platform {
+	return platformContext.GetContext(ctx)
+}
+
+// Start is a shorthand to create a new *Platform instance and
+// immediately starts the server listener and handles requests.
+func Start(ctx context.Context, options *Options) (*Platform, error) {
+	svc := New(options)
+	if err := svc.Start(ctx); err != nil {
+		return nil, err
+	}
+	return svc, nil
 }

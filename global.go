@@ -76,13 +76,3 @@ func Register(m Module) {
 func Use(mw Middleware) {
 	global.registry.Use(mw)
 }
-
-// Start is a shorthand to create a new *Platform instance and
-// immediately starts the server listener and handles requests.
-func Start(ctx context.Context, options *Options) (*Platform, error) {
-	svc := New(options)
-	if err := svc.Start(ctx); err != nil {
-		return nil, err
-	}
-	return svc, nil
-}

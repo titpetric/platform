@@ -19,7 +19,7 @@ func TestParam(t *testing.T) {
 			mux.Get("/user/{id}", func(w http.ResponseWriter, r *http.Request) {
 				id := platform.Param(r, "id")
 				foo := platform.Param(r, "foo")
-				w.Write([]byte("user: " + id + " foo: " + foo))
+				_, _ = w.Write([]byte("user: " + id + " foo: " + foo))
 			})
 			return nil
 		},
@@ -29,7 +29,7 @@ func TestParam(t *testing.T) {
 
 	resp, err := http.Get(svc.URL() + "/user/test-id?foo=bar")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	t.Cleanup(func() { require.NoError(t, resp.Body.Close()) })
 
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
