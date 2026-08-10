@@ -1,17 +1,12 @@
 package ulid
 
 import (
-	"math/rand"
-	"time"
-
 	ulid "github.com/oklog/ulid/v2"
 )
 
 // ULID will return a new ulid.ULID value.
 func ULID() ulid.ULID {
-	now := time.Now()
-	entropy := ulid.Monotonic(rand.New(rand.NewSource(now.UnixNano())), 0)
-	return ulid.MustNew(ulid.Timestamp(now), entropy)
+	return ulid.Make()
 }
 
 // String will return a string UUID.

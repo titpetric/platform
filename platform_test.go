@@ -83,7 +83,7 @@ func TestPlatform_goroutine_leaks(t *testing.T) {
 
 	t.Run("stress", func(t *testing.T) {
 		t.Logf("start: %d", runtime.NumGoroutine())
-		for i := 0; i < 30; i++ {
+		for i := range 30 {
 			svc, err := platform.Start(t.Context(), platform.NewTestOptions())
 
 			require.NoError(t, err)

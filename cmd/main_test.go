@@ -17,11 +17,9 @@ func TestStart(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 
 	var wg sync.WaitGroup
-	wg.Add(1)
-	go func() {
+	wg.Go(func() {
 		Main(ctx, platform.NewTestOptions())
-		wg.Done()
-	}()
+	})
 
 	time.Sleep(50 * time.Millisecond)
 	cancel()

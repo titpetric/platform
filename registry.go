@@ -48,7 +48,7 @@ func (r *Registry) Cleanup(fn func(context.Context)) {
 func (r *Registry) Find(target any) bool {
 	// target must be a pointer so we can set its underlying value
 	targetVal := reflect.ValueOf(target)
-	if targetVal.Kind() != reflect.Ptr || targetVal.IsNil() {
+	if targetVal.Kind() != reflect.Pointer || targetVal.IsNil() {
 		return false
 	}
 	targetElemType := targetVal.Elem().Type()
