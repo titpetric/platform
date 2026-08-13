@@ -6,10 +6,14 @@ import (
 )
 
 func init() {
-	setupConnections(os.Environ(), global.db.Register)
+	SetupConnections(os.Environ())
 }
 
-// setupConnections will parse the env for named connection strings.
+// SetupConnections will parse the env for named connection strings.
+func SetupConnections(environment []string) {
+	setupConnections(environment, global.db.Register)
+}
+
 func setupConnections(environment []string, register func(string, string)) {
 	connections := map[string]string{
 		"default": "sqlite://:memory:",
