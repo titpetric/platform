@@ -48,8 +48,18 @@ func TestCleanDSN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := cleanDSN(tt.dsn)
+			got := cleanDSN("mysql", tt.dsn)
 			require.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestCleanDSNDriverSpecific(t *testing.T) {
+	dsn := "user=postgres password=secret host=127.0.0.1 port=15432 dbname=postgres sslmode=verify-ca"
+
+	for _, driver := range []string{"postgres", "pgx", "sqlite"} {
+		t.Run(driver, func(t *testing.T) {
+			require.Equal(t, dsn, cleanDSN(driver, dsn))
 		})
 	}
 }

@@ -118,5 +118,5 @@ func (r *DatabaseProvider) parseCredential(credential string) (driver string, ds
 		dsn = dsn[sepIndex+3:]
 	}
 
-	return driver, cleanDSN(dsn)
+	return driver, cleanDSN(driver, dsn)
 }
