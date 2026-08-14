@@ -116,6 +116,10 @@ func (r *DatabaseProvider) parseCredential(credential string) (driver string, ds
 	if sepIndex := strings.Index(dsn, "://"); sepIndex != -1 {
 		driver = dsn[:sepIndex]
 		dsn = dsn[sepIndex+3:]
+		if driver == "postgres" || driver == "postgresql" {
+			driver = "pgx"
+			dsn = "postgres://" + dsn
+		}
 	}
 
 	return driver, cleanDSN(driver, dsn)
