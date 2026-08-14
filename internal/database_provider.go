@@ -100,7 +100,7 @@ func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error)
 				return nil, err
 			}
 
-			opt := databaseOptions[driver]
+			opt := databaseOption(driver, dsn)
 			opt.Apply(client)
 			return client, nil
 		}

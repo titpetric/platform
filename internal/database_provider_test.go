@@ -2,6 +2,7 @@ package internal
 
 import (
 	"errors"
+	"path/filepath"
 	"testing"
 
 	_ "modernc.org/sqlite"
@@ -37,4 +38,31 @@ func TestDatabaseProvider_Open(t *testing.T) {
 	db, err := provider.Open(t.Context(), "test")
 	require.Error(t, err)
 	require.Nil(t, db)
+}
+
+func TestDatabaseProviderFileSQLiteDefaults(t *testing.T) {
+	provider := NewDatabaseProvider(sqlx.Open)
+	provider.Register("test", "sqlite://"+filepath.Join(t.TempDir(), "test.db"))
+
+	db, err := provider.Connect(t.Context(), "test")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = db.Close() })
+	require.Equal(t, 10, db.Stats().MaxOpenConnections)
+
+	first, err := db.Connx(t.Context())
+	require.NoError(t, err)
+	defer first.Close()
+	second, err := db.Connx(t.Context())
+	require.NoError(t, err)
+	defer second.Close()
+
+	for _, connection := range []*sqlx.Conn{first, second} {
+		var journalMode string
+		require.NoError(t, connection.GetContext(t.Context(), &journalMode, "PRAGMA journal_mode"))
+		require.Equal(t, "wal", journalMode)
+
+		var busyTimeout int
+		require.NoError(t, connection.GetContext(t.Context(), &busyTimeout, "PRAGMA busy_timeout"))
+		require.Equal(t, 5000, busyTimeout)
+	}
 }

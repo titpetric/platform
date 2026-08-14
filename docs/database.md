@@ -50,6 +50,12 @@ to various databases. The value is constructed as `<driver>://<dsn>`.
 The platform may add some flags automatically if required by the driver,
 like `parseTime=true`.
 
+File-backed SQLite connections default to WAL mode, a 5-second busy timeout,
+and a pool of up to 10 open and 2 idle connections. Explicit `_journal_mode`
+and `_busy_timeout` DSN options take precedence. In-memory SQLite connections
+do not receive these defaults and remain limited to one open and idle connection
+so every query uses the same database.
+
 ## Using Connections in Modules
 
 ```go

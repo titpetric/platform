@@ -19,11 +19,21 @@ func (o *DatabaseOption) Apply(client *sqlx.DB) {
 
 var databaseOptions = map[string]DatabaseOption{
 	"sqlite": {
-		MaxOpenConns: 1,
-		MaxIdleConns: 1,
+		MaxOpenConns: 10,
+		MaxIdleConns: 2,
 	},
 	"mysql": {
 		MaxOpenConns: 10,
 		MaxIdleConns: 10,
 	},
+}
+
+func databaseOption(driver, dsn string) DatabaseOption {
+	if driver == "sqlite" && isSQLiteMemoryDSN(dsn) {
+		return DatabaseOption{
+			MaxOpenConns: 1,
+			MaxIdleConns: 1,
+		}
+	}
+	return databaseOptions[driver]
 }
