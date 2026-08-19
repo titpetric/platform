@@ -2,7 +2,6 @@ name: platform
 
 include:
   - docker/service/flatnotes.yml
-  - docker/service/opentelemetry.yml
 
 services:
   platform:
@@ -13,8 +12,6 @@ services:
     ports:
       - 8080:8080
     env_file: .env.docker
-    environment:
-      - OTEL_EXPORTER_OTLP_ENDPOINT=jaeger:4318
 
 networks:
   db_storage:
