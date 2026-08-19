@@ -17,15 +17,6 @@ class "pkg.httpcontext.Value[T any]" {
   + Key: any
 }
 
-class "pkg.telemetry.Monitor" {
-  - mu: sync.Mutex
-  - enabled: bool
-  - state: map[string]*expvar.Int
-  + Enabled () bool
-  + SetEnabled (enabled bool)
-  + Touch (name string)
-}
-
 interface "platform.DatabaseProvider" {
   + Open: Open (ctx context.Context, names ...string) (*sqlx.DB, error)
   + Connect: Connect (ctx context.Context, names ...string) (*sqlx.DB, error)
@@ -52,6 +43,8 @@ class "platform.Options" {
   + Quiet: bool
   + Modules: []string
   + ConfigFS: fs.FS
+  + Telemetry: oida.Options
+  + DisableTelemetry: bool
 }
 
 interface "platform.Platform" {
@@ -64,6 +57,7 @@ interface "platform.Platform" {
   - stop: func()
   - once: sync.Once
   - registry: *Registry
+  - telemetry: *TelemetryModule
 }
 
 class "platform.Registry" {
@@ -79,6 +73,16 @@ class "platform.Registry" {
   + Start (ctx context.Context, mux Router, opts *Options) error
   + Stats () int
   + Use (f Middleware)
+}
+
+class "platform.TelemetryModule" {
+  - options: oida.Options
+  - tracer: *oida.Tracer
+  - middleware: func(http.Handler) http.Handler
+  + Middleware (next http.Handler) http.Handler
+  + Mount (ctx context.Context, r Router) error
+  + Options () oida.Options
+  + Tracer () *oida.Tracer
 }
 
 interface "platform.UnimplementedModule" {
@@ -99,6 +103,9 @@ interface "platform.UnimplementedModule" {
 
 
 
+
+"platform.Platform" --> "platform.TelemetryModule" : .telemetry
+"platform.TelemetryModule" --> "platform.UnimplementedModule" : embeds
 
 "platform.Registry" --> "platform.Module" : .modules
 "platform.Registry" --> "platform.Middleware" : .middleware

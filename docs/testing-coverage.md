@@ -20,9 +20,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform/pkg/assert      | 0.00%    | 0         | 0     |
 | ✅      | titpetric/platform/pkg/drivers     | 0.00%    | 0         | 0     |
 | ✅      | titpetric/platform/pkg/httpcontext | 100.00%  | 1         | 22    |
-| ✅      | titpetric/platform/pkg/reflect     | 100.00%  | 7         | 32    |
 | ✅      | titpetric/platform/pkg/require     | 0.00%    | 0         | 0     |
-| ❌      | titpetric/platform/pkg/telemetry   | 51.28%   | 8         | 134   |
 | ✅      | titpetric/platform/pkg/ulid        | 100.00%  | 0         | 20    |
 
 ## Functions
@@ -101,21 +99,6 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅      | titpetric/platform/pkg/httpcontext | Value[T].GetContext              | 100.00%  | 1         |
 | ✅      | titpetric/platform/pkg/httpcontext | Value[T].Set                     | 100.00%  | 0         |
 | ✅      | titpetric/platform/pkg/httpcontext | Value[T].SetContext              | 100.00%  | 0         |
-| ✅      | titpetric/platform/pkg/reflect     | SymbolName                       | 100.00%  | 1         |
-| ✅      | titpetric/platform/pkg/reflect     | readSymbolName                   | 100.00%  | 6         |
-| ✅      | titpetric/platform/pkg/telemetry   | CaptureError                     | 100.00%  | 0         |
-| ✅      | titpetric/platform/pkg/telemetry   | Fatal                            | 0.00%    | 0         |
-| ✅      | titpetric/platform/pkg/telemetry   | Middleware                       | 0.00%    | 0         |
-| ✅      | titpetric/platform/pkg/telemetry   | Monitor.Enabled                  | 100.00%  | 0         |
-| ✅      | titpetric/platform/pkg/telemetry   | Monitor.SetEnabled               | 100.00%  | 0         |
-| ✅      | titpetric/platform/pkg/telemetry   | Monitor.Touch                    | 100.00%  | 2         |
-| ✅      | titpetric/platform/pkg/telemetry   | NewMonitor                       | 100.00%  | 0         |
-| ❌      | titpetric/platform/pkg/telemetry   | Open                             | 0.00%    | 1         |
-| ✅      | titpetric/platform/pkg/telemetry   | Start                            | 100.00%  | 0         |
-| ✅      | titpetric/platform/pkg/telemetry   | StartAuto                        | 0.00%    | 0         |
-| ✅      | titpetric/platform/pkg/telemetry   | StartRequest                     | 0.00%    | 0         |
-| ❌      | titpetric/platform/pkg/telemetry   | init                             | 0.00%    | 2         |
-| ❌      | titpetric/platform/pkg/telemetry   | initOpenTelemetry                | 0.00%    | 3         |
 | ✅      | titpetric/platform/pkg/ulid        | Parse                            | 100.00%  | 0         |
 | ✅      | titpetric/platform/pkg/ulid        | String                           | 100.00%  | 0         |
 | ✅      | titpetric/platform/pkg/ulid        | ULID                             | 100.00%  | 0         |

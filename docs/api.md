@@ -128,6 +128,15 @@ type Options struct {
 	// The application running with the platform may use `go:embed` to carry config for the
 	// composed service.
 	ConfigFS	fs.FS
+
+	// Telemetry configures the recorder and the debug dashboard that New
+	// registers by default. See github.com/titpetric/oida for the fields.
+	Telemetry	oida.Options
+
+	// DisableTelemetry skips registering the built-in telemetry module.
+	// Set it in a host that registers its own recorder, otherwise both
+	// mount the same path and the router panics on the duplicate route.
+	DisableTelemetry	bool
 }
 ```
 
@@ -150,6 +159,11 @@ type Platform struct {
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
 	registry	*Registry
+
+	// telemetry records requests and serves the debug dashboard. It's nil
+	// when Options.DisableTelemetry is set, or when the recorder failed to
+	// build, in which case instrumentation degrades to no-ops.
+	telemetry	*TelemetryModule
 }
 ```
 
@@ -175,6 +189,23 @@ type Registry struct {
 ```go
 // Router is a local shim that aliases the chi router interface.
 type Router = chi.Router
+```
+
+```go
+// TelemetryModule records the telemetry of a platform service. It is the
+// recorder and the dashboard at once: HTTP middleware recording every request,
+// and a module mounting the debug front end under Options.Path.
+//
+// New registers one by default. A host that wires its own recorder sets
+// Options.DisableTelemetry, because two modules mounting the same path is a
+// duplicate route, which chi panics on.
+type TelemetryModule struct {
+	UnimplementedModule
+
+	options		oida.Options
+	tracer		*oida.Tracer
+	middleware	func(http.Handler) http.Handler
+}
 ```
 
 ```go
@@ -204,6 +235,7 @@ var Database DatabaseProvider = global.db
 - `func JSON (w http.ResponseWriter, r *http.Request, status int, data any)`
 - `func New (options *Options) *Platform`
 - `func NewOptions () *Options`
+- `func NewTelemetryModule (options oida.Options) (*TelemetryModule, error)`
 - `func NewTestOptions () *Options`
 - `func NewUnimplementedModule (name string) *UnimplementedModule`
 - `func OptionsFromContext (ctx context.Context) *Options`
@@ -211,6 +243,7 @@ var Database DatabaseProvider = global.db
 - `func Param (r *http.Request, name string) string`
 - `func QueryParam (r *http.Request, name string) string`
 - `func Register (m Module)`
+- `func SetupConnections (environment []string)`
 - `func Start (ctx context.Context, options *Options) (*Platform, error)`
 - `func TestMiddleware () Middleware`
 - `func Transaction (ctx context.Context, db *sqlx.DB, fn func(context.Context, *sqlx.Tx) error) error`
@@ -233,6 +266,10 @@ var Database DatabaseProvider = global.db
 - `func (*Registry) Start (ctx context.Context, mux Router, opts *Options) error`
 - `func (*Registry) Stats () int`
 - `func (*Registry) Use (f Middleware)`
+- `func (*TelemetryModule) Middleware (next http.Handler) http.Handler`
+- `func (*TelemetryModule) Mount (_ context.Context, r Router) error`
+- `func (*TelemetryModule) Options () oida.Options`
+- `func (*TelemetryModule) Tracer () *oida.Tracer`
 - `func (UnimplementedModule) Mount (ctx context.Context, r Router) error`
 - `func (UnimplementedModule) Name () string`
 - `func (UnimplementedModule) Start (ctx context.Context) error`
@@ -287,6 +324,16 @@ NewOptions provides default options for the platform.
 
 ```go
 func NewOptions () *Options
+```
+
+### NewTelemetryModule
+
+NewTelemetryModule returns a telemetry module recording into its own tracer.
+The tracer is explicit rather than the process wide one, so two services, or
+two tests, do not record into each other.
+
+```go
+func NewTelemetryModule (options oida.Options) (*TelemetryModule, error)
 ```
 
 ### NewTestOptions
@@ -345,6 +392,14 @@ This enables registering modules using blank imports.
 
 ```go
 func Register (m Module)
+```
+
+### SetupConnections
+
+SetupConnections will parse the env for named connection strings.
+
+```go
+func SetupConnections (environment []string)
 ```
 
 ### Start
@@ -544,6 +599,39 @@ Use adds a Middleware to the registry.
 
 ```go
 func (*Registry) Use (f Middleware)
+```
+
+### Middleware
+
+Middleware records requests handled by next.
+
+```go
+func (*TelemetryModule) Middleware (next http.Handler) http.Handler
+```
+
+### Mount
+
+Mount registers the debug front end on the platform router.
+
+```go
+func (*TelemetryModule) Mount (_ context.Context, r Router) error
+```
+
+### Options
+
+Options returns the options the module was built with, including the tracer
+it records into.
+
+```go
+func (*TelemetryModule) Options () oida.Options
+```
+
+### Tracer
+
+Tracer returns the tracer the module records into.
+
+```go
+func (*TelemetryModule) Tracer () *oida.Tracer
 ```
 
 ### Mount

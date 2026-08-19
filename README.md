@@ -26,9 +26,7 @@ Status: the app and maillist packages still need implementation surface.
 | ✅      | titpetric/platform/internal      | 94.87%   | 20        | 155   |
 | ✅      | titpetric/platform/pkg/assert    | 0.00%    | 0         | 0     |
 | ✅      | titpetric/platform/pkg/drivers   | 0.00%    | 0         | 0     |
-| ✅      | titpetric/platform/pkg/reflect   | 100.00%  | 7         | 31    |
 | ✅      | titpetric/platform/pkg/require   | 0.00%    | 0         | 0     |
-| ❌      | titpetric/platform/pkg/telemetry | 57.44%   | 8         | 130   |
 | ✅      | titpetric/platform/pkg/ulid      | 100.00%  | 0         | 20    |
 
 For more detail, see: [Testing Coverage](./docs/testing-coverage.md).
@@ -40,5 +38,5 @@ For more detail, see: [Testing Coverage](./docs/testing-coverage.md).
 - [Creating Modules](./docs/modules.md) - module API, lifecycle, and using `UnimplementedModule`.
 - [Common Patterns](./docs/patterns.md) - routing, GET/POST, background jobs and validation patterns.
 - [SQL Database Usage](./docs/database.md) - named connections, DSN examples, and `Connect()` vs `Open()`.
-- [Telemetry](./docs/telemetry.md) - setting up and using OpenTelemetry.
+- [Telemetry](./docs/telemetry.md) - recording traces and spans with oida, and the `/debug/oida` dashboard.
 - [FAQ](./docs/faq.md) - short practical answers to common questions.
