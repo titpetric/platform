@@ -224,6 +224,13 @@ func (p *Platform) Stop() {
 			p.registry.Close(p.context)
 		}()
 
+		// Setup can fail before the server is built, and Stop is still
+		// the way a caller releases what did get allocated. There is
+		// nothing to shut down in that case.
+		if p.server == nil {
+			return
+		}
+
 		// Capture error to telemetry sink.
 		telemetry.CaptureError(p.context, p.server.Shutdown(ctx))
 	})

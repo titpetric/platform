@@ -114,3 +114,17 @@ func BenchmarkPlatform(b *testing.B) {
 		}
 	})
 }
+
+// TestPlatform_stop_after_failed_start covers the lifecycle hole where setup
+// fails before the server is built. Stop is still how a caller releases what
+// did get allocated, so it has to tolerate that.
+func TestPlatform_stop_after_failed_start(t *testing.T) {
+	options := platform.NewTestOptions()
+	options.ServerAddr = "127.0.0.1:not-a-port"
+
+	svc := platform.New(options)
+	require.Error(t, svc.Start(t.Context()))
+
+	svc.Stop()
+	svc.Wait()
+}
