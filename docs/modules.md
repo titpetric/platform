@@ -6,10 +6,10 @@ A module must implement:
 
 ```go
 type Module interface {
-    Name() string
-    Mount(Router) error
-    Start(context.Context) error
-    Stop() error
+	Name() string
+	Mount(Router) error
+	Start(context.Context) error
+	Stop() error
 }
 ```
 
@@ -55,16 +55,16 @@ Embed `platform.UnimplementedModule` to reduce boilerplate and override only met
 
 ```go
 type StaticModule struct {
-    platform.UnimplementedModule
+	platform.UnimplementedModule
 }
 
 func (m *StaticModule) Name() string { return "static" }
 
 func (m *StaticModule) Mount(r platform.Router) error {
-    r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-        w.Write([]byte("static page"))
-    })
-    return nil
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("static page"))
+	})
+	return nil
 }
 ```
 
@@ -86,9 +86,9 @@ func main() {
 
 ```go
 func loggingMiddleware(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        log.Println(r.Method, r.URL.Path)
-        next.ServeHTTP(w, r)
-    })
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println(r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
 }
 ```

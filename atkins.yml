@@ -43,6 +43,8 @@ jobs:
     steps:
       - go-fsck extract . --include-sources
       - go-fsck docs > docs/api.md
+      # go-fsck writes api.md unformatted, so format after generating it.
+      - task: mdox:fmt
       - go-fsck extract --pretty-json ./...
       - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
       - go-fsck coverage -c pkg.cov.json -o go-fsck.json

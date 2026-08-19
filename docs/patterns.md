@@ -6,9 +6,9 @@ Attach GET and POST endpoints:
 
 ```go
 func (m *Module) Mount(r platform.Router) error {
-    r.Get("/items", m.GetItems)
-    r.Post("/items", m.PostItem)
-    return nil
+	r.Get("/items", m.GetItems)
+	r.Post("/items", m.PostItem)
+	return nil
 }
 ```
 
@@ -19,11 +19,11 @@ Handlers are methods on the module:
 
 ```go
 func (m *Module) GetItems(w http.ResponseWriter, r *http.Request) {
-    // fetch and return items
+	// fetch and return items
 }
 
 func (m *Module) PostItem(w http.ResponseWriter, r *http.Request) {
-    // validate input and create item
+	// validate input and create item
 }
 ```
 
@@ -33,12 +33,12 @@ For simple validation, parse POST data and call GET handler on error:
 
 ```go
 func (m *Module) PostItem(w http.ResponseWriter, r *http.Request) {
-    if r.PostFormValue("name") == "" {
-        // reuse GET handler to re-render with error
-        m.GetItems(w, r)
-        return
-    }
-    // continue processing
+	if r.PostFormValue("name") == "" {
+		// reuse GET handler to re-render with error
+		m.GetItems(w, r)
+		return
+	}
+	// continue processing
 }
 ```
 
@@ -71,7 +71,6 @@ func (c *Crontab) Stop() error {
 
 Since `Stop` is blocking, it will wait up to 3 seconds here, so that any
 running scheduled task is completed before exiting.
-
 
 ## Middleware
 
