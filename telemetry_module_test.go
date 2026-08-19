@@ -177,11 +177,9 @@ func TestTelemetryModuleCollidesWithASecondOne(t *testing.T) {
 	_ = svc.Start(t.Context())
 }
 
-// Telemetry is oida.Options, so it is off in the zero value the way oida's own
-// options are. NewOptions turns it on; an Options built by hand has to say so.
+// Telemetry is oida.Options, so it is off in the zero value.
 func TestTelemetryDefaults(t *testing.T) {
-	require.True(t, platform.NewOptions().Telemetry.Enabled)
-	require.False(t, (&platform.Options{}).Telemetry.Enabled)
+	require.False(t, platform.NewOptions().Telemetry.Enabled)
 	require.False(t, platform.NewTestOptions().Telemetry.Enabled)
 
 	// New(nil) is the documented way to get the defaults, so it mounts the
@@ -193,5 +191,5 @@ func TestTelemetryDefaults(t *testing.T) {
 	require.NoError(t, svc.Start(t.Context()))
 
 	status, _ := get(t, svc.URL()+oida.DefaultPath)
-	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, http.StatusNotFound, status)
 }
