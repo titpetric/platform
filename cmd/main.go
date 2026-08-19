@@ -3,11 +3,13 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 
 	_ "github.com/titpetric/platform/pkg/drivers"
 
+	"github.com/titpetric/oida"
+
 	"github.com/titpetric/platform"
-	"github.com/titpetric/platform/pkg/telemetry"
 )
 
 // Main is the entrypoint for the app.
@@ -28,7 +30,9 @@ func Main(ctx context.Context, options ...*platform.Options) {
 
 	p, err := platform.Start(ctx, option)
 	if err != nil {
-		telemetry.Fatal(ctx, fmt.Errorf("exit error: %w", err))
+		err = fmt.Errorf("exit error: %w", err)
+		oida.RecordError(ctx, err)
+		log.Fatal(err)
 	}
 
 	p.Wait()

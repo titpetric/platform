@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/titpetric/platform/pkg/telemetry"
+	"github.com/titpetric/oida"
 )
 
 // JSON writes any payload as JSON. If the payload is nil, the write is omitted.
@@ -14,7 +14,7 @@ func JSON(w http.ResponseWriter, r *http.Request, status int, data any) {
 	w.WriteHeader(status)
 
 	if data != nil {
-		telemetry.CaptureError(r.Context(), json.NewEncoder(w).Encode(data))
+		oida.RecordError(r.Context(), json.NewEncoder(w).Encode(data))
 	}
 }
 

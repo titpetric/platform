@@ -35,9 +35,10 @@ import (
 
 	chi "github.com/go-chi/chi/v5"
 
+	"github.com/titpetric/oida"
+
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/pkg/httpcontext"
-	"github.com/titpetric/platform/pkg/telemetry"
 )
 
 // Platform is our world struct.
@@ -58,6 +59,11 @@ type Platform struct {
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
 	registry *Registry
+
+	// telemetry records requests and serves the debug dashboard. It's nil
+	// when Options.DisableTelemetry is set, or when the recorder failed to
+	// build, in which case instrumentation degrades to no-ops.
+	telemetry *TelemetryModule
 }
 
 // New will create a new *Platform object. It is the allocation point
@@ -76,6 +82,19 @@ func New(options *Options) *Platform {
 
 	// Set up the default registry.
 	p.registry = global.registry.Clone()
+
+	// Record into oida unless the host brought its own recorder. An
+	// invalid telemetry config disables recording rather than failing the
+	// service: every instrumentation call below is nil safe.
+	if !options.DisableTelemetry {
+		if module, err := NewTelemetryModule(options.Telemetry); err == nil {
+			p.telemetry = module
+			p.Use(module.Middleware)
+			p.Register(module)
+		} else if !options.Quiet {
+			log.Println("[platform] telemetry disabled:", err)
+		}
+	}
 
 	// Set up final shutdown signal.
 	p.context, p.cancel = context.WithCancel(context.Background())
@@ -127,7 +146,7 @@ func (p *Platform) Start(ctx context.Context) error {
 	// Start the server.
 	go func() {
 		if err := p.server.Serve(p.listener); err != nil && err != http.ErrServerClosed {
-			telemetry.CaptureError(p.context, err)
+			oida.RecordError(p.context, err)
 		}
 	}()
 
@@ -143,22 +162,35 @@ func (p *Platform) setup(startCtx context.Context) error {
 	// set up context for module start
 	ctx := platformContext.SetContext(startCtx, p)
 	ctx = optionsContext.SetContext(ctx, p.options)
-	ctx, span := telemetry.Start(ctx, "platform.setup")
-	defer span.End()
 
-	if err := p.registry.Start(ctx, p.router, p.options); err != nil {
-		return fmt.Errorf("registry: %w", err)
+	// Startup does not arrive over the network, so it gets a trace of its
+	// own. Without one the spans below have nothing to record onto and the
+	// dashboard shows nothing until the first request.
+	return p.observe(ctx, "platform.setup", func(ctx context.Context) error {
+		if err := p.registry.Start(ctx, p.router, p.options); err != nil {
+			return fmt.Errorf("registry: %w", err)
+		}
+
+		if err := p.setupListener(); err != nil {
+			return fmt.Errorf("setting up listener: %w", err)
+		}
+
+		p.server = &http.Server{
+			Handler: p.setupRequestContext(p.router),
+		}
+
+		return nil
+	})
+}
+
+// observe runs fn inside a background trace, so the spans it starts are
+// recorded. Without a telemetry module there is nothing to record into and fn
+// runs as it is.
+func (p *Platform) observe(ctx context.Context, name string, fn func(context.Context) error) error {
+	if p.telemetry == nil {
+		return fn(ctx)
 	}
-
-	if err := p.setupListener(); err != nil {
-		return fmt.Errorf("setting up listener: %w", err)
-	}
-
-	p.server = &http.Server{
-		Handler: p.setupRequestContext(p.router),
-	}
-
-	return nil
+	return p.telemetry.Tracer().Observe(ctx, name, fn)
 }
 
 // setupRequestContext will bind *Platform to the request context.
@@ -232,7 +264,7 @@ func (p *Platform) Stop() {
 		}
 
 		// Capture error to telemetry sink.
-		telemetry.CaptureError(p.context, p.server.Shutdown(ctx))
+		oida.RecordError(p.context, p.server.Shutdown(ctx))
 	})
 }
 

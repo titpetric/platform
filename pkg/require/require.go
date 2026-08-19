@@ -13,6 +13,7 @@ var (
 	Error         = require.Error
 	ErrorIs       = require.ErrorIs
 	ErrorContains = require.ErrorContains
+	Contains      = require.Contains
 	NoError       = require.NoError
 	Nil           = require.Nil
 	NotNil        = require.NotNil

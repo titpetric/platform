@@ -8,7 +8,7 @@ import (
 	"slices"
 	"sync"
 
-	"github.com/titpetric/platform/pkg/telemetry"
+	"github.com/titpetric/oida"
 )
 
 // Registry provides a programmatic API to manage middleware and modules.
@@ -92,7 +92,7 @@ func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	ctx, span := telemetry.Start(ctx, "registry.Start")
+	ctx, span := oida.Start(ctx, "registry.Start")
 	defer span.End()
 
 	modules, err := r.filter(opts)
@@ -125,9 +125,14 @@ func (r *Registry) filter(opts *Options) ([]Module, error) {
 			return nil, fmt.Errorf("module %T doesn't return name", mod)
 		}
 
-		if len(opts.Modules) > 0 && !slices.Contains(opts.Modules, name) {
-			disabled = append(disabled, name)
-			continue
+		// The allowlist names the application's modules. The recorder
+		// the platform registers itself is infrastructure, turned off
+		// with Options.DisableTelemetry rather than by omission here.
+		if _, builtin := mod.(*TelemetryModule); !builtin {
+			if len(opts.Modules) > 0 && !slices.Contains(opts.Modules, name) {
+				disabled = append(disabled, name)
+				continue
+			}
 		}
 		enabled = append(enabled, mod)
 
@@ -141,7 +146,7 @@ func (r *Registry) filter(opts *Options) ([]Module, error) {
 }
 
 func (r *Registry) mount(ctx context.Context, mux Router, modules []Module, quiet bool) error {
-	ctx, span := telemetry.Start(ctx, "registry.mount")
+	ctx, span := oida.Start(ctx, "registry.mount")
 	defer span.End()
 
 	for _, mw := range r.middleware {
@@ -158,7 +163,7 @@ func (r *Registry) mount(ctx context.Context, mux Router, modules []Module, quie
 }
 
 func (r *Registry) start(ctx context.Context, modules []Module, quiet bool) error {
-	ctx, span := telemetry.Start(ctx, "registry.start")
+	ctx, span := oida.Start(ctx, "registry.start")
 	defer span.End()
 
 	started := make([]string, 0, len(modules))
@@ -178,7 +183,7 @@ func (r *Registry) start(ctx context.Context, modules []Module, quiet bool) erro
 }
 
 func (r *Registry) startModule(ctx context.Context, mod Module) error {
-	ctx, span := telemetry.Start(ctx, "module.start: "+mod.Name())
+	ctx, span := oida.Start(ctx, "module.start: "+mod.Name())
 	defer span.End()
 
 	r.Cleanup(func(ctx context.Context) {
@@ -189,17 +194,17 @@ func (r *Registry) startModule(ctx context.Context, mod Module) error {
 }
 
 func (r *Registry) stopModule(ctx context.Context, mod Module) {
-	ctx, span := telemetry.Start(ctx, "module.stop: "+mod.Name())
+	ctx, span := oida.Start(ctx, "module.stop: "+mod.Name())
 	defer span.End()
 
 	defer func() {
 		if r := recover(); r != nil {
-			telemetry.CaptureError(ctx, fmt.Errorf("recovered panic: %v", r))
+			oida.RecordError(ctx, fmt.Errorf("recovered panic: %v", r))
 		}
 	}()
 
 	if err := mod.Stop(ctx); err != nil {
-		telemetry.CaptureError(ctx, err)
+		oida.RecordError(ctx, err)
 	}
 }
 
@@ -218,7 +223,7 @@ func (r *Registry) Close(ctx context.Context) {
 }
 
 func (r *Registry) close(ctx context.Context) {
-	ctx, span := telemetry.Start(ctx, "registry.close")
+	ctx, span := oida.Start(ctx, "registry.close")
 	defer span.End()
 
 	if len(r.cleanups) > 0 {

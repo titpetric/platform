@@ -5,7 +5,10 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
+
+	"github.com/titpetric/oida"
 
 	"github.com/titpetric/platform/pkg/httpcontext"
 )
@@ -26,6 +29,15 @@ type Options struct {
 	// The application running with the platform may use `go:embed` to carry config for the
 	// composed service.
 	ConfigFS fs.FS
+
+	// Telemetry configures the recorder and the debug dashboard that New
+	// registers by default. See github.com/titpetric/oida for the fields.
+	Telemetry oida.Options
+
+	// DisableTelemetry skips registering the built-in telemetry module.
+	// Set it in a host that registers its own recorder, otherwise both
+	// mount the same path and the router panics on the duplicate route.
+	DisableTelemetry bool
 }
 
 // NewOptions provides default options for the platform.
@@ -33,6 +45,11 @@ func NewOptions() *Options {
 	opt := &Options{}
 	opt.ServerAddr = opt.env("PLATFORM_SERVER_ADDR", ":8080")
 	opt.Modules = opt.envCSV("PLATFORM_MODULES")
+
+	opt.Telemetry = oida.NewOptions()
+	opt.Telemetry.ServiceName = opt.env("PLATFORM_TELEMETRY_SERVICE", "platform")
+	opt.Telemetry.Path = opt.env("PLATFORM_TELEMETRY_PATH", opt.Telemetry.Path)
+	opt.Telemetry.Enabled = opt.envBool("PLATFORM_TELEMETRY_ENABLED", opt.Telemetry.Enabled)
 	return opt
 }
 
@@ -51,11 +68,24 @@ func (*Options) env(name string, def string) string {
 	return result
 }
 
+func (*Options) envBool(name string, def bool) bool {
+	v, err := strconv.ParseBool(os.Getenv(name))
+	if err != nil {
+		return def
+	}
+	return v
+}
+
 // NewTestOptions produces default options for tests.
 func NewTestOptions() *Options {
 	return &Options{
 		ServerAddr: "127.0.0.1:0",
 		Quiet:      true,
+
+		// Tests get no dashboard and no recorder unless they ask for
+		// one, which keeps the global state they observe empty.
+		Telemetry:        oida.NewOptions(),
+		DisableTelemetry: true,
 	}
 }
 

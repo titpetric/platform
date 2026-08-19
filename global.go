@@ -7,7 +7,6 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/titpetric/platform/internal"
-	"github.com/titpetric/platform/pkg/telemetry"
 )
 
 // global is a value to prevent pollution of the global package namespace.
@@ -18,7 +17,7 @@ var global = struct {
 	db       *internal.DatabaseProvider
 }{
 	registry: &Registry{},
-	db:       internal.NewDatabaseProvider(telemetry.Open),
+	db:       internal.NewDatabaseProvider(internal.Open),
 }
 
 // Router is a local shim that aliases the chi router interface.
