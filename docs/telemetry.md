@@ -128,6 +128,15 @@ svc.Register(recorder)
 
 `Telemetry.Enabled` gates registration, not just recording: a disabled Telemetry puts no route and no middleware on the router at all. `NewTestOptions` disables it already, so tests observe no dashboard and no recorder unless they opt back in.
 
+`Options.Telemetry` is `oida.Options`, so the zero value is disabled the way oida's own options are. `platform.NewOptions` fills it from `oida.NewOptions` and enables it; an `Options` built by hand has to do the same:
+
+```go
+options := &platform.Options{
+	ServerAddr: ":8080",
+	Telemetry:  oida.NewOptions(),
+}
+```
+
 `PLATFORM_MODULES` does not apply. That allowlist names the application's modules, and the recorder the platform registers itself is not one of them, so it stays registered whatever the list says.
 
 ## What gets recorded

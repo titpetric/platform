@@ -19,7 +19,7 @@ func newTracedPlatform(t *testing.T) *platform.Platform {
 	t.Helper()
 
 	options := platform.NewTestOptions()
-	options.Telemetry = platform.NewTelemetry()
+	options.Telemetry = oida.NewOptions()
 	options.Telemetry.ServiceName = "platform-test"
 	options.Telemetry.TrackMemoryUse = false
 
@@ -136,7 +136,7 @@ func TestTelemetryDisabledRegistersNoModule(t *testing.T) {
 
 func TestTelemetryModuleSurvivesModuleFilter(t *testing.T) {
 	options := platform.NewTestOptions()
-	options.Telemetry = platform.NewTelemetry()
+	options.Telemetry = oida.NewOptions()
 	options.Telemetry.TrackMemoryUse = false
 
 	// The allowlist names the application's modules. The recorder the
@@ -161,7 +161,7 @@ func TestTelemetryModuleSurvivesModuleFilter(t *testing.T) {
 // which chi panics on.
 func TestTelemetryModuleCollidesWithASecondOne(t *testing.T) {
 	options := platform.NewTestOptions()
-	options.Telemetry = platform.NewTelemetry()
+	options.Telemetry = oida.NewOptions()
 	options.Telemetry.TrackMemoryUse = false
 
 	svc := platform.New(options)
@@ -175,4 +175,23 @@ func TestTelemetryModuleCollidesWithASecondOne(t *testing.T) {
 		require.NotNil(t, recover(), "mounting two dashboards on one path must not be silent")
 	}()
 	_ = svc.Start(t.Context())
+}
+
+// Telemetry is oida.Options, so it is off in the zero value the way oida's own
+// options are. NewOptions turns it on; an Options built by hand has to say so.
+func TestTelemetryDefaults(t *testing.T) {
+	require.True(t, platform.NewOptions().Telemetry.Enabled)
+	require.False(t, (&platform.Options{}).Telemetry.Enabled)
+	require.False(t, platform.NewTestOptions().Telemetry.Enabled)
+
+	// New(nil) is the documented way to get the defaults, so it mounts the
+	// dashboard.
+	options := platform.NewOptions()
+	options.ServerAddr, options.Quiet = "127.0.0.1:0", true
+	svc := platform.New(options)
+	t.Cleanup(svc.Stop)
+	require.NoError(t, svc.Start(t.Context()))
+
+	status, _ := get(t, svc.URL()+oida.DefaultPath)
+	require.Equal(t, http.StatusOK, status)
 }

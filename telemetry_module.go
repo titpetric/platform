@@ -30,8 +30,8 @@ var _ Module = (*TelemetryModule)(nil)
 // NewTelemetryModule returns a telemetry module recording into its own tracer.
 // The tracer is explicit rather than the process wide one, so two services, or
 // two tests, do not record into each other.
-func NewTelemetryModule(telemetry Telemetry) (*TelemetryModule, error) {
-	options := telemetry.Options.WithDefaults()
+func NewTelemetryModule(options oida.Options) (*TelemetryModule, error) {
+	options = options.WithDefaults()
 	if options.RouteFunc == nil {
 		options.RouteFunc = routePattern
 	}

@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/titpetric/oida"
+
 	"github.com/titpetric/platform/pkg/httpcontext"
 )
 
@@ -28,9 +30,10 @@ type Options struct {
 	// composed service.
 	ConfigFS fs.FS
 
-	// Telemetry configures the recorder and the debug dashboard. A
-	// disabled Telemetry registers no module at all.
-	Telemetry Telemetry
+	// Telemetry configures the recorder and the debug dashboard. It is
+	// disabled by the zero value, so an Options built by hand rather than
+	// by NewOptions needs oida.NewOptions() here to record anything.
+	Telemetry oida.Options
 }
 
 // NewOptions provides default options for the platform.
@@ -39,7 +42,7 @@ func NewOptions() *Options {
 	opt.ServerAddr = opt.env("PLATFORM_SERVER_ADDR", ":8080")
 	opt.Modules = opt.envCSV("PLATFORM_MODULES")
 
-	opt.Telemetry = NewTelemetry()
+	opt.Telemetry = oida.NewOptions()
 	opt.Telemetry.ServiceName = opt.env("PLATFORM_TELEMETRY_SERVICE", "platform")
 	opt.Telemetry.Path = opt.env("PLATFORM_TELEMETRY_PATH", opt.Telemetry.Path)
 	opt.Telemetry.Enabled = opt.envBool("PLATFORM_TELEMETRY_ENABLED", opt.Telemetry.Enabled)
@@ -77,7 +80,7 @@ func NewTestOptions() *Options {
 
 		// Tests get no dashboard and no recorder unless they ask for
 		// one, which keeps the global state they observe empty.
-		Telemetry: Telemetry{},
+		Telemetry: oida.Options{Enabled: false},
 	}
 }
 
