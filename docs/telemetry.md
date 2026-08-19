@@ -65,11 +65,11 @@ Both mark the span and its trace as failed, which is what the dashboard's error 
 
 `platform.NewOptions` fills `Options.Telemetry` from `oida.NewOptions` and reads the environment:
 
-| Variable                     | Default       | Meaning                                                     |
-|------------------------------|---------------|-------------------------------------------------------------|
-| `PLATFORM_TELEMETRY_ENABLED` | `true`        | Record traces. A disabled recorder passes requests through. |
-| `PLATFORM_TELEMETRY_PATH`    | `/debug/oida` | Mount path of the dashboard.                                |
-| `PLATFORM_TELEMETRY_SERVICE` | `platform`    | Service name shown in the dashboard.                        |
+| Variable                     | Default       | Meaning                                                                       |
+|------------------------------|---------------|-------------------------------------------------------------------------------|
+| `PLATFORM_TELEMETRY_ENABLED` | `true`        | Register the recorder and the dashboard. Disabled puts neither on the router. |
+| `PLATFORM_TELEMETRY_PATH`    | `/debug/oida` | Mount path of the dashboard.                                                  |
+| `PLATFORM_TELEMETRY_SERVICE` | `platform`    | Service name shown in the dashboard.                                          |
 
 Anything else is set on the struct. See the [configuration guide](https://github.com/titpetric/oida/blob/main/docs/guide-configuration.md) for retention, sampling and access control:
 
@@ -86,20 +86,47 @@ svc := platform.New(options)
 
 The dashboard is unauthenticated unless `Authorize` says otherwise. Do not expose it publicly without one.
 
-## Bringing your own recorder
+## Retention
 
-A host that registers its own telemetry module sets `DisableTelemetry`, because two modules mounting the same path is a duplicate route and the router panics on it:
+Traces are kept in memory by default: a ring buffer of `RingBufferSize` traces, 200 unless you change it. It costs nothing to set up and starts empty on every boot.
 
 ```go
 options := platform.NewOptions()
-options.DisableTelemetry = true
+options.Telemetry.RingBufferSize = 500
+```
+
+To keep traces across a restart, assign disk storage. It writes one JSON document per trace into a folder, retaining at most `limit` of them:
+
+```go
+store, err := oida.NewStorageDisk(500, "/var/lib/app/traces")
+if err != nil {
+	return err
+}
+
+options := platform.NewOptions()
+options.Telemetry.Storage = store
+```
+
+`NewStorageDisk` creates the folder and checks it is writable, so a bad path fails at startup rather than on the first recorded trace. With no path it uses a folder under the operating system temporary directory, which does not survive a reboot.
+
+`RingBufferSize` only sizes the default memory storage. Once `Storage` is set, the `limit` argument bounds retention instead.
+
+Storage is an interface, not a name, so it has no environment variable. A service that wants it configurable reads its own key and builds the value before calling `platform.New`.
+
+## Bringing your own recorder
+
+A host that registers its own telemetry module turns this one off, because two modules mounting the same path is a duplicate route and the router panics on it:
+
+```go
+options := platform.NewOptions()
+options.Telemetry.Enabled = false
 
 svc := platform.New(options)
 svc.Use(recorder.Middleware)
 svc.Register(recorder)
 ```
 
-`NewTestOptions` sets it already, so tests observe no dashboard and no recorder unless they opt back in.
+`Telemetry.Enabled` gates registration, not just recording: a disabled Telemetry puts no route and no middleware on the router at all. `NewTestOptions` disables it already, so tests observe no dashboard and no recorder unless they opt back in.
 
 `PLATFORM_MODULES` does not apply. That allowlist names the application's modules, and the recorder the platform registers itself is not one of them, so it stays registered whatever the list says.
 

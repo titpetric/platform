@@ -127,7 +127,7 @@ func (r *Registry) filter(opts *Options) ([]Module, error) {
 
 		// The allowlist names the application's modules. The recorder
 		// the platform registers itself is infrastructure, turned off
-		// with Options.DisableTelemetry rather than by omission here.
+		// with Options.Telemetry rather than by omission here.
 		if _, builtin := mod.(*TelemetryModule); !builtin {
 			if len(opts.Modules) > 0 && !slices.Contains(opts.Modules, name) {
 				disabled = append(disabled, name)

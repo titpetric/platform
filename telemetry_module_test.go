@@ -19,8 +19,7 @@ func newTracedPlatform(t *testing.T) *platform.Platform {
 	t.Helper()
 
 	options := platform.NewTestOptions()
-	options.DisableTelemetry = false
-	options.Telemetry = oida.NewOptions()
+	options.Telemetry = platform.NewTelemetry()
 	options.Telemetry.ServiceName = "platform-test"
 	options.Telemetry.TrackMemoryUse = false
 
@@ -126,7 +125,9 @@ func TestTelemetryModuleRecordsStartup(t *testing.T) {
 	require.Contains(t, names, "module.start: TestTelemetry")
 }
 
-func TestTelemetryDisabledByDefaultInTests(t *testing.T) {
+// A disabled Telemetry registers no module, so the dashboard is not on the
+// router at all rather than mounted and empty.
+func TestTelemetryDisabledRegistersNoModule(t *testing.T) {
 	svc := NewTestPlatform(t)
 
 	status, _ := get(t, svc.URL()+oida.DefaultPath)
@@ -135,8 +136,7 @@ func TestTelemetryDisabledByDefaultInTests(t *testing.T) {
 
 func TestTelemetryModuleSurvivesModuleFilter(t *testing.T) {
 	options := platform.NewTestOptions()
-	options.DisableTelemetry = false
-	options.Telemetry = oida.NewOptions()
+	options.Telemetry = platform.NewTelemetry()
 	options.Telemetry.TrackMemoryUse = false
 
 	// The allowlist names the application's modules. The recorder the
@@ -155,13 +155,13 @@ func TestTelemetryModuleSurvivesModuleFilter(t *testing.T) {
 	require.Equal(t, http.StatusOK, status)
 }
 
-// TestTelemetryModuleCollidesWithASecondOne pins the reason DisableTelemetry
-// exists. A host that registers its own recorder on the same path and forgets
-// to opt out gets a duplicate route, which chi panics on.
+// TestTelemetryModuleCollidesWithASecondOne pins the reason Telemetry.Enabled
+// gates registration rather than just recording. A host that registers its own
+// recorder on the same path and leaves this one enabled gets a duplicate route,
+// which chi panics on.
 func TestTelemetryModuleCollidesWithASecondOne(t *testing.T) {
 	options := platform.NewTestOptions()
-	options.DisableTelemetry = false
-	options.Telemetry = oida.NewOptions()
+	options.Telemetry = platform.NewTelemetry()
 	options.Telemetry.TrackMemoryUse = false
 
 	svc := platform.New(options)

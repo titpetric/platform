@@ -61,7 +61,7 @@ type Platform struct {
 	registry *Registry
 
 	// telemetry records requests and serves the debug dashboard. It's nil
-	// when Options.DisableTelemetry is set, or when the recorder failed to
+	// when Options.Telemetry is disabled, or when the recorder failed to
 	// build, in which case instrumentation degrades to no-ops.
 	telemetry *TelemetryModule
 }
@@ -83,10 +83,11 @@ func New(options *Options) *Platform {
 	// Set up the default registry.
 	p.registry = global.registry.Clone()
 
-	// Record into oida unless the host brought its own recorder. An
-	// invalid telemetry config disables recording rather than failing the
-	// service: every instrumentation call below is nil safe.
-	if !options.DisableTelemetry {
+	// Record into oida unless telemetry is off, which is how a host that
+	// brought its own recorder keeps this one off the router. An invalid
+	// config disables recording rather than failing the service: every
+	// instrumentation call below is nil safe.
+	if options.Telemetry.Enabled {
 		if module, err := NewTelemetryModule(options.Telemetry); err == nil {
 			p.telemetry = module
 			p.Use(module.Middleware)

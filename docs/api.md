@@ -129,14 +129,9 @@ type Options struct {
 	// composed service.
 	ConfigFS	fs.FS
 
-	// Telemetry configures the recorder and the debug dashboard that New
-	// registers by default. See github.com/titpetric/oida for the fields.
-	Telemetry	oida.Options
-
-	// DisableTelemetry skips registering the built-in telemetry module.
-	// Set it in a host that registers its own recorder, otherwise both
-	// mount the same path and the router panics on the duplicate route.
-	DisableTelemetry	bool
+	// Telemetry configures the recorder and the debug dashboard. A
+	// disabled Telemetry registers no module at all.
+	Telemetry	Telemetry
 }
 ```
 
@@ -161,7 +156,7 @@ type Platform struct {
 	registry	*Registry
 
 	// telemetry records requests and serves the debug dashboard. It's nil
-	// when Options.DisableTelemetry is set, or when the recorder failed to
+	// when Options.Telemetry is disabled, or when the recorder failed to
 	// build, in which case instrumentation degrades to no-ops.
 	telemetry	*TelemetryModule
 }
@@ -192,13 +187,37 @@ type Router = chi.Router
 ```
 
 ```go
+// Telemetry configures the recorder and the debug dashboard that New registers.
+// It is the oida options, named in the platform namespace so the field type is
+// ours and later additions do not change the shape of Options.
+//
+// Enabled is oida's own field, read here as the single switch: a disabled
+// Telemetry registers no module, so there is no dashboard route and no
+// middleware, rather than a mounted dashboard with nothing behind it. Set it in
+// a host that registers its own recorder, otherwise both mount the same path
+// and the router panics on the duplicate route.
+//
+// Retention defaults to an in-memory ring buffer sized by RingBufferSize.
+// Assign Storage to keep traces across a restart:
+//
+//	store, err := oida.NewStorageDisk(500, "/var/lib/app/traces")
+//	if err != nil {
+//		return err
+//	}
+//	options.Telemetry.Storage = store
+type Telemetry struct {
+	oida.Options `yaml:",inline"`
+}
+```
+
+```go
 // TelemetryModule records the telemetry of a platform service. It is the
 // recorder and the dashboard at once: HTTP middleware recording every request,
 // and a module mounting the debug front end under Options.Path.
 //
-// New registers one by default. A host that wires its own recorder sets
-// Options.DisableTelemetry, because two modules mounting the same path is a
-// duplicate route, which chi panics on.
+// New registers one by default. A host that wires its own recorder disables
+// Options.Telemetry, because two modules mounting the same path is a duplicate
+// route, which chi panics on.
 type TelemetryModule struct {
 	UnimplementedModule
 
@@ -235,7 +254,8 @@ var Database DatabaseProvider = global.db
 - `func JSON (w http.ResponseWriter, r *http.Request, status int, data any)`
 - `func New (options *Options) *Platform`
 - `func NewOptions () *Options`
-- `func NewTelemetryModule (options oida.Options) (*TelemetryModule, error)`
+- `func NewTelemetry () Telemetry`
+- `func NewTelemetryModule (telemetry Telemetry) (*TelemetryModule, error)`
 - `func NewTestOptions () *Options`
 - `func NewUnimplementedModule (name string) *UnimplementedModule`
 - `func OptionsFromContext (ctx context.Context) *Options`
@@ -326,6 +346,14 @@ NewOptions provides default options for the platform.
 func NewOptions () *Options
 ```
 
+### NewTelemetry
+
+NewTelemetry returns the default telemetry configuration.
+
+```go
+func NewTelemetry () Telemetry
+```
+
 ### NewTelemetryModule
 
 NewTelemetryModule returns a telemetry module recording into its own tracer.
@@ -333,7 +361,7 @@ The tracer is explicit rather than the process wide one, so two services, or
 two tests, do not record into each other.
 
 ```go
-func NewTelemetryModule (options oida.Options) (*TelemetryModule, error)
+func NewTelemetryModule (telemetry Telemetry) (*TelemetryModule, error)
 ```
 
 ### NewTestOptions

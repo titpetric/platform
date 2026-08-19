@@ -14,9 +14,9 @@ import (
 // recorder and the dashboard at once: HTTP middleware recording every request,
 // and a module mounting the debug front end under Options.Path.
 //
-// New registers one by default. A host that wires its own recorder sets
-// Options.DisableTelemetry, because two modules mounting the same path is a
-// duplicate route, which chi panics on.
+// New registers one by default. A host that wires its own recorder disables
+// Options.Telemetry, because two modules mounting the same path is a duplicate
+// route, which chi panics on.
 type TelemetryModule struct {
 	UnimplementedModule
 
@@ -30,8 +30,8 @@ var _ Module = (*TelemetryModule)(nil)
 // NewTelemetryModule returns a telemetry module recording into its own tracer.
 // The tracer is explicit rather than the process wide one, so two services, or
 // two tests, do not record into each other.
-func NewTelemetryModule(options oida.Options) (*TelemetryModule, error) {
-	options = options.WithDefaults()
+func NewTelemetryModule(telemetry Telemetry) (*TelemetryModule, error) {
+	options := telemetry.Options.WithDefaults()
 	if options.RouteFunc == nil {
 		options.RouteFunc = routePattern
 	}
