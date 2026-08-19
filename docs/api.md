@@ -5,6 +5,7 @@ import (
 	"github.com/titpetric/platform"
 }
 ```
+
 The platform is an extensible modular system for writing HTTP servers.
 
 1. Provides a global registry for middleware and module registration
@@ -78,8 +79,8 @@ type ErrorResponse struct {
 ```go
 // ErrorResponseBody is an inner type for ErrorResponse.Error.
 type ErrorResponseBody struct {
-	Code	int	`json:"code"`
-	Message	string	`json:"message"`
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }
 ```
 
@@ -90,7 +91,6 @@ type Middleware func(http.Handler) http.Handler
 
 ```go
 // Module is the implementation contract for modules.
-//
 // The interface should only be used to enforce the API contract as
 // shown below. It's also used to provide `platform.Register()`.
 type Module interface {
@@ -115,51 +115,51 @@ type Module interface {
 // Options is a configuration struct for platform behaviour.
 type Options struct {
 	// ServerAddr is the address the server listens to.
-	ServerAddr	string
+	ServerAddr string
 
 	// Quiet turns down the verbosity in the Platform logging code, set to true in tests.
-	Quiet	bool
+	Quiet bool
 
 	// Modules controls which modules get loaded. If the list
 	// is empty (unconfigured, zero value), all modules load.
-	Modules	[]string
+	Modules []string
 
 	// ConfigFS can be used for configuration purposes by modules. It's optional and may be nil.
 	// The application running with the platform may use `go:embed` to carry config for the
 	// composed service.
-	ConfigFS	fs.FS
+	ConfigFS fs.FS
 
 	// Telemetry configures the recorder and the debug dashboard. It is
 	// disabled by the zero value, so an Options built by hand rather than
 	// by NewOptions needs oida.NewOptions() here to record anything.
-	Telemetry	oida.Options
+	Telemetry oida.Options
 }
 ```
 
 ```go
 // Platform is our world struct.
 type Platform struct {
-	options	*Options
+	options *Options
 
 	// server setup
-	router		*chi.Mux
-	server		*http.Server
-	listener	net.Listener
+	router   *chi.Mux
+	server   *http.Server
+	listener net.Listener
 
 	// final shutdown context
-	context	context.Context
-	cancel	context.CancelFunc
-	stop	func()
-	once	sync.Once
+	context context.Context
+	cancel  context.CancelFunc
+	stop    func()
+	once    sync.Once
 
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
-	registry	*Registry
+	registry *Registry
 
 	// telemetry records requests and serves the debug dashboard. It's nil
 	// when Options.Telemetry is disabled, or when the recorder failed to
 	// build, in which case instrumentation degrades to no-ops.
-	telemetry	*TelemetryModule
+	telemetry *TelemetryModule
 }
 ```
 
@@ -167,18 +167,18 @@ type Platform struct {
 // Registry provides a programmatic API to manage middleware and modules.
 // A module registers middleware and has a contract to enforce lifecycle.
 type Registry struct {
-	mu	sync.RWMutex
+	mu sync.RWMutex
 
 	// Modules hold a list of all modules registered. This list
 	// is filtered to start/stop only the modules that are enabled.
 	// Interacting with a module is subject to concurrency concerns.
-	modules		[]Module
-	middleware	[]Middleware
+	modules    []Module
+	middleware []Middleware
 
 	// On registry start when modules start, a cleanup service per module
 	// will be registered via this value. On registry close, the slice
 	// is cleared. The functions receive the shutdown context.
-	cleanups	[]func(context.Context)
+	cleanups []func(context.Context)
 }
 ```
 
@@ -198,9 +198,9 @@ type Router = chi.Router
 type TelemetryModule struct {
 	UnimplementedModule
 
-	options		oida.Options
-	tracer		*oida.Tracer
-	middleware	func(http.Handler) http.Handler
+	options    oida.Options
+	tracer     *oida.Tracer
+	middleware func(http.Handler) http.Handler
 }
 ```
 
@@ -209,10 +209,10 @@ type TelemetryModule struct {
 // The module can embed the type to skip implementing
 // any of the bound functions.
 type UnimplementedModule struct {
-	NameFn	func() string
-	StartFn	func(context.Context) error
-	StopFn	func(context.Context) error
-	MountFn	func(context.Context, Router) error
+	NameFn  func() string
+	StartFn func(context.Context) error
+	StopFn  func(context.Context) error
+	MountFn func(context.Context, Router) error
 }
 ```
 
@@ -276,7 +276,7 @@ var Database DatabaseProvider = global.db
 Error writes an error payload as JSON.
 
 ```go
-func Error (w http.ResponseWriter, r *http.Request, status int, data error)
+func Error(w http.ResponseWriter, r *http.Request, status int, data error)
 ```
 
 ### FromContext
@@ -284,7 +284,7 @@ func Error (w http.ResponseWriter, r *http.Request, status int, data error)
 FromContext returns the *Platform instance attached to the context.
 
 ```go
-func FromContext (ctx context.Context) *Platform
+func FromContext(ctx context.Context) *Platform
 ```
 
 ### FromRequest
@@ -292,7 +292,7 @@ func FromContext (ctx context.Context) *Platform
 FromRequest returns the *Platform instance attached to the request.
 
 ```go
-func FromRequest (r *http.Request) *Platform
+func FromRequest(r *http.Request) *Platform
 ```
 
 ### JSON
@@ -301,7 +301,7 @@ JSON writes any payload as JSON. If the payload is nil, the write is omitted.
 If an error occurs in encoding, a telemetry error is logged.
 
 ```go
-func JSON (w http.ResponseWriter, r *http.Request, status int, data any)
+func JSON(w http.ResponseWriter, r *http.Request, status int, data any)
 ```
 
 ### New
@@ -311,7 +311,7 @@ for each platform instance. If no options are passed, the defaults are in use.
 The defaults options are provided by NewOptions().
 
 ```go
-func New (options *Options) *Platform
+func New(options *Options) *Platform
 ```
 
 ### NewOptions
@@ -319,7 +319,7 @@ func New (options *Options) *Platform
 NewOptions provides default options for the platform.
 
 ```go
-func NewOptions () *Options
+func NewOptions() *Options
 ```
 
 ### NewTelemetryModule
@@ -329,7 +329,7 @@ The tracer is explicit rather than the process wide one, so two services, or
 two tests, do not record into each other.
 
 ```go
-func NewTelemetryModule (options oida.Options) (*TelemetryModule, error)
+func NewTelemetryModule(options oida.Options) (*TelemetryModule, error)
 ```
 
 ### NewTestOptions
@@ -337,7 +337,7 @@ func NewTelemetryModule (options oida.Options) (*TelemetryModule, error)
 NewTestOptions produces default options for tests.
 
 ```go
-func NewTestOptions () *Options
+func NewTestOptions() *Options
 ```
 
 ### NewUnimplementedModule
@@ -345,7 +345,7 @@ func NewTestOptions () *Options
 NewUnimplementedModule will fill the module name.
 
 ```go
-func NewUnimplementedModule (name string) *UnimplementedModule
+func NewUnimplementedModule(name string) *UnimplementedModule
 ```
 
 ### OptionsFromContext
@@ -353,7 +353,7 @@ func NewUnimplementedModule (name string) *UnimplementedModule
 OptionsFromContext returns the *Options instance attached to the context.
 
 ```go
-func OptionsFromContext (ctx context.Context) *Options
+func OptionsFromContext(ctx context.Context) *Options
 ```
 
 ### OptionsFromRequest
@@ -361,7 +361,7 @@ func OptionsFromContext (ctx context.Context) *Options
 OptionsFromRequest returns the *Options instance attached to the request.
 
 ```go
-func OptionsFromRequest (r *http.Request) *Options
+func OptionsFromRequest(r *http.Request) *Options
 ```
 
 ### Param
@@ -369,7 +369,7 @@ func OptionsFromRequest (r *http.Request) *Options
 Param will return a named URL parameter, or query string.
 
 ```go
-func Param (r *http.Request, name string) string
+func Param(r *http.Request, name string) string
 ```
 
 ### QueryParam
@@ -377,7 +377,7 @@ func Param (r *http.Request, name string) string
 QueryParam will return a named query parameter from the request.
 
 ```go
-func QueryParam (r *http.Request, name string) string
+func QueryParam(r *http.Request, name string) string
 ```
 
 ### Register
@@ -387,7 +387,7 @@ It should not be relied upon in tests, keeping global state empty.
 This enables registering modules using blank imports.
 
 ```go
-func Register (m Module)
+func Register(m Module)
 ```
 
 ### SetupConnections
@@ -395,7 +395,7 @@ func Register (m Module)
 SetupConnections will parse the env for named connection strings.
 
 ```go
-func SetupConnections (environment []string)
+func SetupConnections(environment []string)
 ```
 
 ### Start
@@ -404,7 +404,7 @@ Start is a shorthand to create a new *Platform instance and
 immediately starts the server listener and handles requests.
 
 ```go
-func Start (ctx context.Context, options *Options) (*Platform, error)
+func Start(ctx context.Context, options *Options) (*Platform, error)
 ```
 
 ### TestMiddleware
@@ -412,7 +412,7 @@ func Start (ctx context.Context, options *Options) (*Platform, error)
 TestMiddleware returns a middleware that just passes along the request.
 
 ```go
-func TestMiddleware () Middleware
+func TestMiddleware() Middleware
 ```
 
 ### Transaction
@@ -422,7 +422,7 @@ If the function returns an error, the transaction is rolled back.
 If the function returns nil, the transaction is committed.
 
 ```go
-func Transaction (ctx context.Context, db *sqlx.DB, fn func(context.Context, *sqlx.Tx) error) error
+func Transaction(ctx context.Context, db *sqlx.DB, fn func(context.Context, *sqlx.Tx) error) error
 ```
 
 ### URLParam
@@ -430,7 +430,7 @@ func Transaction (ctx context.Context, db *sqlx.DB, fn func(context.Context, *sq
 URLParam will return a named parameter value from the request URL.
 
 ```go
-func URLParam (r *http.Request, name string) string
+func URLParam(r *http.Request, name string) string
 ```
 
 ### Use
@@ -440,7 +440,7 @@ It should not be relied upon in tests, keeping global state empty.
 This should be used from main() to define any global middleware.
 
 ```go
-func Use (mw Middleware)
+func Use(mw Middleware)
 ```
 
 ### Context
@@ -449,7 +449,7 @@ Context returns the cancellation context for the service.
 When the context finishes, the server has shut down.
 
 ```go
-func (*Platform) Context () context.Context
+func (*Platform) Context() context.Context
 ```
 
 ### Find
@@ -457,7 +457,7 @@ func (*Platform) Context () context.Context
 Find fills target with the module matching the type.
 
 ```go
-func (*Platform) Find (target any) bool
+func (*Platform) Find(target any) bool
 ```
 
 ### Register
@@ -466,7 +466,7 @@ Register will add a registry.Module into the internal platform registry.
 This function should be called before Serve is called.
 
 ```go
-func (*Platform) Register (m Module)
+func (*Platform) Register(m Module)
 ```
 
 ### Start
@@ -476,7 +476,7 @@ It respects cancellation from the passed context, as well as
 sets up signal notification to respond to SIGTERM.
 
 ```go
-func (*Platform) Start (ctx context.Context) error
+func (*Platform) Start(ctx context.Context) error
 ```
 
 ### Stats
@@ -484,7 +484,7 @@ func (*Platform) Start (ctx context.Context) error
 Stats will report how many middlewares and plugins are added to the registry.
 
 ```go
-func (*Platform) Stats () (int, int)
+func (*Platform) Stats() (int, int)
 ```
 
 ### Stop
@@ -498,7 +498,7 @@ to clear background goroutine event loops, or flush a dirty buffer to storage.
 Only after the server has fully shut down does the internal context get cancelled.
 
 ```go
-func (*Platform) Stop ()
+func (*Platform) Stop()
 ```
 
 ### URL
@@ -506,7 +506,7 @@ func (*Platform) Stop ()
 URL gives the e2e endpoint URL for requests.
 
 ```go
-func (*Platform) URL () string
+func (*Platform) URL() string
 ```
 
 ### Use
@@ -515,7 +515,7 @@ Use will add a middleware to the internal platform registry.
 This function should be called before Serve is called.
 
 ```go
-func (*Platform) Use (m Middleware)
+func (*Platform) Use(m Middleware)
 ```
 
 ### Wait
@@ -523,7 +523,7 @@ func (*Platform) Use (m Middleware)
 Wait will pause until the server is shut down.
 
 ```go
-func (*Platform) Wait ()
+func (*Platform) Wait()
 ```
 
 ### Cleanup
@@ -532,7 +532,7 @@ Cleanup is sort of a testing.T.Cleanup but for the registry.
 The cleanups are initialized in Start, and ran in Close.
 
 ```go
-func (*Registry) Cleanup (fn func(context.Context))
+func (*Registry) Cleanup(fn func(context.Context))
 ```
 
 ### Clone
@@ -540,7 +540,7 @@ func (*Registry) Cleanup (fn func(context.Context))
 Clone provides a copy of the registry for use in the platform.
 
 ```go
-func (*Registry) Clone () *Registry
+func (*Registry) Clone() *Registry
 ```
 
 ### Close
@@ -550,7 +550,7 @@ When finished, it will clear the registered modules list, as
 well as any defined middleware and invoked cleanups.
 
 ```go
-func (*Registry) Close (ctx context.Context)
+func (*Registry) Close(ctx context.Context)
 ```
 
 ### Find
@@ -560,7 +560,7 @@ The target argument can be a pointer or an interface. The function returns true
 if a module matching the type or interface was found and assigned to `target`.
 
 ```go
-func (*Registry) Find (target any) bool
+func (*Registry) Find(target any) bool
 ```
 
 ### Register
@@ -568,7 +568,7 @@ func (*Registry) Find (target any) bool
 Register adds a Module to the registry.
 
 ```go
-func (*Registry) Register (m Module)
+func (*Registry) Register(m Module)
 ```
 
 ### Start
@@ -578,7 +578,7 @@ If an error occurs, execution is halted and an error is returned.
 The context is passed along for observability and access to the platform.
 
 ```go
-func (*Registry) Start (ctx context.Context, mux Router, opts *Options) error
+func (*Registry) Start(ctx context.Context, mux Router, opts *Options) error
 ```
 
 ### Stats
@@ -586,7 +586,7 @@ func (*Registry) Start (ctx context.Context, mux Router, opts *Options) error
 Stats returns counts for modules and middlewares in the registry.
 
 ```go
-func (*Registry) Stats () int
+func (*Registry) Stats() int
 ```
 
 ### Use
@@ -594,7 +594,7 @@ func (*Registry) Stats () int
 Use adds a Middleware to the registry.
 
 ```go
-func (*Registry) Use (f Middleware)
+func (*Registry) Use(f Middleware)
 ```
 
 ### Middleware
@@ -602,7 +602,7 @@ func (*Registry) Use (f Middleware)
 Middleware records requests handled by next.
 
 ```go
-func (*TelemetryModule) Middleware (next http.Handler) http.Handler
+func (*TelemetryModule) Middleware(next http.Handler) http.Handler
 ```
 
 ### Mount
@@ -610,7 +610,7 @@ func (*TelemetryModule) Middleware (next http.Handler) http.Handler
 Mount registers the debug front end on the platform router.
 
 ```go
-func (*TelemetryModule) Mount (_ context.Context, r Router) error
+func (*TelemetryModule) Mount(_ context.Context, r Router) error
 ```
 
 ### Options
@@ -619,7 +619,7 @@ Options returns the options the module was built with, including the tracer
 it records into.
 
 ```go
-func (*TelemetryModule) Options () oida.Options
+func (*TelemetryModule) Options() oida.Options
 ```
 
 ### Tracer
@@ -627,7 +627,7 @@ func (*TelemetryModule) Options () oida.Options
 Tracer returns the tracer the module records into.
 
 ```go
-func (*TelemetryModule) Tracer () *oida.Tracer
+func (*TelemetryModule) Tracer() *oida.Tracer
 ```
 
 ### Mount
@@ -635,7 +635,7 @@ func (*TelemetryModule) Tracer () *oida.Tracer
 Mount returns nil (no error).
 
 ```go
-func (UnimplementedModule) Mount (ctx context.Context, r Router) error
+func (UnimplementedModule) Mount(ctx context.Context, r Router) error
 ```
 
 ### Name
@@ -643,7 +643,7 @@ func (UnimplementedModule) Mount (ctx context.Context, r Router) error
 Name returns an empty string.
 
 ```go
-func (UnimplementedModule) Name () string
+func (UnimplementedModule) Name() string
 ```
 
 ### Start
@@ -651,7 +651,7 @@ func (UnimplementedModule) Name () string
 Start returns nil (no error).
 
 ```go
-func (UnimplementedModule) Start (ctx context.Context) error
+func (UnimplementedModule) Start(ctx context.Context) error
 ```
 
 ### Stop
@@ -659,7 +659,5 @@ func (UnimplementedModule) Start (ctx context.Context) error
 Stop returns nil (no error).
 
 ```go
-func (UnimplementedModule) Stop (ctx context.Context) error
+func (UnimplementedModule) Stop(ctx context.Context) error
 ```
-
-
