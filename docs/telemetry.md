@@ -2,7 +2,22 @@
 
 The platform records telemetry with [oida](https://github.com/titpetric/oida): traces and spans held in a ring buffer inside the process, with a dashboard served at `/debug/oida`. There is no collector, no exporter and no second service to run.
 
-`platform.New` registers the recorder and the dashboard by default, so a service gets both without wiring anything.
+Recording is opt-in. `platform.New` registers the recorder and the dashboard only when `Options.Telemetry.Enabled` is set, because the dashboard reports the internals of the process and is unauthenticated unless `Authorize` says otherwise. Ask for it with the environment:
+
+```bash
+PLATFORM_TELEMETRY_ENABLED=true
+```
+
+or in code:
+
+```go
+options := platform.NewOptions()
+options.Telemetry.Enabled = true
+
+svc := platform.New(options)
+```
+
+With telemetry off, the instrumentation calls below still compile and run: they record nothing and cost a nil check.
 
 ## Instrumenting your code
 
@@ -63,13 +78,15 @@ Both mark the span and its trace as failed, which is what the dashboard's error 
 
 ## Configuration
 
-`platform.NewOptions` fills `Options.Telemetry` from `oida.NewOptions` and reads the environment:
+`platform.NewOptions` fills `Options.Telemetry` from `oida.NewOptions`, overrules its `Enabled` default, and reads the environment:
 
-| Variable                     | Default       | Meaning                                                                       |
-|------------------------------|---------------|-------------------------------------------------------------------------------|
-| `PLATFORM_TELEMETRY_ENABLED` | `true`        | Register the recorder and the dashboard. Disabled puts neither on the router. |
-| `PLATFORM_TELEMETRY_PATH`    | `/debug/oida` | Mount path of the dashboard.                                                  |
-| `PLATFORM_TELEMETRY_SERVICE` | `platform`    | Service name shown in the dashboard.                                          |
+| Variable                     | Default       | Meaning                                                                  |
+|------------------------------|---------------|--------------------------------------------------------------------------|
+| `PLATFORM_TELEMETRY_ENABLED` | `false`       | Register the recorder and the dashboard. Off puts neither on the router. |
+| `PLATFORM_TELEMETRY_PATH`    | `/debug/oida` | Mount path of the dashboard.                                             |
+| `PLATFORM_TELEMETRY_SERVICE` | `platform`    | Service name shown in the dashboard.                                     |
+
+`oida.NewOptions` returns `Enabled: true`, which suits a caller constructing a recorder on purpose. The platform mounts one for every service that never asked, so it flips that default; the rest of the oida defaults (ring buffer, sampling, mount path) are kept.
 
 Anything else is set on the struct. See the [configuration guide](https://github.com/titpetric/oida/blob/main/docs/guide-configuration.md) for retention, sampling and access control:
 
@@ -128,7 +145,7 @@ svc.Register(recorder)
 
 `Telemetry.Enabled` gates registration, not just recording: a disabled Telemetry puts no route and no middleware on the router at all. `NewTestOptions` disables it already, so tests observe no dashboard and no recorder unless they opt back in.
 
-`Options.Telemetry` is `oida.Options`, so the zero value is disabled the way oida's own options are. `platform.NewOptions` fills it from `oida.NewOptions` and enables it; an `Options` built by hand has to do the same:
+`Options.Telemetry` is `oida.Options`, so the zero value is disabled. An `Options` built by hand asks for the recorder the same way `NewOptions` does, by filling it from `oida.NewOptions`, which enables it:
 
 ```go
 options := &platform.Options{

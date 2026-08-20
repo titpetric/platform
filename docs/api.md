@@ -130,8 +130,10 @@ type Options struct {
 	ConfigFS fs.FS
 
 	// Telemetry configures the recorder and the debug dashboard. It is
-	// disabled by the zero value, so an Options built by hand rather than
-	// by NewOptions needs oida.NewOptions() here to record anything.
+	// off unless asked for: the zero value disables it, and NewOptions
+	// disables it too, because the dashboard reports the internals of the
+	// process and is unauthenticated unless Telemetry.Authorize says
+	// otherwise. Set Enabled, or PLATFORM_TELEMETRY_ENABLED, to record.
 	Telemetry oida.Options
 }
 ```

@@ -31,8 +31,10 @@ type Options struct {
 	ConfigFS fs.FS
 
 	// Telemetry configures the recorder and the debug dashboard. It is
-	// disabled by the zero value, so an Options built by hand rather than
-	// by NewOptions needs oida.NewOptions() here to record anything.
+	// off unless asked for: the zero value disables it, and NewOptions
+	// disables it too, because the dashboard reports the internals of the
+	// process and is unauthenticated unless Telemetry.Authorize says
+	// otherwise. Set Enabled, or PLATFORM_TELEMETRY_ENABLED, to record.
 	Telemetry oida.Options
 }
 
@@ -42,10 +44,13 @@ func NewOptions() *Options {
 	opt.ServerAddr = opt.env("PLATFORM_SERVER_ADDR", ":8080")
 	opt.Modules = opt.envCSV("PLATFORM_MODULES")
 
+	// oida.NewOptions carries the recorder's own defaults (ring buffer,
+	// sampling, mount path) and enables it. Recording is opt-in here, so
+	// the default is overruled and PLATFORM_TELEMETRY_ENABLED turns it on.
 	opt.Telemetry = oida.NewOptions()
 	opt.Telemetry.ServiceName = opt.env("PLATFORM_TELEMETRY_SERVICE", "platform")
 	opt.Telemetry.Path = opt.env("PLATFORM_TELEMETRY_PATH", opt.Telemetry.Path)
-	opt.Telemetry.Enabled = opt.envBool("PLATFORM_TELEMETRY_ENABLED", opt.Telemetry.Enabled)
+	opt.Telemetry.Enabled = opt.envBool("PLATFORM_TELEMETRY_ENABLED", false)
 	return opt
 }
 

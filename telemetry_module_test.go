@@ -177,13 +177,14 @@ func TestTelemetryModuleCollidesWithASecondOne(t *testing.T) {
 	_ = svc.Start(t.Context())
 }
 
-// Telemetry is oida.Options, so it is off in the zero value.
+// Recording is opt-in: off in the zero value, and off in the options both
+// constructors hand out.
 func TestTelemetryDefaults(t *testing.T) {
 	require.False(t, platform.NewOptions().Telemetry.Enabled)
 	require.False(t, platform.NewTestOptions().Telemetry.Enabled)
 
-	// New(nil) is the documented way to get the defaults, so it mounts the
-	// dashboard.
+	// A service built from the defaults serves no dashboard, so nothing
+	// reports the internals of a process that never asked to.
 	options := platform.NewOptions()
 	options.ServerAddr, options.Quiet = "127.0.0.1:0", true
 	svc := platform.New(options)
@@ -192,4 +193,22 @@ func TestTelemetryDefaults(t *testing.T) {
 
 	status, _ := get(t, svc.URL()+oida.DefaultPath)
 	require.Equal(t, http.StatusNotFound, status)
+}
+
+// The environment turns recording on, which is how a deployment asks for the
+// dashboard without a code change.
+func TestTelemetryEnabledByEnv(t *testing.T) {
+	t.Setenv("PLATFORM_TELEMETRY_ENABLED", "true")
+
+	options := platform.NewOptions()
+	require.True(t, options.Telemetry.Enabled)
+
+	options.ServerAddr, options.Quiet = "127.0.0.1:0", true
+	options.Telemetry.TrackMemoryUse = false
+	svc := platform.New(options)
+	t.Cleanup(svc.Stop)
+	require.NoError(t, svc.Start(t.Context()))
+
+	status, _ := get(t, svc.URL()+oida.DefaultPath)
+	require.Equal(t, http.StatusOK, status)
 }
