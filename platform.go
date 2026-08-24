@@ -25,7 +25,7 @@ package platform
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
@@ -43,6 +43,12 @@ import (
 
 // Platform is our world struct.
 type Platform struct {
+	// Logger receives the platform's own output. New sets it to
+	// slog.Default(), or to a discarding logger when Options.Quiet is set.
+	// Assign to it before Start to reuse the platform logger from a test,
+	// or to route output into a consumer application's logger.
+	Logger Logger
+
 	options *Options
 
 	// server setup
@@ -80,6 +86,13 @@ func New(options *Options) *Platform {
 		stop:    func() {},
 	}
 
+	// Set up the platform logger. It's set before anything that logs, and
+	// stays assignable so a test or a consumer can take the output over.
+	p.Logger = slog.Default()
+	if options.Quiet {
+		p.Logger = discard
+	}
+
 	// Set up the default registry.
 	p.registry = global.registry.Clone()
 
@@ -92,8 +105,8 @@ func New(options *Options) *Platform {
 			p.telemetry = module
 			p.Use(module.Middleware)
 			p.Register(module)
-		} else if !options.Quiet {
-			log.Println("[platform] telemetry disabled:", err)
+		} else {
+			p.Logger.Error("telemetry disabled", "error", err)
 		}
 	}
 
@@ -128,7 +141,11 @@ func (p *Platform) Find(target any) bool {
 // It respects cancellation from the passed context, as well as
 // sets up signal notification to respond to SIGTERM.
 func (p *Platform) Start(ctx context.Context) error {
-	if err := p.setup(ctx); err != nil {
+	// Read the logger once. The field is exported, and the goroutine below
+	// outlives this call, so it gets a value and not a shared field.
+	log := p.logger()
+
+	if err := p.setup(ctx, log); err != nil {
 		return fmt.Errorf("error in platform setup: %w", err)
 	}
 
@@ -138,9 +155,7 @@ func (p *Platform) Start(ctx context.Context) error {
 
 	go func() {
 		<-sigctx.Done()
-		if !p.options.Quiet {
-			log.Println("caught sigterm, stopping server")
-		}
+		log.Info("caught sigterm, stopping server")
 		p.Stop()
 	}()
 
@@ -152,14 +167,12 @@ func (p *Platform) Start(ctx context.Context) error {
 	}()
 
 	// Print registered routes.
-	if !p.options.Quiet {
-		internal.PrintRoutes(p.router)
-	}
+	internal.PrintRoutes(log, p.router)
 
 	return nil
 }
 
-func (p *Platform) setup(startCtx context.Context) error {
+func (p *Platform) setup(startCtx context.Context, log Logger) error {
 	// set up context for module start
 	ctx := platformContext.SetContext(startCtx, p)
 	ctx = optionsContext.SetContext(ctx, p.options)
@@ -168,11 +181,11 @@ func (p *Platform) setup(startCtx context.Context) error {
 	// own. Without one the spans below have nothing to record onto and the
 	// dashboard shows nothing until the first request.
 	return p.observe(ctx, "platform.setup", func(ctx context.Context) error {
-		if err := p.registry.Start(ctx, p.router, p.options); err != nil {
+		if err := p.registry.Start(ctx, p.router, p.options, log); err != nil {
 			return fmt.Errorf("registry: %w", err)
 		}
 
-		if err := p.setupListener(); err != nil {
+		if err := p.setupListener(log); err != nil {
 			return fmt.Errorf("setting up listener: %w", err)
 		}
 
@@ -204,7 +217,7 @@ func (p *Platform) setupRequestContext(next http.Handler) http.Handler {
 	})
 }
 
-func (p *Platform) setupListener() error {
+func (p *Platform) setupListener(log Logger) error {
 	// Set up server listener.
 	listener, err := net.Listen("tcp", p.options.ServerAddr)
 	if err != nil {
@@ -212,9 +225,7 @@ func (p *Platform) setupListener() error {
 	}
 	p.listener = listener
 
-	if !p.options.Quiet {
-		log.Println("Server listening on", p.listener.Addr().String(), p.URL())
-	}
+	log.Info("server listening", "addr", p.listener.Addr().String(), "url", p.URL())
 	return nil
 }
 

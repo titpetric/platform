@@ -31,6 +31,9 @@ state and holds scoped allocations only, enabling test parallelism.
 
 ## Types
 
+<details>
+<summary><code>type DatabaseProvider</code></summary>
+
 ```go
 // DatabaseProvider is the implementation interface for working with named connections.
 // If no connection name is passed, the "default" connection will be used.
@@ -69,12 +72,22 @@ type DatabaseProvider interface {
 }
 ```
 
+</details>
+
+<details>
+<summary><code>type ErrorResponse</code></summary>
+
 ```go
 // ErrorResponse is the JSON structure for error responses.
 type ErrorResponse struct {
 	Error ErrorResponseBody `json:"error"`
 }
 ```
+
+</details>
+
+<details>
+<summary><code>type ErrorResponseBody</code></summary>
 
 ```go
 // ErrorResponseBody is an inner type for ErrorResponse.Error.
@@ -84,10 +97,35 @@ type ErrorResponseBody struct {
 }
 ```
 
+</details>
+
+<details>
+<summary><code>type Logger</code></summary>
+
+```go
+// Logger is the interface the platform writes its own output through.
+// It is the subset of *slog.Logger the platform needs, so a *slog.Logger
+// can be assigned to Platform.Logger as it is.
+type Logger interface {
+	Info(msg string, args ...any)
+	Error(msg string, args ...any)
+}
+```
+
+</details>
+
+<details>
+<summary><code>type Middleware</code></summary>
+
 ```go
 // Middleware is a type alias for middleware functions.
 type Middleware func(http.Handler) http.Handler
 ```
+
+</details>
+
+<details>
+<summary><code>type Module</code></summary>
 
 ```go
 // Module is the implementation contract for modules.
@@ -111,13 +149,20 @@ type Module interface {
 }
 ```
 
+</details>
+
+<details>
+<summary><code>type Options</code></summary>
+
 ```go
 // Options is a configuration struct for platform behaviour.
 type Options struct {
 	// ServerAddr is the address the server listens to.
 	ServerAddr string
 
-	// Quiet turns down the verbosity in the Platform logging code, set to true in tests.
+	// Quiet silences the platform's own output: New installs a discarding
+	// logger as Platform.Logger instead of the default one. Set to true in
+	// tests. Assigning Platform.Logger afterwards overrules it.
 	Quiet bool
 
 	// Modules controls which modules get loaded. If the list
@@ -138,9 +183,20 @@ type Options struct {
 }
 ```
 
+</details>
+
+<details>
+<summary><code>type Platform</code></summary>
+
 ```go
 // Platform is our world struct.
 type Platform struct {
+	// Logger receives the platform's own output. New sets it to
+	// slog.Default(), or to a discarding logger when Options.Quiet is set.
+	// Assign to it before Start to reuse the platform logger from a test,
+	// or to route output into a consumer application's logger.
+	Logger Logger
+
 	options *Options
 
 	// server setup
@@ -165,6 +221,11 @@ type Platform struct {
 }
 ```
 
+</details>
+
+<details>
+<summary><code>type Registry</code></summary>
+
 ```go
 // Registry provides a programmatic API to manage middleware and modules.
 // A module registers middleware and has a contract to enforce lifecycle.
@@ -184,10 +245,20 @@ type Registry struct {
 }
 ```
 
+</details>
+
+<details>
+<summary><code>type Router</code></summary>
+
 ```go
 // Router is a local shim that aliases the chi router interface.
 type Router = chi.Router
 ```
+
+</details>
+
+<details>
+<summary><code>type TelemetryModule</code></summary>
 
 ```go
 // TelemetryModule records the telemetry of a platform service. It is the
@@ -206,6 +277,11 @@ type TelemetryModule struct {
 }
 ```
 
+</details>
+
+<details>
+<summary><code>type UnimplementedModule</code></summary>
+
 ```go
 // UnimplementedModule implements the module contract.
 // The module can embed the type to skip implementing
@@ -218,12 +294,19 @@ type UnimplementedModule struct {
 }
 ```
 
+</details>
+
 ## Vars
+
+<details>
+<summary><code>var Database</code></summary>
 
 ```go
 // Database is a holder of the database provider api in package namespace.
 var Database DatabaseProvider = global.db
 ```
+
+</details>
 
 ## Function symbols
 
@@ -261,7 +344,7 @@ var Database DatabaseProvider = global.db
 - `func (*Registry) Close (ctx context.Context)`
 - `func (*Registry) Find (target any) bool`
 - `func (*Registry) Register (m Module)`
-- `func (*Registry) Start (ctx context.Context, mux Router, opts *Options) error`
+- `func (*Registry) Start (ctx context.Context, mux Router, opts *Options, log Logger) error`
 - `func (*Registry) Stats () int`
 - `func (*Registry) Use (f Middleware)`
 - `func (*TelemetryModule) Middleware (next http.Handler) http.Handler`
@@ -578,9 +661,10 @@ func (*Registry) Register(m Module)
 Start will invoke all the modules start functions sequentially.
 If an error occurs, execution is halted and an error is returned.
 The context is passed along for observability and access to the platform.
+The logger receives the registry's own output; a nil logger discards it.
 
 ```go
-func (*Registry) Start(ctx context.Context, mux Router, opts *Options) error
+func (*Registry) Start(ctx context.Context, mux Router, opts *Options, log Logger) error
 ```
 
 ### Stats

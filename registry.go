@@ -3,7 +3,6 @@ package platform
 import (
 	"context"
 	"fmt"
-	"log"
 	"reflect"
 	"slices"
 	"sync"
@@ -88,23 +87,30 @@ func (r *Registry) Use(f Middleware) {
 // Start will invoke all the modules start functions sequentially.
 // If an error occurs, execution is halted and an error is returned.
 // The context is passed along for observability and access to the platform.
-func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
+// The logger receives the registry's own output; a nil logger discards it.
+func (r *Registry) Start(ctx context.Context, mux Router, opts *Options, log Logger) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	ctx, span := oida.Start(ctx, "registry.Start")
 	defer span.End()
 
-	modules, err := r.filter(opts)
+	// A Registry is usable as a bare value, so it can't assume a caller
+	// passed a logger in.
+	if log == nil {
+		log = discard
+	}
+
+	modules, err := r.filter(log, opts)
 	if err != nil {
 		return err
 	}
 
-	if err := r.start(ctx, modules, opts.Quiet); err != nil {
+	if err := r.start(ctx, modules, log); err != nil {
 		return err
 	}
 
-	if err := r.mount(ctx, mux, modules, opts.Quiet); err != nil {
+	if err := r.mount(ctx, mux, modules); err != nil {
 		return err
 	}
 
@@ -113,7 +119,7 @@ func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
 
 // filter will provide a set of enabled modules based on options
 // it prints which modules are enabled/disabled to the log
-func (r *Registry) filter(opts *Options) ([]Module, error) {
+func (r *Registry) filter(log Logger, opts *Options) ([]Module, error) {
 	var enabled []Module
 	var disabled []string
 
@@ -138,14 +144,14 @@ func (r *Registry) filter(opts *Options) ([]Module, error) {
 
 	}
 
-	if !opts.Quiet && len(disabled) > 0 {
-		log.Printf("[platform] disabled %d modules: %v", len(disabled), disabled)
+	if len(disabled) > 0 {
+		log.Info("modules disabled", "count", len(disabled), "modules", disabled)
 	}
 
 	return enabled, nil
 }
 
-func (r *Registry) mount(ctx context.Context, mux Router, modules []Module, quiet bool) error {
+func (r *Registry) mount(ctx context.Context, mux Router, modules []Module) error {
 	ctx, span := oida.Start(ctx, "registry.mount")
 	defer span.End()
 
@@ -162,7 +168,7 @@ func (r *Registry) mount(ctx context.Context, mux Router, modules []Module, quie
 	return nil
 }
 
-func (r *Registry) start(ctx context.Context, modules []Module, quiet bool) error {
+func (r *Registry) start(ctx context.Context, modules []Module, log Logger) error {
 	ctx, span := oida.Start(ctx, "registry.start")
 	defer span.End()
 
@@ -175,9 +181,7 @@ func (r *Registry) start(ctx context.Context, modules []Module, quiet bool) erro
 		started = append(started, name)
 	}
 
-	if !quiet {
-		log.Printf("[platform] started %d modules: %v", len(started), started)
-	}
+	log.Info("modules started", "count", len(started), "modules", started)
 
 	return nil
 }

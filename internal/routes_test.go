@@ -29,5 +29,20 @@ func TestRoutesCount(t *testing.T) {
 	require.Equal(t, 1, routes_b)
 	require.Equal(t, 1, mws_b)
 
-	PrintRoutes(r)
+	log := &testLogger{}
+	PrintRoutes(log, r)
+
+	// The summary line, and one line for the single route.
+	require.Equal(t, 2, len(log.messages))
+	require.Equal(t, "routes registered", log.messages[0])
+	require.Equal(t, "route", log.messages[1])
+}
+
+// testLogger records the messages PrintRoutes writes.
+type testLogger struct {
+	messages []string
+}
+
+func (l *testLogger) Info(msg string, _ ...any) {
+	l.messages = append(l.messages, msg)
 }

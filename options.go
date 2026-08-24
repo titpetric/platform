@@ -18,7 +18,9 @@ type Options struct {
 	// ServerAddr is the address the server listens to.
 	ServerAddr string
 
-	// Quiet turns down the verbosity in the Platform logging code, set to true in tests.
+	// Quiet silences the platform's own output: New installs a discarding
+	// logger as Platform.Logger instead of the default one. Set to true in
+	// tests. Assigning Platform.Logger afterwards overrules it.
 	Quiet bool
 
 	// Modules controls which modules get loaded. If the list

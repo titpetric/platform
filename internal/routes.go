@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"log"
 	"net/http"
 	"reflect"
 	"runtime"
@@ -9,6 +8,13 @@ import (
 
 	chi "github.com/go-chi/chi/v5"
 )
+
+// Logger is the subset of *slog.Logger that PrintRoutes writes through.
+// The platform logger satisfies it, and internal can't import the platform
+// package to name it.
+type Logger interface {
+	Info(msg string, args ...any)
+}
 
 // CountRoutes returns the total number of routes, and the total number of known middlewares.
 func CountRoutes(r chi.Routes) (int, int) {
@@ -30,12 +36,13 @@ func CountRoutes(r chi.Routes) (int, int) {
 }
 
 // PrintRoutes will print the number of routes and middlewares, and the routing table.
-func PrintRoutes(r chi.Routes) {
+func PrintRoutes(log Logger, r chi.Routes) {
 	routes, mws := CountRoutes(r)
-	log.Printf("[router] registered %d routes and %d middlewares\n", routes, mws)
+	log.Info("routes registered", "routes", routes, "middlewares", mws)
 
 	_ = chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
-		log.Printf("%s %s -> %s\n", method, route, runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name())
+		log.Info("route", "method", method, "path", route,
+			"handler", runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name())
 		return nil
 	})
 }

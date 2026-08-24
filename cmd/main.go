@@ -3,7 +3,8 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
+	"os"
 
 	_ "github.com/titpetric/platform/pkg/drivers"
 
@@ -32,7 +33,11 @@ func Main(ctx context.Context, options ...*platform.Options) {
 	if err != nil {
 		err = fmt.Errorf("exit error: %w", err)
 		oida.RecordError(ctx, err)
-		log.Fatal(err)
+
+		// The platform never came up, so there is no platform logger to
+		// write this through.
+		slog.Error("platform start failed", "error", err)
+		os.Exit(1)
 	}
 
 	p.Wait()
