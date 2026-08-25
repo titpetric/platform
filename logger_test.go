@@ -4,6 +4,7 @@ import (
 	"slices"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/pkg/require"
@@ -72,5 +73,24 @@ func TestLogger(t *testing.T) {
 		svc.Logger = nil
 
 		require.NoError(t, svc.Start(t.Context()))
+	})
+
+	// Stop releases the signal handler, and that cancels the same context
+	// a delivered signal does. Only a signal is worth a line.
+	t.Run("stop is not a caught signal", func(t *testing.T) {
+		log := &recordLogger{}
+
+		svc := platform.New(verboseTestOptions())
+		svc.Logger = log
+
+		require.NoError(t, svc.Start(t.Context()))
+
+		svc.Stop()
+		svc.Wait()
+
+		// The signal goroutine wakes on its own schedule.
+		time.Sleep(50 * time.Millisecond)
+
+		require.False(t, log.has("caught sigterm, stopping server"))
 	})
 }

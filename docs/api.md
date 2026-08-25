@@ -242,10 +242,11 @@ type Platform struct {
 	served chan struct{}
 
 	// final shutdown context
-	context context.Context
-	cancel  context.CancelFunc
-	stop    func()
-	once    sync.Once
+	context  context.Context
+	cancel   context.CancelFunc
+	stop     func()
+	once     sync.Once
+	stopping atomic.Bool
 
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.

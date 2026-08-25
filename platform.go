@@ -31,6 +31,7 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	chi "github.com/go-chi/chi/v5"
@@ -61,10 +62,11 @@ type Platform struct {
 	served chan struct{}
 
 	// final shutdown context
-	context context.Context
-	cancel  context.CancelFunc
-	stop    func()
-	once    sync.Once
+	context  context.Context
+	cancel   context.CancelFunc
+	stop     func()
+	once     sync.Once
+	stopping atomic.Bool
 
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
@@ -160,6 +162,13 @@ func (p *Platform) Start(ctx context.Context) error {
 
 	go func() {
 		<-sigctx.Done()
+
+		// Stop releases the signal handler, which cancels this context
+		// as a delivered signal does. Only one of the two is news.
+		if p.stopping.Load() {
+			return
+		}
+
 		log.Info("caught sigterm, stopping server")
 		p.Stop()
 	}()
@@ -265,6 +274,8 @@ func (p *Platform) URL() string {
 // Only after the server has fully shut down does the internal context get cancelled.
 func (p *Platform) Stop() {
 	p.once.Do(func() {
+		p.stopping.Store(true)
+
 		// Give a 5 second timeout for a graceful shutdown.
 		ctx, cancel := context.WithTimeout(p.Context(), 5*time.Second)
 		defer cancel()
