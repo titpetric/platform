@@ -28,6 +28,9 @@ svc.Register(user.NewModule())
 The platform lifecycle is extensively tested to ensure no races, no
 goroutine leaks. Each platform object creates a copy of the global
 state and holds scoped allocations only, enabling test parallelism.
+Modules are part of that copy when registered with `RegisterFunc`,
+which is called once per platform. A value registered with the
+deprecated `Register` is shared by every platform in the process.
 
 ## Types
 

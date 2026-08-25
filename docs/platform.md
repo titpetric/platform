@@ -9,7 +9,7 @@
 - A router (alias to `chi.Router`) for attaching module routes.
 - Named database connections with automatic environment scanning.
 
-Each `Platform` instance clones the global registry, enabling isolated test instances and avoiding races or goroutine leaks.
+Each `Platform` instance clones the global registry, enabling isolated test instances and avoiding races or goroutine leaks. The clone calls the constructors registered with `platform.RegisterFunc()`, so each instance holds modules of its own. A value registered with the deprecated `platform.Register()` is shared by every instance in the process.
 
 ## Key Concepts
 
