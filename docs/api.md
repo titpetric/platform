@@ -115,6 +115,39 @@ type Logger interface {
 </details>
 
 <details>
+<summary><code>type Manager</code></summary>
+
+```go
+// Manager owns the socket, and the platform generation serving on it. It
+// replaces the platform under it on SIGHUP, keeping the address it serves.
+type Manager struct {
+	// Logger receives the manager's own output, and is handed to every
+	// platform generation it creates. Defaults as Platform.Logger does.
+	Logger Logger
+
+	// Setup runs against every platform generation before it starts.
+	// Registration against a platform value belongs here, as a reload
+	// discards the value it was made against.
+	Setup func(*Platform) error
+
+	options *Options
+
+	// mu serializes the generation swap.
+	mu      sync.Mutex
+	shared  *sharedListener
+	current atomic.Pointer[generation]
+
+	// final shutdown context, cancelled when the manager stops
+	context context.Context
+	cancel  context.CancelFunc
+	stop    func()
+	once    sync.Once
+}
+```
+
+</details>
+
+<details>
 <summary><code>type Middleware</code></summary>
 
 ```go
@@ -203,6 +236,10 @@ type Platform struct {
 	router   *chi.Mux
 	server   *http.Server
 	listener net.Listener
+
+	// served is closed when the accept loop has returned. Stop waits on it,
+	// so a manager gets the socket back when Stop is done.
+	served chan struct{}
 
 	// final shutdown context
 	context context.Context
@@ -315,6 +352,7 @@ var Database DatabaseProvider = global.db
 - `func FromRequest (r *http.Request) *Platform`
 - `func JSON (w http.ResponseWriter, r *http.Request, status int, data any)`
 - `func New (options *Options) *Platform`
+- `func NewManager (options *Options) *Manager`
 - `func NewOptions () *Options`
 - `func NewTelemetryModule (options oida.Options) (*TelemetryModule, error)`
 - `func NewTestOptions () *Options`
@@ -330,6 +368,13 @@ var Database DatabaseProvider = global.db
 - `func Transaction (ctx context.Context, db *sqlx.DB, fn func(context.Context, *sqlx.Tx) error) error`
 - `func URLParam (r *http.Request, name string) string`
 - `func Use (mw Middleware)`
+- `func (*Manager) Context () context.Context`
+- `func (*Manager) Platform () *Platform`
+- `func (*Manager) Reload (ctx context.Context) error`
+- `func (*Manager) Start (ctx context.Context) error`
+- `func (*Manager) Stop ()`
+- `func (*Manager) URL () string`
+- `func (*Manager) Wait ()`
 - `func (*Platform) Context () context.Context`
 - `func (*Platform) Find (target any) bool`
 - `func (*Platform) Register (m Module)`
@@ -397,6 +442,15 @@ The defaults options are provided by NewOptions().
 
 ```go
 func New(options *Options) *Platform
+```
+
+### NewManager
+
+NewManager creates a manager for the passed options. If no options are
+passed, the defaults from NewOptions() are in use.
+
+```go
+func NewManager(options *Options) *Manager
 ```
 
 ### NewOptions
@@ -526,6 +580,67 @@ This should be used from main() to define any global middleware.
 
 ```go
 func Use(mw Middleware)
+```
+
+### Context
+
+Context returns the cancellation context for the manager. When the context
+finishes, the platform has shut down and the socket is closed.
+
+```go
+func (*Manager) Context() context.Context
+```
+
+### Platform
+
+Platform returns the generation currently serving, and nil when there is
+none: before Start, after Stop, and after a reload that failed.
+
+```go
+func (*Manager) Platform() *Platform
+```
+
+### Reload
+
+Reload stops the running platform and starts a new one on the same
+socket. Generations never overlap, so a module has to survive a restart.
+
+```go
+func (*Manager) Reload(ctx context.Context) error
+```
+
+### Start
+
+Start binds the listener, starts the first platform generation on it, and
+arms the SIGHUP handler. Cancelling ctx stops the manager.
+
+```go
+func (*Manager) Start(ctx context.Context) error
+```
+
+### Stop
+
+Stop shuts down the running platform and closes the socket. A stopped
+manager does not start again.
+
+```go
+func (*Manager) Stop()
+```
+
+### URL
+
+URL gives the e2e endpoint URL for requests. A reload does not change it.
+
+```go
+func (*Manager) URL() string
+```
+
+### Wait
+
+Wait will pause until the manager is stopped. A reload does not end it.
+
+```go
+func (*Manager) Wait()
 ```
 
 ### Context

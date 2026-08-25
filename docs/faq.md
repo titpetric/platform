@@ -75,3 +75,25 @@ the passed context is expected to be a `t.Context()` (for `testing.TB`).
 Start has a platform instance attached to the context, and can use
 `platform.FromContext` to get the instance, and the `Find` function on
 the instance to get a reference to any side loaded module.
+
+## How do I reload the app without restarting the process?
+
+Run a `platform.Manager` instead of a bare `*Platform`, and send the
+process a `SIGHUP`. `cmd.Main` already does, so an app built on it
+reloads out of the box:
+
+```go
+m := platform.NewManager(platform.NewOptions())
+if err := m.Start(ctx); err != nil {
+	return err
+}
+
+m.Wait()
+```
+
+The manager holds the listening socket and replaces the platform under
+it, so the address survives the reload while the router, the registry
+and the modules are new. Modules therefore have to tolerate `Start`
+after `Stop`. Registrations that are not in the global registry belong
+in `Manager.Setup`, which runs against every generation. See the reload
+section in [The Platform](platform.md).

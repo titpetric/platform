@@ -56,6 +56,10 @@ type Platform struct {
 	server   *http.Server
 	listener net.Listener
 
+	// served is closed when the accept loop has returned. Stop waits on it,
+	// so a manager gets the socket back when Stop is done.
+	served chan struct{}
+
 	// final shutdown context
 	context context.Context
 	cancel  context.CancelFunc
@@ -84,6 +88,7 @@ func New(options *Options) *Platform {
 		options: options,
 		router:  chi.NewRouter(),
 		stop:    func() {},
+		served:  make(chan struct{}),
 	}
 
 	// Set up the platform logger. It's set before anything that logs, and
@@ -161,6 +166,8 @@ func (p *Platform) Start(ctx context.Context) error {
 
 	// Start the server.
 	go func() {
+		defer close(p.served)
+
 		if err := p.server.Serve(p.listener); err != nil && err != http.ErrServerClosed {
 			oida.RecordError(p.context, err)
 		}
@@ -218,12 +225,15 @@ func (p *Platform) setupRequestContext(next http.Handler) http.Handler {
 }
 
 func (p *Platform) setupListener() error {
-	// Set up server listener.
-	listener, err := net.Listen("tcp", p.options.ServerAddr)
-	if err != nil {
-		return err
+	// A Manager hands its platform a listener to serve, so the socket
+	// survives a reload. Only bind one when there is none.
+	if p.listener == nil {
+		listener, err := net.Listen("tcp", p.options.ServerAddr)
+		if err != nil {
+			return err
+		}
+		p.listener = listener
 	}
-	p.listener = listener
 
 	p.logger().Info("server listening", "addr", p.listener.Addr().String(), "url", p.URL())
 	return nil
@@ -243,9 +253,7 @@ func (p *Platform) Wait() {
 
 // URL gives the e2e endpoint URL for requests.
 func (p *Platform) URL() string {
-	listenAddr := p.listener.Addr().String()
-	_, port, _ := net.SplitHostPort(listenAddr)
-	return "http://127.0.0.1:" + port
+	return listenerURL(p.listener)
 }
 
 // Stop will gracefully shutdown the server and then cancel the server context when done.
@@ -277,6 +285,14 @@ func (p *Platform) Stop() {
 
 		// Capture error to telemetry sink.
 		oida.RecordError(p.context, p.server.Shutdown(ctx))
+
+		// Shutdown returns once the connections are done, but the accept
+		// loop is a goroutine of its own, and nothing may be accepting
+		// when a manager hands the socket to the next generation.
+		select {
+		case <-p.served:
+		case <-ctx.Done():
+		}
 	})
 }
 

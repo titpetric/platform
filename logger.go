@@ -25,6 +25,14 @@ func (p *Platform) logger() Logger {
 	return p.Logger
 }
 
+// logger returns the manager logger, never nil.
+func (m *Manager) logger() Logger {
+	if m.Logger == nil {
+		return discard
+	}
+	return m.Logger
+}
+
 // loggerFromContext returns the logger of the platform bound to the context.
 // A Registry is usable as a bare value, outside of a platform, so there may
 // be no platform in the context, in which case output is discarded.

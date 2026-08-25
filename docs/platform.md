@@ -18,6 +18,7 @@ Each `Platform` instance clones the global registry, enabling isolated test inst
 - Registry - package and instance level container value managing modules and middleware; enables `init` usage via package API.
 - Database - named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed.
 - Logger - the `Platform.Logger` field, an interface with `Info` and `Error`, receiving the platform's own output.
+- Manager - owns the listening socket and the `*Platform` serving on it, replacing the platform on `SIGHUP`.
 
 ## Logging
 
@@ -56,3 +57,50 @@ platform.FromRequest(r).Logger.Info("handled", "path", r.URL.Path)
 3. **Start the platform** with `Start(context.Context)`; modules are started and then mounted.
 4. **Stop** with `Stop()`; modules are stopped in parallel, then the server context is cancelled.
 5. Application exit, reporting any error during shutdown.
+
+## Reload
+
+A `*Platform` is a one-shot value. `Stop` clears its registry and cancels its
+context, and there is no way back from that, so a reload is a new platform.
+`Manager` is what outlives the old one and builds the new one:
+
+```go
+m := platform.NewManager(platform.NewOptions())
+if err := m.Start(ctx); err != nil {
+	return err
+}
+m.Wait()
+```
+
+`cmd.Main` runs a manager, so an app built on it reloads with `kill -HUP`.
+Used directly, `platform.Start` is unchanged, and `SIGHUP` keeps its default
+disposition, which terminates the process.
+
+The manager holds the listening socket, so a reload keeps the address it was
+reached on, along with the connections queued on it. Everything above the
+socket is new: the router, the registry, the server, the telemetry recorder,
+and the value `Platform()` returns.
+
+Generations do not overlap. A module registered from `init` is one value
+shared by every generation, cloned out of the global registry, so the old
+generation is drained and stopped before the new one starts. For a reload to
+mean anything, a module has to tolerate `Start` after `Stop`. Requests that
+arrive during the swap wait in the accept queue of the socket rather than
+being refused; requests already in flight are served by the generation that
+took them.
+
+Registrations made against a platform value do not survive a reload, because
+the value does not. `Manager.Setup` is where they belong:
+
+```go
+m.Setup = func(p *platform.Platform) error {
+	p.Register(user.NewModule())
+	p.Use(middleware.Logger)
+	return nil
+}
+```
+
+A reload that fails leaves nothing serving: the old generation is already
+gone, and a retry would read the same configuration again. `Reload` returns
+the error, and the `SIGHUP` handler stops the manager, so the failure is
+visible to whatever supervises the process.
