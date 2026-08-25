@@ -84,7 +84,7 @@ func (l *generationListener) Accept() (net.Conn, error) {
 	default:
 	}
 
-	conn, err := l.shared.Listener.Accept()
+	conn, err := l.shared.Accept()
 
 	select {
 	case <-l.closed:
