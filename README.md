@@ -6,8 +6,9 @@ The `platform` package is an extensible, modular system for building
 HTTP servers and sidecar services in Go.
 
 It provides a global registry for modules and middleware, a lifecycle
-for graceful shutdown, and named database connections, allowing you to
-structure services as composable, testable modules.
+for graceful shutdown, named database connections, and a `SIGHUP` reload
+that replaces the running platform without dropping the socket, allowing
+you to structure services as composable, testable modules.
 
 Application examples, with database use:
 
@@ -18,16 +19,17 @@ Status: the app and maillist packages still need implementation surface.
 
 ## Coverage
 
-| Status | Package                         | Coverage | Cognitive | Lines |
-|--------|---------------------------------|----------|-----------|-------|
-| ✅     | titpetric/platform              | 82.20%   | 42        | 370   |
-| ✅     | titpetric/platform/cmd          | 87.50%   | 2         | 23    |
-| ✅     | titpetric/platform/cmd/platform | 0.00%    | 0         | 3     |
-| ✅     | titpetric/platform/internal     | 94.87%   | 20        | 155   |
-| ✅     | titpetric/platform/pkg/assert   | 0.00%    | 0         | 0     |
-| ✅     | titpetric/platform/pkg/drivers  | 0.00%    | 0         | 0     |
-| ✅     | titpetric/platform/pkg/require  | 0.00%    | 0         | 0     |
-| ✅     | titpetric/platform/pkg/ulid     | 100.00%  | 0         | 20    |
+| Status | Package                            | Coverage | Cognitive | Lines |
+|--------|------------------------------------|----------|-----------|-------|
+| ✅     | titpetric/platform                 | 89.25%   | 244       | 2082  |
+| ✅     | titpetric/platform/cmd             | 46.70%   | 4         | 60    |
+| ✅     | titpetric/platform/cmd/platform    | 0.00%    | 0         | 6     |
+| ✅     | titpetric/platform/internal        | 81.12%   | 62        | 390   |
+| ✅     | titpetric/platform/pkg/assert      | 0.00%    | 0         | 0     |
+| ✅     | titpetric/platform/pkg/drivers     | 0.00%    | 0         | 0     |
+| ✅     | titpetric/platform/pkg/httpcontext | 100.00%  | 2         | 46    |
+| ✅     | titpetric/platform/pkg/require     | 0.00%    | 0         | 0     |
+| ✅     | titpetric/platform/pkg/ulid        | 100.00%  | 0         | 36    |
 
 For more detail, see: [Testing Coverage](./docs/testing-coverage.md).
 
@@ -39,4 +41,5 @@ For more detail, see: [Testing Coverage](./docs/testing-coverage.md).
 - [Common Patterns](./docs/patterns.md) - routing, GET/POST, background jobs and validation patterns.
 - [SQL Database Usage](./docs/database.md) - named connections, DSN examples, and `Connect()` vs `Open()`.
 - [Telemetry](./docs/telemetry.md) - recording traces and spans with oida, and the `/debug/oida` dashboard.
+- [Structural diagram](./docs/structure.md) - generated package import and class diagrams.
 - [FAQ](./docs/faq.md) - short practical answers to common questions.

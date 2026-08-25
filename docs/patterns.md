@@ -5,7 +5,7 @@
 Attach GET and POST endpoints:
 
 ```go
-func (m *Module) Mount(r platform.Router) error {
+func (m *Module) Mount(_ context.Context, r platform.Router) error {
 	r.Get("/items", m.GetItems)
 	r.Post("/items", m.PostItem)
 	return nil
@@ -63,7 +63,7 @@ func (c *Crontab) Start(context.Context) error {
 	return nil
 }
 
-func (c *Crontab) Stop() error {
+func (c *Crontab) Stop(context.Context) error {
 	<-c.scheduler.Stop().Done()
 	return nil
 }
@@ -76,4 +76,4 @@ running scheduled task is completed before exiting.
 
 - Add global middleware via `platform.Use()` (package) or `(*Platform).Use()` (instance).
 - Middleware should be added **before** `Start(context.Context)`.
-- You can use any existing middleware as long as it implements the `Middleware` interface.
+- You can use any existing middleware as long as it matches the `Middleware` signature, `func(http.Handler) http.Handler`.

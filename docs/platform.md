@@ -13,7 +13,7 @@ Each `Platform` instance clones the global registry, enabling isolated test inst
 
 ## Key Concepts
 
-- Module - implements `Name()`, `Mount(Router)`, `Start(context.Context)`, `Stop()`. Registered as a constructor with `platform.RegisterFunc()`, so each platform builds its own.
+- Module - implements `Name()`, `Start(context.Context)`, `Mount(context.Context, Router)`, `Stop(context.Context)`. Registered as a constructor with `platform.RegisterFunc()`, so each platform builds its own.
 - Middleware - type `func(http.Handler) http.Handler`, added via `platform.Use()` or `(*Platform).Use()`.
 - Registry - package and instance level container value managing modules and middleware; enables `init` usage via package API.
 - Database - named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed.
@@ -55,7 +55,9 @@ platform.FromRequest(r).Logger.Info("handled", "path", r.URL.Path)
 1. **Register modules** via `platform.RegisterFunc()` (or `Register` on a `*Platform` instance).
 2. **Add middleware** via `platform.Use()` before calling `Start(context.Context)`.
 3. **Start the platform** with `Start(context.Context)`; modules are started and then mounted.
-4. **Stop** with `Stop()`; modules are stopped in parallel, then the server context is cancelled.
+4. **Stop** with `Stop()`; the server is shut down gracefully with a 5 second
+   timeout, the platform context is cancelled, and the registry then stops
+   every module in parallel.
 5. Application exit, reporting any error during shutdown.
 
 ## Reload

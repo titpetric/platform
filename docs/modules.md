@@ -7,17 +7,17 @@ A module must implement:
 ```go
 type Module interface {
 	Name() string
-	Mount(Router) error
 	Start(context.Context) error
-	Stop() error
+	Mount(context.Context, Router) error
+	Stop(context.Context) error
 }
 ```
 
 The functions run in this order. If `Mount` runs, `Start` has completed.
 
 - `Start(context.Context)` - start background goroutines or services.
-- `Mount(Router)` - attach HTTP routes.
-- `Stop()` - clean up and stop all background work.
+- `Mount(context.Context, Router)` - attach HTTP routes.
+- `Stop(context.Context)` - clean up and stop all background work.
 
 ### Firewalling modules
 
@@ -60,7 +60,7 @@ type StaticModule struct {
 
 func (m *StaticModule) Name() string { return "static" }
 
-func (m *StaticModule) Mount(r platform.Router) error {
+func (m *StaticModule) Mount(_ context.Context, r platform.Router) error {
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("static page"))
 	})
@@ -76,11 +76,18 @@ func main() {
 	platform.Use(loggingMiddleware)
 	platform.RegisterFunc(func() platform.Module { return &StaticModule{} })
 
-	if err := platform.Start(); err != nil {
+	p, err := platform.Start(context.Background(), platform.NewOptions())
+	if err != nil {
 		log.Fatalf("exit error: %v", err)
 	}
+
+	p.Wait()
 }
 ```
+
+`platform.Start` returns as soon as the server is accepting, so `Wait` is what
+blocks until shutdown. To get `SIGHUP` reloads instead, run a `platform.Manager`
+or call `cmd.Main`; see [The Platform](platform.md).
 
 `loggingMiddleware` example:
 

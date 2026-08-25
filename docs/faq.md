@@ -14,11 +14,15 @@ one value is shared by every platform in the process.
 
 ## How do I access a named database connection?
 
-Use `platform.Database.Connect("name")` to Open + Ping a connection, or `Open("name")` for lazy access.
+Use `platform.Database.Connect(ctx, "name")` to Open + Ping a connection, or
+`Open(ctx, "name")` to skip the ping. Passing no name uses `"default"`.
 
 ## How do I run the platform in tests?
 
-Create a `*Platform` instance and call `Register`/`Use` on it. Avoid package-level `Register` in tests.
+Create a `*Platform` instance with `platform.NewTestOptions()` and call
+`Register`/`Use` on it. Avoid package-level `Register` in tests. The test
+options bind to `127.0.0.1:0`, silence the platform's own output, and leave
+telemetry off, so parallel tests do not observe each other.
 
 ## How do I implement a module quickly?
 
@@ -26,28 +30,26 @@ Embed `platform.UnimplementedModule` and override only the methods you need.
 
 ## How do I start/stop a platform instance?
 
-The package provides a `Start(context.Context)` function, wrapping a
-`StartPlatform(context.Context, *Options)`. Using `StartPlatform` allows
-to configure how the platform starts by providing an options object.
+The package provides `Start(context.Context, *Options)`, a shorthand that
+allocates a platform and starts it. The options object configures how it
+starts; `nil` takes the defaults from `NewOptions()`.
 
-The platform is shut down when the context passed to `StartPlatform` is
-cancelled or when a SIGTERM signal is intercepted in the system.
-
-```go
-if err := platform.Start(ctx); err != nil {
-	return log.Fatalf("exit error: %v", err)
-}
-```
-
-For the `*Platform` instance, you need to invoke the `Wait()` function,
-like you would with a `sync.WaitGroup`. The function exits when the
-server has shut down due to cancellation via signal.
+The platform is shut down when the context passed to `Start` is cancelled
+or when a SIGTERM signal is intercepted in the system.
 
 ```go
-p, err := platform.New()
+p, err := platform.Start(ctx, platform.NewOptions())
 if err != nil {
 	return err
 }
+```
+
+`Start` returns as soon as the server is accepting. To block until it is
+done, invoke `Wait()`, like you would with a `sync.WaitGroup`. The function
+exits when the server has shut down due to cancellation via signal.
+
+```go
+p := platform.New(platform.NewOptions())
 
 if err := p.Start(ctx); err != nil {
 	return err
@@ -62,7 +64,7 @@ want to shut down the platform.
 
 ## How do I attach routes in a module?
 
-Implement your `Mount(r Router)` to register GET/POST handlers via
+Implement your `Mount(ctx context.Context, r Router)` to register GET/POST handlers via
 `r.Get()`/`r.Post()` and other options. Functions exist to add grouping
 to your endpoints, like `r.Route(prefix, func(Router))`. This gives you
 simple ways to use middleware in your routes.
@@ -97,7 +99,9 @@ m.Wait()
 
 The manager holds the listening socket and replaces the platform under
 it, so the address survives the reload while the router, the registry
-and the modules are new. Modules therefore have to tolerate `Start`
-after `Stop`. Registrations that are not in the global registry belong
-in `Manager.Setup`, which runs against every generation. See the reload
-section in [The Platform](platform.md).
+and the modules are new. Modules registered with `RegisterFunc` are
+constructed per generation; a module registered as a value with the
+deprecated `Register` is shared across generations, and has to tolerate
+`Start` after `Stop`. Registrations that are not in the global registry
+belong in `Manager.Setup`, which runs against every generation. See the
+reload section in [The Platform](platform.md).
