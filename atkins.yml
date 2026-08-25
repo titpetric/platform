@@ -47,7 +47,7 @@ jobs:
       - go-fsck extract --pretty-json ./...
       - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
       - go-fsck coverage -c pkg.cov.json -o go-fsck.json
-      - go-fsck coverage -c pkg.cov.json --template docs/testing-coverage.md.tpl > docs/testing-coverage.md
+      - go-fsck coverage --template docs/testing-coverage.md.tpl > docs/testing-coverage.md
       - task: mdox:fmt
 
   clean:

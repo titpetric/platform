@@ -13,15 +13,15 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 | Status | Package                                       | Coverage | Cognitive | Lines |
 |--------|-----------------------------------------------|----------|-----------|-------|
-| ✅     | github.com/titpetric/platform                 | 89.25%   | 244       | 2082  |
-| ✅     | github.com/titpetric/platform/cmd             | 46.70%   | 4         | 60    |
-| ✅     | github.com/titpetric/platform/cmd/platform    | 0.00%    | 0         | 6     |
-| ✅     | github.com/titpetric/platform/internal        | 81.12%   | 62        | 390   |
+| ✅     | github.com/titpetric/platform                 | 89.25%   | 122       | 1041  |
+| ✅     | github.com/titpetric/platform/cmd             | 46.70%   | 2         | 30    |
+| ✅     | github.com/titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
+| ✅     | github.com/titpetric/platform/internal        | 81.12%   | 31        | 195   |
 | ✅     | github.com/titpetric/platform/pkg/assert      | 0.00%    | 0         | 0     |
 | ✅     | github.com/titpetric/platform/pkg/drivers     | 0.00%    | 0         | 0     |
-| ✅     | github.com/titpetric/platform/pkg/httpcontext | 100.00%  | 2         | 46    |
+| ✅     | github.com/titpetric/platform/pkg/httpcontext | 100.00%  | 1         | 23    |
 | ✅     | github.com/titpetric/platform/pkg/require     | 0.00%    | 0         | 0     |
-| ✅     | github.com/titpetric/platform/pkg/ulid        | 100.00%  | 0         | 36    |
+| ✅     | github.com/titpetric/platform/pkg/ulid        | 100.00%  | 0         | 18    |
 
 ## Functions
 
