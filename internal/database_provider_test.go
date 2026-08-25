@@ -46,15 +46,15 @@ func TestDatabaseProviderFileSQLiteDefaults(t *testing.T) {
 
 	db, err := provider.Connect(t.Context(), "test")
 	require.NoError(t, err)
-	t.Cleanup(func() { _ = db.Close() })
+	t.Cleanup(func() { require.NoError(t, db.Close()) })
 	require.Equal(t, 10, db.Stats().MaxOpenConnections)
 
 	first, err := db.Connx(t.Context())
 	require.NoError(t, err)
-	defer first.Close()
+	t.Cleanup(func() { require.NoError(t, first.Close()) })
 	second, err := db.Connx(t.Context())
 	require.NoError(t, err)
-	defer second.Close()
+	t.Cleanup(func() { require.NoError(t, second.Close()) })
 
 	for _, connection := range []*sqlx.Conn{first, second} {
 		var journalMode string
