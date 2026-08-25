@@ -344,7 +344,7 @@ var Database DatabaseProvider = global.db
 - `func (*Registry) Close (ctx context.Context)`
 - `func (*Registry) Find (target any) bool`
 - `func (*Registry) Register (m Module)`
-- `func (*Registry) Start (ctx context.Context, mux Router, opts *Options, log Logger) error`
+- `func (*Registry) Start (ctx context.Context, mux Router, opts *Options) error`
 - `func (*Registry) Stats () int`
 - `func (*Registry) Use (f Middleware)`
 - `func (*TelemetryModule) Middleware (next http.Handler) http.Handler`
@@ -661,10 +661,11 @@ func (*Registry) Register(m Module)
 Start will invoke all the modules start functions sequentially.
 If an error occurs, execution is halted and an error is returned.
 The context is passed along for observability and access to the platform.
-The logger receives the registry's own output; a nil logger discards it.
+The registry's own output goes to the logger of the platform in the
+context; without one it is discarded.
 
 ```go
-func (*Registry) Start(ctx context.Context, mux Router, opts *Options, log Logger) error
+func (*Registry) Start(ctx context.Context, mux Router, opts *Options) error
 ```
 
 ### Stats

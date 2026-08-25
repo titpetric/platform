@@ -87,19 +87,16 @@ func (r *Registry) Use(f Middleware) {
 // Start will invoke all the modules start functions sequentially.
 // If an error occurs, execution is halted and an error is returned.
 // The context is passed along for observability and access to the platform.
-// The logger receives the registry's own output; a nil logger discards it.
-func (r *Registry) Start(ctx context.Context, mux Router, opts *Options, log Logger) error {
+// The registry's own output goes to the logger of the platform in the
+// context; without one it is discarded.
+func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	ctx, span := oida.Start(ctx, "registry.Start")
 	defer span.End()
 
-	// A Registry is usable as a bare value, so it can't assume a caller
-	// passed a logger in.
-	if log == nil {
-		log = discard
-	}
+	log := loggerFromContext(ctx)
 
 	modules, err := r.filter(log, opts)
 	if err != nil {

@@ -145,7 +145,7 @@ func (p *Platform) Start(ctx context.Context) error {
 	// outlives this call, so it gets a value and not a shared field.
 	log := p.logger()
 
-	if err := p.setup(ctx, log); err != nil {
+	if err := p.setup(ctx); err != nil {
 		return fmt.Errorf("error in platform setup: %w", err)
 	}
 
@@ -172,7 +172,7 @@ func (p *Platform) Start(ctx context.Context) error {
 	return nil
 }
 
-func (p *Platform) setup(startCtx context.Context, log Logger) error {
+func (p *Platform) setup(startCtx context.Context) error {
 	// set up context for module start
 	ctx := platformContext.SetContext(startCtx, p)
 	ctx = optionsContext.SetContext(ctx, p.options)
@@ -181,11 +181,11 @@ func (p *Platform) setup(startCtx context.Context, log Logger) error {
 	// own. Without one the spans below have nothing to record onto and the
 	// dashboard shows nothing until the first request.
 	return p.observe(ctx, "platform.setup", func(ctx context.Context) error {
-		if err := p.registry.Start(ctx, p.router, p.options, log); err != nil {
+		if err := p.registry.Start(ctx, p.router, p.options); err != nil {
 			return fmt.Errorf("registry: %w", err)
 		}
 
-		if err := p.setupListener(log); err != nil {
+		if err := p.setupListener(); err != nil {
 			return fmt.Errorf("setting up listener: %w", err)
 		}
 
@@ -217,7 +217,7 @@ func (p *Platform) setupRequestContext(next http.Handler) http.Handler {
 	})
 }
 
-func (p *Platform) setupListener(log Logger) error {
+func (p *Platform) setupListener() error {
 	// Set up server listener.
 	listener, err := net.Listen("tcp", p.options.ServerAddr)
 	if err != nil {
@@ -225,7 +225,7 @@ func (p *Platform) setupListener(log Logger) error {
 	}
 	p.listener = listener
 
-	log.Info("server listening", "addr", p.listener.Addr().String(), "url", p.URL())
+	p.logger().Info("server listening", "addr", p.listener.Addr().String(), "url", p.URL())
 	return nil
 }
 
