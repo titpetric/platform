@@ -6,7 +6,11 @@ Use `platform.Use` (package) or `(*Platform).Use` (instance). Add before calling
 
 ## How do I register a module?
 
-Use `platform.Register` (package) or `(*Platform).Register` (instance) before starting the server.
+Use `platform.RegisterFunc` (package) or `(*Platform).Register` (instance)
+before starting the server. The package function takes a constructor, and
+calls it once per platform, so a reload generation and a parallel test get
+a module of their own. `platform.Register` takes a value and is deprecated:
+one value is shared by every platform in the process.
 
 ## How do I access a named database connection?
 

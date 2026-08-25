@@ -1,7 +1,11 @@
 package platform_test
 
 import (
+	"context"
+	"strconv"
 	"testing"
+
+	chi "github.com/go-chi/chi/v5"
 
 	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/pkg/require"
@@ -56,4 +60,64 @@ func TestRegistry_Modules(t *testing.T) {
 	t.Run("nil interface target returns false", func(t *testing.T) {
 		require.False(t, r.Find(nil), "Find(nil) should return false")
 	})
+}
+
+// TestRegistry_RegisterFunc covers constructor registration, which is what
+// gives each platform, and each reload generation, modules of its own.
+func TestRegistry_RegisterFunc(t *testing.T) {
+	var built int
+
+	r := platform.Registry{}
+	r.RegisterFunc(func() platform.Module {
+		built++
+		return &MyGreeter{Nickname: strconv.Itoa(built)}
+	})
+
+	modules, _ := r.Stats()
+	require.Equal(t, 1, modules)
+	require.Equal(t, 0, built, "a constructor is called by Clone, not by registration")
+
+	var first, second *MyGreeter
+	require.True(t, r.Clone().Find(&first))
+	require.True(t, r.Clone().Find(&second))
+
+	require.Equal(t, 2, built)
+	require.True(t, first != second, "each clone should get its own module")
+	require.Equal(t, "1", first.Nickname)
+	require.Equal(t, "2", second.Nickname)
+}
+
+// TestRegistry_Register covers the deprecated value form, where the module
+// is shared by everything that clones the registry.
+func TestRegistry_Register(t *testing.T) {
+	value := &MyGreeter{Nickname: "shared"}
+
+	r := platform.Registry{}
+	r.Register(value)
+
+	var first, second *MyGreeter
+	require.True(t, r.Clone().Find(&first))
+	require.True(t, r.Clone().Find(&second))
+
+	require.True(t, first == value)
+	require.True(t, second == value)
+}
+
+// TestRegistry_start_materializes covers a registry started as it stands,
+// with no clone to call the constructors it holds.
+func TestRegistry_start_materializes(t *testing.T) {
+	var started int
+
+	r := platform.Registry{}
+	r.RegisterFunc(func() platform.Module {
+		mod := platform.NewUnimplementedModule("materialized")
+		mod.StartFn = func(context.Context) error {
+			started++
+			return nil
+		}
+		return mod
+	})
+
+	require.NoError(t, r.Start(t.Context(), chi.NewRouter(), platform.NewTestOptions()))
+	require.Equal(t, 1, started)
 }

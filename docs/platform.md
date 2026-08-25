@@ -13,7 +13,7 @@ Each `Platform` instance clones the global registry, enabling isolated test inst
 
 ## Key Concepts
 
-- Module - implements `Name()`, `Mount(Router)`, `Start(context.Context)`, `Stop()`.
+- Module - implements `Name()`, `Mount(Router)`, `Start(context.Context)`, `Stop()`. Registered as a constructor with `platform.RegisterFunc()`, so each platform builds its own.
 - Middleware - type `func(http.Handler) http.Handler`, added via `platform.Use()` or `(*Platform).Use()`.
 - Registry - package and instance level container value managing modules and middleware; enables `init` usage via package API.
 - Database - named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed.
@@ -52,7 +52,7 @@ platform.FromRequest(r).Logger.Info("handled", "path", r.URL.Path)
 
 ## Lifecycle
 
-1. **Register modules** via `platform.Register()` (or on a `*Platform` instance).
+1. **Register modules** via `platform.RegisterFunc()` (or `Register` on a `*Platform` instance).
 2. **Add middleware** via `platform.Use()` before calling `Start(context.Context)`.
 3. **Start the platform** with `Start(context.Context)`; modules are started and then mounted.
 4. **Stop** with `Stop()`; modules are stopped in parallel, then the server context is cancelled.
@@ -81,13 +81,15 @@ reached on, along with the connections queued on it. Everything above the
 socket is new: the router, the registry, the server, the telemetry recorder,
 and the value `Platform()` returns.
 
-Generations do not overlap. A module registered from `init` is one value
-shared by every generation, cloned out of the global registry, so the old
-generation is drained and stopped before the new one starts. For a reload to
-mean anything, a module has to tolerate `Start` after `Stop`. Requests that
-arrive during the swap wait in the accept queue of the socket rather than
-being refused; requests already in flight are served by the generation that
-took them.
+Generations do not overlap: the old one is drained and stopped before the
+new one starts. Requests that arrive during the swap wait in the accept
+queue of the socket rather than being refused, and requests already in
+flight are served by the generation that took them.
+
+Modules registered with `platform.RegisterFunc` are constructed per
+generation, so a reload starts fresh values. A module registered with the
+deprecated `platform.Register` is one value shared by every generation, and
+has to tolerate `Start` after `Stop`.
 
 Registrations made against a platform value do not survive a reload, because
 the value does not. `Manager.Setup` is where they belong:

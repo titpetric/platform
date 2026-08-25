@@ -12,7 +12,7 @@ The platform is an extensible modular system for writing HTTP servers.
 2. Provides a lifecycle to the modules for graceful shutdown
 3. Provides a router the modules can attach to
 
-It's advised to use `platform.Register` from `init` functions.
+It's advised to use `platform.RegisterFunc` from `init` functions.
 Similarly, `platform.Use` should be used from `main` or any
 descendant setup functions. Don't use these functions from tests
 as they create a shared state.
@@ -270,11 +270,11 @@ type Platform struct {
 type Registry struct {
 	mu sync.RWMutex
 
-	// Modules hold a list of all modules registered. This list
-	// is filtered to start/stop only the modules that are enabled.
+	// Registrations hold every module registered, in registration order.
+	// The list is filtered to start/stop only the modules that are enabled.
 	// Interacting with a module is subject to concurrency concerns.
-	modules    []Module
-	middleware []Middleware
+	registrations []registration
+	middleware    []Middleware
 
 	// On registry start when modules start, a cleanup service per module
 	// will be registered via this value. On registry close, the slice
@@ -363,6 +363,7 @@ var Database DatabaseProvider = global.db
 - `func Param (r *http.Request, name string) string`
 - `func QueryParam (r *http.Request, name string) string`
 - `func Register (m Module)`
+- `func RegisterFunc (f func() Module)`
 - `func SetupConnections (environment []string)`
 - `func Start (ctx context.Context, options *Options) (*Platform, error)`
 - `func TestMiddleware () Middleware`
@@ -390,6 +391,7 @@ var Database DatabaseProvider = global.db
 - `func (*Registry) Close (ctx context.Context)`
 - `func (*Registry) Find (target any) bool`
 - `func (*Registry) Register (m Module)`
+- `func (*Registry) RegisterFunc (f func() Module)`
 - `func (*Registry) Start (ctx context.Context, mux Router, opts *Options) error`
 - `func (*Registry) Stats () int`
 - `func (*Registry) Use (f Middleware)`
@@ -526,8 +528,25 @@ Register will register a module in the platform global registry.
 It should not be relied upon in tests, keeping global state empty.
 This enables registering modules using blank imports.
 
+Deprecated: use RegisterFunc. One value is shared by every platform in
+the process, including the generations of a reload, so its state outlives
+the platform it was started with.
+
 ```go
 func Register(m Module)
+```
+
+### RegisterFunc
+
+RegisterFunc will register a module constructor in the platform global
+registry. It is called once per platform, so every platform, and every
+reload generation, starts a module of its own.
+
+It should not be relied upon in tests, keeping global state empty.
+This enables registering modules using blank imports.
+
+```go
+func RegisterFunc(f func() Module)
 ```
 
 ### SetupConnections
@@ -604,7 +623,8 @@ func (*Manager) Platform() *Platform
 ### Reload
 
 Reload stops the running platform and starts a new one on the same
-socket. Generations never overlap, so a module has to survive a restart.
+socket. Generations never overlap, so a module registered as a value,
+rather than as a constructor, has to survive a restart.
 
 ```go
 func (*Manager) Reload(ctx context.Context) error
@@ -738,7 +758,8 @@ func (*Registry) Cleanup(fn func(context.Context))
 
 ### Clone
 
-Clone provides a copy of the registry for use in the platform.
+Clone provides a copy of the registry for use in the platform. Modules
+registered as constructors are built here, one set per clone.
 
 ```go
 func (*Registry) Clone() *Registry
@@ -768,8 +789,21 @@ func (*Registry) Find(target any) bool
 
 Register adds a Module to the registry.
 
+Deprecated: use RegisterFunc. One value is shared by every platform that
+clones the registry, including the generations of a reload, so its state
+outlives the platform it was started with.
+
 ```go
 func (*Registry) Register(m Module)
+```
+
+### RegisterFunc
+
+RegisterFunc adds a module constructor to the registry. Clone calls it,
+so every platform starts a module of its own.
+
+```go
+func (*Registry) RegisterFunc(f func() Module)
 ```
 
 ### Start

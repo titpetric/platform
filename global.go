@@ -65,8 +65,22 @@ var Database DatabaseProvider = global.db
 // Register will register a module in the platform global registry.
 // It should not be relied upon in tests, keeping global state empty.
 // This enables registering modules using blank imports.
+//
+// Deprecated: use RegisterFunc. One value is shared by every platform in
+// the process, including the generations of a reload, so its state outlives
+// the platform it was started with.
 func Register(m Module) {
-	global.registry.Register(m)
+	global.registry.register(m)
+}
+
+// RegisterFunc will register a module constructor in the platform global
+// registry. It is called once per platform, so every platform, and every
+// reload generation, starts a module of its own.
+//
+// It should not be relied upon in tests, keeping global state empty.
+// This enables registering modules using blank imports.
+func RegisterFunc(f func() Module) {
+	global.registry.RegisterFunc(f)
 }
 
 // Use will add a middleware to the platform router.

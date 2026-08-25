@@ -4,7 +4,7 @@
 // 2. Provides a lifecycle to the modules for graceful shutdown
 // 3. Provides a router the modules can attach to
 //
-// It's advised to use `platform.Register` from `init` functions.
+// It's advised to use `platform.RegisterFunc` from `init` functions.
 // Similarly, `platform.Use` should be used from `main` or any
 // descendant setup functions. Don't use these functions from tests
 // as they create a shared state.
@@ -125,7 +125,7 @@ func New(options *Options) *Platform {
 // Register will add a registry.Module into the internal platform registry.
 // This function should be called before Serve is called.
 func (p *Platform) Register(m Module) {
-	p.registry.Register(m)
+	p.registry.register(m)
 }
 
 // Use will add a middleware to the internal platform registry.

@@ -74,7 +74,7 @@ func (m *StaticModule) Mount(r platform.Router) error {
 func main() {
 	// Register common middleware.
 	platform.Use(loggingMiddleware)
-	platform.Register(&StaticModule{})
+	platform.RegisterFunc(func() platform.Module { return &StaticModule{} })
 
 	if err := platform.Start(); err != nil {
 		log.Fatalf("exit error: %v", err)

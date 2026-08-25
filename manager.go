@@ -116,7 +116,8 @@ func (m *Manager) Start(ctx context.Context) error {
 }
 
 // Reload stops the running platform and starts a new one on the same
-// socket. Generations never overlap, so a module has to survive a restart.
+// socket. Generations never overlap, so a module registered as a value,
+// rather than as a constructor, has to survive a restart.
 func (m *Manager) Reload(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
