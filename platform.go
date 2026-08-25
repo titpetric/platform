@@ -9,11 +9,11 @@
 // descendant setup functions. Don't use these functions from tests
 // as they create a shared state.
 //
-// It's possible to use the platform in an emperative way.
+// It's possible to use the platform in an imperative way.
 //
 // ```go
 // svc := platform.New(platform.NewOptions())
-// svg.Use(middleware.Logger)
+// svc.Use(middleware.Logger)
 // svc.Register(user.NewModule())
 // ```
 //

@@ -17,11 +17,11 @@ Similarly, `platform.Use` should be used from `main` or any
 descendant setup functions. Don't use these functions from tests
 as they create a shared state.
 
-It's possible to use the platform in an emperative way.
+It's possible to use the platform in an imperative way.
 
 ```go
 svc := platform.New(platform.NewOptions())
-svg.Use(middleware.Logger)
+svc.Use(middleware.Logger)
 svc.Register(user.NewModule())
 ```
 
@@ -38,21 +38,16 @@ deprecated `Register` is shared by every platform in the process.
 <summary><code>type DatabaseProvider</code></summary>
 
 ```go
-// DatabaseProvider is the implementation interface for working with named connections.
-// If no connection name is passed, the "default" connection will be used.
-// There's no assumption to how the database connection is provided, and
-// the interface supports using external providers, enforces context awareness.
+// DatabaseProvider is the implementation interface for working with named
+// connections. If no connection name is passed, the "default" connection will
+// be used. It makes no assumption about how the connection is provided, and
+// only enforces context awareness.
 //
-// The connection names, singleton behaviour, retries, fallback mechanisms,
-// multiple-name logic and everything else to produce a *sql.DB is left to
-// the implementation. The first party implementation uses the process environment
-// and decodes `PLATFORM_DB_*` and uses the environment variable name for the key
-// and the definition of the connection. It doesn't carry other logic like
-// reconnecting.
-//
-// It's also likely that the first party database provider will be a public
-// API package in the future. I'd like this to be swappable so people can
-// bring in something like AWS secretsmanager or vault, or other.
+// Connection names, singleton behaviour, retries, fallback mechanisms,
+// multiple-name logic and everything else needed to produce a *sql.DB is left
+// to the implementation. The first party one decodes `PLATFORM_DB_*` from the
+// process environment, using the variable name as the key and its value as the
+// connection definition, and carries no other logic like reconnecting.
 type DatabaseProvider interface {
 	// Open takes a context, a different implementation may use it for context awareness.
 	// For example, Open may retrieve connection details from the database. The context
