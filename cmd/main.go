@@ -19,7 +19,8 @@ import (
 // exit is not expected to be graceful in case of errors. Main starts
 // the platform server with modules loaded beforehand. It is blocking
 // until server shutdown from cancellation of the context, or a caught
-// SIGTERM, an OS control signal hinting the app should exit.
+// SIGTERM. A caught SIGHUP reloads instead, replacing the platform while
+// the socket stays bound; see platform.Manager.
 //
 // The variadic parameter allows to inject options from test.
 func Main(ctx context.Context, options ...*platform.Options) {
@@ -29,8 +30,8 @@ func Main(ctx context.Context, options ...*platform.Options) {
 		break
 	}
 
-	p, err := platform.Start(ctx, option)
-	if err != nil {
+	m := platform.NewManager(option)
+	if err := m.Start(ctx); err != nil {
 		err = fmt.Errorf("exit error: %w", err)
 		oida.RecordError(ctx, err)
 
@@ -40,5 +41,5 @@ func Main(ctx context.Context, options ...*platform.Options) {
 		os.Exit(1)
 	}
 
-	p.Wait()
+	m.Wait()
 }
