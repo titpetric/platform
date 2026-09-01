@@ -2,7 +2,7 @@
 
 The platform records telemetry with [oida](https://github.com/titpetric/oida): traces and spans held in a ring buffer inside the process, with a dashboard served at `/debug/oida`. There is no collector, no exporter and no second service to run.
 
-Recording is opt-in. `platform.New` registers the recorder and the dashboard only when `Options.Telemetry.Enabled` is set, because the dashboard reports the internals of the process and is unauthenticated unless `Authorize` says otherwise. Ask for it with the environment:
+Recording is opt-in. `platform.New` registers the recorder and the dashboard only when `Options.Telemetry.Enabled` is set, because the dashboard reports the internals of the process and is unauthenticated until it is configured otherwise. Ask for it with the environment:
 
 ```bash
 PLATFORM_TELEMETRY_ENABLED=true
@@ -76,9 +76,20 @@ oida.RecordError(ctx, err)
 
 Both mark the span and its trace as failed, which is what the dashboard's error filter and the `Errors` column in statistics use. A nil error is ignored.
 
+## Logs
+
+A trace carries log entries, attributed to the innermost open span, so the lines a request wrote are read next to the spans that wrote them:
+
+```go
+span.Info("cache miss", "key", key)
+span.Error("upstream refused", "status", resp.StatusCode)
+```
+
+`CaptureLogs` is on by default, and `OIDA_CAPTURE_LOGS=false` turns it off. Disabled, `Info` does nothing and `Error` records its formatted text on the active span the way `RecordError` does, so the message is not lost.
+
 ## Configuration
 
-`platform.NewOptions` fills `Options.Telemetry` from `oida.NewOptions`, overrules its `Enabled` default, and reads the environment:
+`platform.NewOptions` fills `Options.Telemetry` from `oida.NewOptions` and reads the environment:
 
 | Variable                     | Default       | Meaning                                                                  |
 |------------------------------|---------------|--------------------------------------------------------------------------|
@@ -86,9 +97,11 @@ Both mark the span and its trace as failed, which is what the dashboard's error 
 | `PLATFORM_TELEMETRY_PATH`    | `/debug/oida` | Mount path of the dashboard.                                             |
 | `PLATFORM_TELEMETRY_SERVICE` | `platform`    | Service name shown in the dashboard.                                     |
 
-`oida.NewOptions` returns `Enabled: true`, which suits a caller constructing a recorder on purpose. The platform mounts one for every service that never asked, so it flips that default; the rest of the oida defaults (ring buffer, sampling, mount path) are kept.
+`oida.NewOptions` also sets `ReadEnv`, so the recorder applies its own `OIDA_*` variables when the tracer is built: retention, sampling, allowed networks, users and the signing secret are configurable from the deployment without the platform proxying a variable for each of them. They are the table in the [configuration guide](https://github.com/titpetric/oida/blob/main/docs/guide-configuration.md), and an `OIDA_*` variable applies only where the code left the field at its default, so a value set on `Options.Telemetry` wins.
 
-Anything else is set on the struct. See the [configuration guide](https://github.com/titpetric/oida/blob/main/docs/guide-configuration.md) for retention, sampling and access control:
+The three variables above are the exception, because they are read before a tracer exists. `PLATFORM_TELEMETRY_SERVICE` and `PLATFORM_TELEMETRY_PATH` are set on the struct, so `OIDA_SERVICE_NAME` never applies and `OIDA_PATH` applies only when the platform variable is unset. `OIDA_ENABLED` is read by the platform alongside its own variable, because registration is decided before the tracer that would have applied it; `PLATFORM_TELEMETRY_ENABLED` decides when both are set.
+
+Anything else is set on the struct:
 
 ```go
 options := platform.NewOptions()
@@ -101,7 +114,15 @@ options.Telemetry.Authorize = func(r *http.Request) bool {
 svc := platform.New(options)
 ```
 
-The dashboard is unauthenticated unless `Authorize` says otherwise. Do not expose it publicly without one.
+The dashboard is unauthenticated unless it is told otherwise. `Authorize` is the platform's own hook; the recorder adds a CIDR allow list, a login screen and bearer tokens:
+
+```go
+options.Telemetry.AllowedNetworks = []string{"127.0.0.0/8", "10.0.0.0/8"}
+options.Telemetry.Users = map[string]string{"admin": bcryptHash} // htpasswd -nbB admin secret
+options.Telemetry.SigningSecret = os.Getenv("OIDA_SIGNING_SECRET")
+```
+
+`Authorize` runs first, then the allow list, then credentials. A request rejected by either of the first two gets a 404; one missing credentials is redirected to `{path}/login` or answered with a 401. Do not expose the dashboard publicly without at least one of them.
 
 ## Retention
 
@@ -112,10 +133,18 @@ options := platform.NewOptions()
 options.Telemetry.RingBufferSize = 500
 ```
 
-To keep traces across a restart, assign disk storage. It writes one JSON document per trace into a folder, retaining at most `limit` of them:
+To keep traces across a restart, ask for disk storage. It writes one JSON document per trace into a folder, retaining at most the limit it is given. The recorder builds it from the environment:
+
+```bash
+OIDA_STORAGE_DRIVER=disk
+OIDA_STORAGE_DISK_PATH=/var/lib/app/traces
+OIDA_STORAGE_DISK_LIMIT=5000
+```
+
+or from code, with the driver from `github.com/titpetric/oida/storage`:
 
 ```go
-store, err := oida.NewStorageDisk(500, "/var/lib/app/traces")
+store, err := storage.NewDiskStorage(500, "/var/lib/app/traces")
 if err != nil {
 	return err
 }
@@ -124,15 +153,13 @@ options := platform.NewOptions()
 options.Telemetry.Storage = store
 ```
 
-`NewStorageDisk` creates the folder and checks it is writable, so a bad path fails at startup rather than on the first recorded trace. With no path it uses a folder under the operating system temporary directory, which does not survive a reboot.
+Either way the folder is created and checked for writability, so a bad path fails at startup rather than on the first recorded trace. With no path it uses a folder under the operating system temporary directory, which does not survive a reboot.
 
-`RingBufferSize` only sizes the default memory storage. Once `Storage` is set, the `limit` argument bounds retention instead.
-
-Storage is an interface, not a name, so it has no environment variable. A service that wants it configurable reads its own key and builds the value before calling `platform.New`.
+`RingBufferSize` only sizes the default memory storage. Once `Storage` is set, the driver's own limit bounds retention instead, and it wins over every `OIDA_STORAGE_*` variable.
 
 ## Bringing your own recorder
 
-A host that registers its own telemetry module turns this one off, because two modules mounting the same path is a duplicate route and the router panics on it:
+A host that registers its own telemetry module turns this one off, so only one dashboard is on the path and only one middleware records the request:
 
 ```go
 options := platform.NewOptions()
@@ -145,13 +172,20 @@ svc.Register(recorder)
 
 `Telemetry.Enabled` gates registration, not just recording: a disabled Telemetry puts no route and no middleware on the router at all. `NewTestOptions` disables it already, so tests observe no dashboard and no recorder unless they opt back in.
 
-`Options.Telemetry` is `oida.Options`, so the zero value is disabled. An `Options` built by hand asks for the recorder the same way `NewOptions` does, by filling it from `oida.NewOptions`, which enables it:
+`Options.Telemetry` is `oida.Options`, so the zero value is disabled. An `Options` built by hand asks for the recorder the same way `NewOptions` does, by filling it from `oida.NewOptions` and enabling it:
 
 ```go
 options := &platform.Options{
 	ServerAddr: ":8080",
-	Telemetry:  oida.NewOptions(),
+	Telemetry:  oida.NewOptions("billing-api"),
 }
+options.Telemetry.Enabled = true
+```
+
+`oida.NewOptions` also sets `ReadEnv`. A recorder that must ignore the deployment, which is what a test wants, clears it:
+
+```go
+options.Telemetry.ReadEnv = false
 ```
 
 `PLATFORM_MODULES` does not apply. That allowlist names the application's modules, and the recorder the platform registers itself is not one of them, so it stays registered whatever the list says.
