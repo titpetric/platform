@@ -13,15 +13,30 @@ import (
 	"github.com/titpetric/platform/pkg/require"
 )
 
+// telemetryPath is the path these tests mount the dashboard on. It is spelled
+// out rather than read from the recorder, so a test asks for the address it
+// configured instead of whatever the library defaults to.
+const telemetryPath = "/debug/oida"
+
+// tracedOptions returns recorder options a test can rely on: recording is on,
+// memory accounting is off because it costs a GC read per trace, and ReadEnv is
+// off so an OIDA_* variable in the environment cannot reconfigure the run.
+func tracedOptions() oida.Options {
+	options := oida.NewOptions("platform-test")
+	options.Path = telemetryPath
+	options.Enabled = true
+	options.TrackMemoryUse = false
+	options.ReadEnv = false
+	return options
+}
+
 // newTracedPlatform returns a platform recording into oida. NewTestOptions
 // disables telemetry, so a test that wants the dashboard opts back in.
 func newTracedPlatform(t *testing.T) *platform.Platform {
 	t.Helper()
 
 	options := platform.NewTestOptions()
-	options.Telemetry = oida.NewOptions()
-	options.Telemetry.ServiceName = "platform-test"
-	options.Telemetry.TrackMemoryUse = false
+	options.Telemetry = tracedOptions()
 
 	svc := platform.New(options)
 	t.Cleanup(svc.Stop)
@@ -32,7 +47,9 @@ func newTracedPlatform(t *testing.T) *platform.Platform {
 			r.Get("/users/{id}", func(w http.ResponseWriter, r *http.Request) {
 				_, span := oida.Start(r.Context(), "load user", oida.KindDatabase)
 				defer span.End()
-				_, _ = w.Write([]byte("user"))
+
+				_, err := w.Write([]byte("user"))
+				require.NoError(t, err)
 			})
 			return nil
 		},
@@ -60,7 +77,7 @@ func TestTelemetryModuleServesDashboard(t *testing.T) {
 	status, _ := get(t, svc.URL()+"/users/42")
 	require.Equal(t, http.StatusOK, status)
 
-	status, body := get(t, svc.URL()+oida.DefaultPath)
+	status, body := get(t, svc.URL()+telemetryPath)
 	require.Equal(t, http.StatusOK, status)
 	require.True(t, len(body) > 0)
 }
@@ -71,7 +88,7 @@ func TestTelemetryModuleRecordsRequests(t *testing.T) {
 	status, _ := get(t, svc.URL()+"/users/42")
 	require.Equal(t, http.StatusOK, status)
 
-	status, body := get(t, svc.URL()+oida.DefaultPath+"/traces?format=json")
+	status, body := get(t, svc.URL()+telemetryPath+"/traces?format=json")
 	require.Equal(t, http.StatusOK, status)
 
 	var traces []oida.Trace
@@ -100,7 +117,7 @@ func TestTelemetryModuleRecordsRequests(t *testing.T) {
 func TestTelemetryModuleRecordsStartup(t *testing.T) {
 	svc := newTracedPlatform(t)
 
-	status, body := get(t, svc.URL()+oida.DefaultPath+"/traces?format=json")
+	status, body := get(t, svc.URL()+telemetryPath+"/traces?format=json")
 	require.Equal(t, http.StatusOK, status)
 
 	var traces []oida.Trace
@@ -130,14 +147,13 @@ func TestTelemetryModuleRecordsStartup(t *testing.T) {
 func TestTelemetryDisabledRegistersNoModule(t *testing.T) {
 	svc := NewTestPlatform(t)
 
-	status, _ := get(t, svc.URL()+oida.DefaultPath)
+	status, _ := get(t, svc.URL()+telemetryPath)
 	require.Equal(t, http.StatusNotFound, status)
 }
 
 func TestTelemetryModuleSurvivesModuleFilter(t *testing.T) {
 	options := platform.NewTestOptions()
-	options.Telemetry = oida.NewOptions()
-	options.Telemetry.TrackMemoryUse = false
+	options.Telemetry = tracedOptions()
 
 	// The allowlist names the application's modules. The recorder the
 	// platform registers itself is not one of them.
@@ -151,30 +167,8 @@ func TestTelemetryModuleSurvivesModuleFilter(t *testing.T) {
 	})
 	require.NoError(t, svc.Start(t.Context()))
 
-	status, _ := get(t, svc.URL()+oida.DefaultPath)
+	status, _ := get(t, svc.URL()+telemetryPath)
 	require.Equal(t, http.StatusOK, status)
-}
-
-// TestTelemetryModuleCollidesWithASecondOne pins the reason Telemetry.Enabled
-// gates registration rather than just recording. A host that registers its own
-// recorder on the same path and leaves this one enabled gets a duplicate route,
-// which chi panics on.
-func TestTelemetryModuleCollidesWithASecondOne(t *testing.T) {
-	options := platform.NewTestOptions()
-	options.Telemetry = oida.NewOptions()
-	options.Telemetry.TrackMemoryUse = false
-
-	svc := platform.New(options)
-	t.Cleanup(svc.Stop)
-
-	own, err := platform.NewTelemetryModule(options.Telemetry)
-	require.NoError(t, err)
-	svc.Register(own)
-
-	defer func() {
-		require.NotNil(t, recover(), "mounting two dashboards on one path must not be silent")
-	}()
-	_ = svc.Start(t.Context())
 }
 
 // Recording is opt-in: off in the zero value, and off in the options both
@@ -191,7 +185,7 @@ func TestTelemetryDefaults(t *testing.T) {
 	t.Cleanup(svc.Stop)
 	require.NoError(t, svc.Start(t.Context()))
 
-	status, _ := get(t, svc.URL()+oida.DefaultPath)
+	status, _ := get(t, svc.URL()+options.Telemetry.Path)
 	require.Equal(t, http.StatusNotFound, status)
 }
 
@@ -209,6 +203,22 @@ func TestTelemetryEnabledByEnv(t *testing.T) {
 	t.Cleanup(svc.Stop)
 	require.NoError(t, svc.Start(t.Context()))
 
-	status, _ := get(t, svc.URL()+oida.DefaultPath)
+	status, _ := get(t, svc.URL()+options.Telemetry.Path)
 	require.Equal(t, http.StatusOK, status)
+}
+
+// OIDA_ENABLED is read by the platform rather than left to oida, because
+// registration is decided before a tracer exists: a module that never
+// registered never reaches the New that would have applied the variable.
+func TestTelemetryEnabledByRecorderEnv(t *testing.T) {
+	// The test environment pins the platform's own variable, so it is the
+	// fallback that is under test here.
+	t.Setenv("PLATFORM_TELEMETRY_ENABLED", "")
+	t.Setenv("OIDA_ENABLED", "true")
+	require.True(t, platform.NewOptions().Telemetry.Enabled)
+
+	// The platform's own variable decides, so a deployment can keep the
+	// dashboard off a service the recorder is configured for elsewhere.
+	t.Setenv("PLATFORM_TELEMETRY_ENABLED", "false")
+	require.False(t, platform.NewOptions().Telemetry.Enabled)
 }

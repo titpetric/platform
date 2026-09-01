@@ -7,7 +7,6 @@ import (
 	chi "github.com/go-chi/chi/v5"
 
 	"github.com/titpetric/oida"
-	"github.com/titpetric/oida/frontend"
 )
 
 // TelemetryModule records the telemetry of a platform service. It is the
@@ -15,14 +14,13 @@ import (
 // and a module mounting the debug front end under Options.Path.
 //
 // New registers one by default. A host that wires its own recorder disables
-// Options.Telemetry, because two modules mounting the same path is a duplicate
-// route, which chi panics on.
+// Options.Telemetry, so only one dashboard is on the path and only one
+// middleware records the request.
 type TelemetryModule struct {
 	UnimplementedModule
 
-	options    oida.Options
-	tracer     *oida.Tracer
-	middleware func(http.Handler) http.Handler
+	options oida.Options
+	tracer  *oida.Tracer
 }
 
 var _ Module = (*TelemetryModule)(nil)
@@ -40,28 +38,32 @@ func NewTelemetryModule(options oida.Options) (*TelemetryModule, error) {
 	if err != nil {
 		return nil, err
 	}
-	options.Tracer = tracer
 
 	return &TelemetryModule{
 		UnimplementedModule: *NewUnimplementedModule("telemetry"),
-		options:             options,
-		tracer:              tracer,
-		middleware:          oida.TracingMiddleware(options),
+
+		// The tracer applied the OIDA_* environment to what it was
+		// handed, so its own copy is what the module actually runs on.
+		options: tracer.Options(),
+		tracer:  tracer,
 	}, nil
 }
 
-// Mount registers the debug front end on the platform router.
+// Mount registers the debug front end on the platform router. The tracer is an
+// http.Handler serving its own dashboard, and oida.Mount adds the subtree
+// patterns each router understands.
 func (m *TelemetryModule) Mount(_ context.Context, r Router) error {
-	return frontend.Mount(r, m.options)
+	return oida.Mount(r, m.tracer)
 }
 
 // Middleware records requests handled by next.
 func (m *TelemetryModule) Middleware(next http.Handler) http.Handler {
-	return m.middleware(next)
+	return m.tracer.Middleware(next)
 }
 
-// Options returns the options the module was built with, including the tracer
-// it records into.
+// Options returns the options the tracer runs on, which is what the module was
+// built with after the environment was applied. The retention driver is left
+// out of the copy; a caller that needs it holds the storage it configured.
 func (m *TelemetryModule) Options() oida.Options {
 	return m.options
 }

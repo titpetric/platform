@@ -35,8 +35,9 @@ type Options struct {
 	// Telemetry configures the recorder and the debug dashboard. It is
 	// off unless asked for: the zero value disables it, and NewOptions
 	// disables it too, because the dashboard reports the internals of the
-	// process and is unauthenticated unless Telemetry.Authorize says
-	// otherwise. Set Enabled, or PLATFORM_TELEMETRY_ENABLED, to record.
+	// process and is unauthenticated unless Telemetry.Authorize, its
+	// network allow list or its users say otherwise. Set Enabled, or
+	// PLATFORM_TELEMETRY_ENABLED, to record.
 	Telemetry oida.Options
 }
 
@@ -47,12 +48,16 @@ func NewOptions() *Options {
 	opt.Modules = opt.envCSV("PLATFORM_MODULES")
 
 	// oida.NewOptions carries the recorder's own defaults (ring buffer,
-	// sampling, mount path) and enables it. Recording is opt-in here, so
-	// the default is overruled and PLATFORM_TELEMETRY_ENABLED turns it on.
-	opt.Telemetry = oida.NewOptions()
-	opt.Telemetry.ServiceName = opt.env("PLATFORM_TELEMETRY_SERVICE", "platform")
+	// sampling, mount path) and sets ReadEnv, so the OIDA_* environment
+	// reaches retention, sampling and access control without the platform
+	// proxying a variable for each of them.
+	opt.Telemetry = oida.NewOptions(opt.env("PLATFORM_TELEMETRY_SERVICE", "platform"))
 	opt.Telemetry.Path = opt.env("PLATFORM_TELEMETRY_PATH", opt.Telemetry.Path)
-	opt.Telemetry.Enabled = opt.envBool("PLATFORM_TELEMETRY_ENABLED", false)
+
+	// Registration is gated on this before a tracer exists, so OIDA_ENABLED
+	// is read here rather than left to oida: a module that never registered
+	// does not reach the New that would have applied it.
+	opt.Telemetry.Enabled = opt.envBool("PLATFORM_TELEMETRY_ENABLED", opt.envBool("OIDA_ENABLED", false))
 	return opt
 }
 
@@ -86,7 +91,9 @@ func NewTestOptions() *Options {
 		Quiet:      true,
 
 		// Tests get no dashboard and no recorder unless they ask for
-		// one, which keeps the global state they observe empty.
+		// one, which keeps the global state they observe empty. A
+		// literal leaves ReadEnv off, so an OIDA_* variable in the
+		// environment cannot turn a test run into a recording one.
 		Telemetry: oida.Options{Enabled: false},
 	}
 }
