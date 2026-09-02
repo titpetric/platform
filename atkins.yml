@@ -41,9 +41,8 @@ jobs:
   cover:
     desc: "Generate coverage reports"
     steps:
-      - splint -include-sources -output splint-doc.json . || true
-      - jq '.Packages' splint-doc.json > go-fsck.json
-      - go-fsck docs > docs/api.md
+      - splint -include-sources -save . || true
+      - go-fsck docs -i splint.json > docs/api.md
       - task: mdox:fmt
       - go-fsck extract --pretty-json ./...
       - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
@@ -56,4 +55,4 @@ jobs:
     steps:
       - go clean -cache
       - go clean -testcache
-      - rm -f ./${{name}} pkg.cov pkg.cov.json splint-doc.json go-fsck.json
+      - rm -f ./${{name}} pkg.cov pkg.cov.json splint.json go-fsck.json
