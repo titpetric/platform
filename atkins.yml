@@ -41,13 +41,15 @@ jobs:
   cover:
     desc: "Generate coverage reports"
     steps:
+      - defer: rm -f splint.json
       - splint -include-sources -save . || true
       - go-fsck docs -i splint.json > docs/api.md
       - task: mdox:fmt
-      - go-fsck extract --pretty-json ./...
-      - go tool cover -func=pkg.cov | summary coverfunc --json > pkg.cov.json
-      - go-fsck coverage -c pkg.cov.json -o go-fsck.json
-      - go-fsck coverage --template docs/testing-coverage.md.tpl > docs/testing-coverage.md
+      # The extract reads the profile itself, so the coverage is in the
+      # document splint writes rather than folded in by a second pass over a
+      # summary of it. splint exits 1 on a finding, which is not this job.
+      - splint -save --append-coverage=pkg.cov ./... || true
+      - go-fsck coverage -i splint.json --template docs/testing-coverage.md.tpl > docs/testing-coverage.md
       - task: mdox:fmt
 
   clean:
