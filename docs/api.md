@@ -3,7 +3,7 @@
 ```go
 import (
 	"github.com/titpetric/platform"
-}
+)
 ```
 
 The platform is an extensible modular system for writing HTTP servers.
@@ -12,10 +12,7 @@ The platform is an extensible modular system for writing HTTP servers.
 2. Provides a lifecycle to the modules for graceful shutdown
 3. Provides a router the modules can attach to
 
-It's advised to use `platform.RegisterFunc` from `init` functions.
-Similarly, `platform.Use` should be used from `main` or any
-descendant setup functions. Don't use these functions from tests
-as they create a shared state.
+It's advised to use `platform.RegisterFunc` from `init` functions. Similarly, `platform.Use` should be used from `main` or any descendant setup functions. Don't use these functions from tests as they create a shared state.
 
 It's possible to use the platform in an imperative way.
 
@@ -25,12 +22,7 @@ svc.Use(middleware.Logger)
 svc.Register(user.NewModule())
 ```
 
-The platform lifecycle is extensively tested to ensure no races, no
-goroutine leaks. Each platform object creates a copy of the global
-state and holds scoped allocations only, enabling test parallelism.
-Modules are part of that copy when registered with `RegisterFunc`,
-which is called once per platform. A value registered with the
-deprecated `Register` is shared by every platform in the process.
+The platform lifecycle is extensively tested to ensure no races, no goroutine leaks. Each platform object creates a copy of the global state and holds scoped allocations only, enabling test parallelism. Modules are part of that copy when registered with `RegisterFunc`, which is called once per platform. A value registered with the deprecated `Register` is shared by every platform in the process.
 
 ## Types
 
@@ -428,8 +420,7 @@ func FromRequest(r *http.Request) *Platform
 
 ### JSON
 
-JSON writes any payload as JSON. If the payload is nil, the write is omitted.
-If an error occurs in encoding, a telemetry error is logged.
+JSON writes any payload as JSON. If the payload is nil, the write is omitted. If an error occurs in encoding, a telemetry error is logged.
 
 ```go
 func JSON(w http.ResponseWriter, r *http.Request, status int, data any)
@@ -437,9 +428,7 @@ func JSON(w http.ResponseWriter, r *http.Request, status int, data any)
 
 ### New
 
-New will create a new *Platform object. It is the allocation point
-for each platform instance. If no options are passed, the defaults are in use.
-The defaults options are provided by NewOptions().
+New will create a new *Platform object. It is the allocation point for each platform instance. If no options are passed, the defaults are in use. The defaults options are provided by NewOptions().
 
 ```go
 func New(options *Options) *Platform
@@ -447,8 +436,7 @@ func New(options *Options) *Platform
 
 ### NewManager
 
-NewManager creates a manager for the passed options. If no options are
-passed, the defaults from NewOptions() are in use.
+NewManager creates a manager for the passed options. If no options are passed, the defaults from NewOptions() are in use.
 
 ```go
 func NewManager(options *Options) *Manager
@@ -464,9 +452,7 @@ func NewOptions() *Options
 
 ### NewTelemetryModule
 
-NewTelemetryModule returns a telemetry module recording into its own tracer.
-The tracer is explicit rather than the process wide one, so two services, or
-two tests, do not record into each other.
+NewTelemetryModule returns a telemetry module recording into its own tracer. The tracer is explicit rather than the process wide one, so two services, or two tests, do not record into each other.
 
 ```go
 func NewTelemetryModule(options oida.Options) (*TelemetryModule, error)
@@ -522,13 +508,9 @@ func QueryParam(r *http.Request, name string) string
 
 ### Register
 
-Register will register a module in the platform global registry.
-It should not be relied upon in tests, keeping global state empty.
-This enables registering modules using blank imports.
+Register will register a module in the platform global registry. It should not be relied upon in tests, keeping global state empty. This enables registering modules using blank imports.
 
-Deprecated: use RegisterFunc. One value is shared by every platform in
-the process, including the generations of a reload, so its state outlives
-the platform it was started with.
+Deprecated: use RegisterFunc. One value is shared by every platform in the process, including the generations of a reload, so its state outlives the platform it was started with.
 
 ```go
 func Register(m Module)
@@ -536,12 +518,9 @@ func Register(m Module)
 
 ### RegisterFunc
 
-RegisterFunc will register a module constructor in the platform global
-registry. It is called once per platform, so every platform, and every
-reload generation, starts a module of its own.
+RegisterFunc will register a module constructor in the platform global registry. It is called once per platform, so every platform, and every reload generation, starts a module of its own.
 
-It should not be relied upon in tests, keeping global state empty.
-This enables registering modules using blank imports.
+It should not be relied upon in tests, keeping global state empty. This enables registering modules using blank imports.
 
 ```go
 func RegisterFunc(f func() Module)
@@ -557,8 +536,7 @@ func SetupConnections(environment []string)
 
 ### Start
 
-Start is a shorthand to create a new *Platform instance and
-immediately starts the server listener and handles requests.
+Start is a shorthand to create a new *Platform instance and immediately starts the server listener and handles requests.
 
 ```go
 func Start(ctx context.Context, options *Options) (*Platform, error)
@@ -574,9 +552,7 @@ func TestMiddleware() Middleware
 
 ### Transaction
 
-Transaction wraps a function in a transaction.
-If the function returns an error, the transaction is rolled back.
-If the function returns nil, the transaction is committed.
+Transaction wraps a function in a transaction. If the function returns an error, the transaction is rolled back. If the function returns nil, the transaction is committed.
 
 ```go
 func Transaction(ctx context.Context, db *sqlx.DB, fn func(context.Context, *sqlx.Tx) error) error
@@ -592,9 +568,7 @@ func URLParam(r *http.Request, name string) string
 
 ### Use
 
-Use will add a middleware to the platform router.
-It should not be relied upon in tests, keeping global state empty.
-This should be used from main() to define any global middleware.
+Use will add a middleware to the platform router. It should not be relied upon in tests, keeping global state empty. This should be used from main() to define any global middleware.
 
 ```go
 func Use(mw Middleware)
@@ -602,8 +576,7 @@ func Use(mw Middleware)
 
 ### Context
 
-Context returns the cancellation context for the manager. When the context
-finishes, the platform has shut down and the socket is closed.
+Context returns the cancellation context for the manager. When the context finishes, the platform has shut down and the socket is closed.
 
 ```go
 func (*Manager) Context() context.Context
@@ -611,8 +584,7 @@ func (*Manager) Context() context.Context
 
 ### Platform
 
-Platform returns the generation currently serving, and nil when there is
-none: before Start, after Stop, and after a reload that failed.
+Platform returns the generation currently serving, and nil when there is none: before Start, after Stop, and after a reload that failed.
 
 ```go
 func (*Manager) Platform() *Platform
@@ -620,9 +592,7 @@ func (*Manager) Platform() *Platform
 
 ### Reload
 
-Reload stops the running platform and starts a new one on the same
-socket. Generations never overlap, so a module registered as a value,
-rather than as a constructor, has to survive a restart.
+Reload stops the running platform and starts a new one on the same socket. Generations never overlap, so a module registered as a value, rather than as a constructor, has to survive a restart.
 
 ```go
 func (*Manager) Reload(ctx context.Context) error
@@ -630,8 +600,7 @@ func (*Manager) Reload(ctx context.Context) error
 
 ### Start
 
-Start binds the listener, starts the first platform generation on it, and
-arms the SIGHUP handler. Cancelling ctx stops the manager.
+Start binds the listener, starts the first platform generation on it, and arms the SIGHUP handler. Cancelling ctx stops the manager.
 
 ```go
 func (*Manager) Start(ctx context.Context) error
@@ -639,8 +608,7 @@ func (*Manager) Start(ctx context.Context) error
 
 ### Stop
 
-Stop shuts down the running platform and closes the socket. A stopped
-manager does not start again.
+Stop shuts down the running platform and closes the socket. A stopped manager does not start again.
 
 ```go
 func (*Manager) Stop()
@@ -664,8 +632,7 @@ func (*Manager) Wait()
 
 ### Context
 
-Context returns the cancellation context for the service.
-When the context finishes, the server has shut down.
+Context returns the cancellation context for the service. When the context finishes, the server has shut down.
 
 ```go
 func (*Platform) Context() context.Context
@@ -681,8 +648,7 @@ func (*Platform) Find(target any) bool
 
 ### Register
 
-Register will add a registry.Module into the internal platform registry.
-This function should be called before Serve is called.
+Register will add a registry.Module into the internal platform registry. This function should be called before Serve is called.
 
 ```go
 func (*Platform) Register(m Module)
@@ -690,9 +656,7 @@ func (*Platform) Register(m Module)
 
 ### Start
 
-Start will start the server and print the registered routes.
-It respects cancellation from the passed context, as well as
-sets up signal notification to respond to SIGTERM.
+Start will start the server and print the registered routes. It respects cancellation from the passed context, as well as sets up signal notification to respond to SIGTERM.
 
 ```go
 func (*Platform) Start(ctx context.Context) error
@@ -710,9 +674,7 @@ func (*Platform) Stats() (int, int)
 
 Stop will gracefully shutdown the server and then cancel the server context when done.
 
-Stop is an important part of the lifecycle tests. When closing the registry,
-each plugins Stop function gets invoked in parallel. This enables the plugin
-to clear background goroutine event loops, or flush a dirty buffer to storage.
+Stop is an important part of the lifecycle tests. When closing the registry, each plugins Stop function gets invoked in parallel. This enables the plugin to clear background goroutine event loops, or flush a dirty buffer to storage.
 
 Only after the server has fully shut down does the internal context get cancelled.
 
@@ -730,8 +692,7 @@ func (*Platform) URL() string
 
 ### Use
 
-Use will add a middleware to the internal platform registry.
-This function should be called before Serve is called.
+Use will add a middleware to the internal platform registry. This function should be called before Serve is called.
 
 ```go
 func (*Platform) Use(m Middleware)
@@ -747,8 +708,7 @@ func (*Platform) Wait()
 
 ### Cleanup
 
-Cleanup is sort of a testing.T.Cleanup but for the registry.
-The cleanups are initialized in Start, and ran in Close.
+Cleanup is sort of a testing.T.Cleanup but for the registry. The cleanups are initialized in Start, and ran in Close.
 
 ```go
 func (*Registry) Cleanup(fn func(context.Context))
@@ -756,8 +716,7 @@ func (*Registry) Cleanup(fn func(context.Context))
 
 ### Clone
 
-Clone provides a copy of the registry for use in the platform. Modules
-registered as constructors are built here, one set per clone.
+Clone provides a copy of the registry for use in the platform. Modules registered as constructors are built here, one set per clone.
 
 ```go
 func (*Registry) Clone() *Registry
@@ -765,9 +724,7 @@ func (*Registry) Clone() *Registry
 
 ### Close
 
-Close will invoke all the modules close functions in parallel.
-When finished, it will clear the registered modules list, as
-well as any defined middleware and invoked cleanups.
+Close will invoke all the modules close functions in parallel. When finished, it will clear the registered modules list, as well as any defined middleware and invoked cleanups.
 
 ```go
 func (*Registry) Close(ctx context.Context)
@@ -775,9 +732,7 @@ func (*Registry) Close(ctx context.Context)
 
 ### Find
 
-Find gets a Module from the registry.
-The target argument can be a pointer or an interface. The function returns true
-if a module matching the type or interface was found and assigned to `target`.
+Find gets a Module from the registry. The target argument can be a pointer or an interface. The function returns true if a module matching the type or interface was found and assigned to `target`.
 
 ```go
 func (*Registry) Find(target any) bool
@@ -787,9 +742,7 @@ func (*Registry) Find(target any) bool
 
 Register adds a Module to the registry.
 
-Deprecated: use RegisterFunc. One value is shared by every platform that
-clones the registry, including the generations of a reload, so its state
-outlives the platform it was started with.
+Deprecated: use RegisterFunc. One value is shared by every platform that clones the registry, including the generations of a reload, so its state outlives the platform it was started with.
 
 ```go
 func (*Registry) Register(m Module)
@@ -797,8 +750,7 @@ func (*Registry) Register(m Module)
 
 ### RegisterFunc
 
-RegisterFunc adds a module constructor to the registry. Clone calls it,
-so every platform starts a module of its own.
+RegisterFunc adds a module constructor to the registry. Clone calls it, so every platform starts a module of its own.
 
 ```go
 func (*Registry) RegisterFunc(f func() Module)
@@ -806,11 +758,7 @@ func (*Registry) RegisterFunc(f func() Module)
 
 ### Start
 
-Start will invoke all the modules start functions sequentially.
-If an error occurs, execution is halted and an error is returned.
-The context is passed along for observability and access to the platform.
-The registry's own output goes to the logger of the platform in the
-context; without one it is discarded.
+Start will invoke all the modules start functions sequentially. If an error occurs, execution is halted and an error is returned. The context is passed along for observability and access to the platform. The registry's own output goes to the logger of the platform in the context; without one it is discarded.
 
 ```go
 func (*Registry) Start(ctx context.Context, mux Router, opts *Options) error
@@ -842,9 +790,7 @@ func (*TelemetryModule) Middleware(next http.Handler) http.Handler
 
 ### Mount
 
-Mount registers the debug front end on the platform router. The tracer is an
-http.Handler serving its own dashboard, and oida.Mount adds the subtree
-patterns each router understands.
+Mount registers the debug front end on the platform router. The tracer is an http.Handler serving its own dashboard, and oida.Mount adds the subtree patterns each router understands.
 
 ```go
 func (*TelemetryModule) Mount(_ context.Context, r Router) error
@@ -852,9 +798,7 @@ func (*TelemetryModule) Mount(_ context.Context, r Router) error
 
 ### Options
 
-Options returns the options the tracer runs on, which is what the module was
-built with after the environment was applied. The retention driver is left
-out of the copy; a caller that needs it holds the storage it configured.
+Options returns the options the tracer runs on, which is what the module was built with after the environment was applied. The retention driver is left out of the copy; a caller that needs it holds the storage it configured.
 
 ```go
 func (*TelemetryModule) Options() oida.Options

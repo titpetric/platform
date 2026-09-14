@@ -6,17 +6,16 @@ Testing criteria for a passing coverage requirement:
 - Cognitive complexity of 0
 - Have cognitive complexity < 5, but have any coverage
 
-Low cognitive complexity means there are few conditional branches to
-cover. Tests with cognitive complexity 0 would be covered by invocation.
+Low cognitive complexity means there are few conditional branches to cover. Tests with cognitive complexity 0 would be covered by invocation.
 
 ## Packages
 
 | Status | Package         | Coverage | Cognitive | Lines |
 |--------|-----------------|----------|-----------|-------|
-| ✅     | .               | 89.48%   | 122       | 900   |
-| ✅     | cmd             | 46.70%   | 2         | 20    |
+| ✅     | .               | 93.16%   | 122       | 900   |
+| ✅     | cmd             | 46.67%   | 2         | 20    |
 | ✅     | cmd/platform    | 0.00%    | 0         | 3     |
-| ✅     | internal        | 81.12%   | 31        | 176   |
+| ✅     | internal        | 85.32%   | 31        | 176   |
 | ✅     | pkg/assert      | 0.00%    | 0         | 0     |
 | ✅     | pkg/drivers     | 0.00%    | 0         | 0     |
 | ✅     | pkg/httpcontext | 100.00%  | 1         | 18    |
@@ -32,18 +31,18 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅     |                 | JSON                             | 100.00%  | 1         |
 | ✅     |                 | Manager.Platform                 | 100.00%  | 1         |
 | ✅     |                 | Manager.Reload                   | 100.00%  | 1         |
-| ✅     |                 | Manager.Start                    | 83.90%   | 11        |
+| ✅     |                 | Manager.Start                    | 83.87%   | 11        |
 | ✅     |                 | Manager.Stop                     | 100.00%  | 2         |
 | ✅     |                 | Manager.URL                      | 100.00%  | 0         |
 | ✅     |                 | Manager.Wait                     | 100.00%  | 0         |
-| ✅     |                 | Manager.logger                   | 66.70%   | 1         |
+| ✅     |                 | Manager.logger                   | 66.67%   | 1         |
 | ✅     |                 | Manager.retire                   | 100.00%  | 1         |
-| ✅     |                 | Manager.startGeneration          | 92.30%   | 4         |
+| ✅     |                 | Manager.startGeneration          | 92.31%   | 4         |
 | ✅     |                 | Manager.watch                    | 100.00%  | 1         |
-| ✅     |                 | New                              | 88.20%   | 6         |
+| ✅     |                 | New                              | 88.24%   | 6         |
 | ✅     |                 | NewManager                       | 87.50%   | 2         |
 | ✅     |                 | NewOptions                       | 100.00%  | 0         |
-| ✅     |                 | NewTelemetryModule               | 85.70%   | 2         |
+| ✅     |                 | NewTelemetryModule               | 85.71%   | 2         |
 | ✅     |                 | NewTestOptions                   | 100.00%  | 0         |
 | ✅     |                 | NewUnimplementedModule           | 100.00%  | 0         |
 | ✅     |                 | Options.env                      | 100.00%  | 1         |
@@ -53,7 +52,7 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅     |                 | Platform.Context                 | 100.00%  | 0         |
 | ✅     |                 | Platform.Find                    | 100.00%  | 0         |
 | ✅     |                 | Platform.Register                | 100.00%  | 0         |
-| ✅     |                 | Platform.Start                   | 96.40%   | 6         |
+| ✅     |                 | Platform.Start                   | 96.43%   | 6         |
 | ✅     |                 | Platform.Stats                   | 100.00%  | 0         |
 | ✅     |                 | Platform.Stop                    | 100.00%  | 4         |
 | ✅     |                 | Platform.URL                     | 100.00%  | 0         |
@@ -69,16 +68,16 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅     |                 | Registry.Cleanup                 | 100.00%  | 0         |
 | ✅     |                 | Registry.Clone                   | 100.00%  | 1         |
 | ✅     |                 | Registry.Close                   | 100.00%  | 0         |
-| ✅     |                 | Registry.Find                    | 86.20%   | 10        |
+| ✅     |                 | Registry.Find                    | 86.21%   | 10        |
 | ✅     |                 | Registry.Register                | 100.00%  | 0         |
 | ✅     |                 | Registry.RegisterFunc            | 100.00%  | 0         |
-| ✅     |                 | Registry.Start                   | 95.70%   | 3         |
+| ✅     |                 | Registry.Start                   | 95.65%   | 3         |
 | ✅     |                 | Registry.Stats                   | 100.00%  | 0         |
 | ✅     |                 | Registry.Use                     | 100.00%  | 0         |
 | ✅     |                 | Registry.close                   | 100.00%  | 3         |
-| ✅     |                 | Registry.filter                  | 81.00%   | 10        |
+| ✅     |                 | Registry.filter                  | 80.95%   | 10        |
 | ✅     |                 | Registry.materialize             | 100.00%  | 3         |
-| ✅     |                 | Registry.mount                   | 90.90%   | 4         |
+| ✅     |                 | Registry.mount                   | 90.91%   | 4         |
 | ✅     |                 | Registry.register                | 100.00%  | 0         |
 | ✅     |                 | Registry.start                   | 100.00%  | 3         |
 | ✅     |                 | Registry.startModule             | 100.00%  | 0         |
@@ -92,31 +91,32 @@ cover. Tests with cognitive complexity 0 would be covered by invocation.
 | ✅     |                 | Transaction                      | 75.00%   | 3         |
 | ✅     |                 | URLParam                         | 100.00%  | 0         |
 | ✅     |                 | UnimplementedModule.Mount        | 100.00%  | 1         |
-| ✅     |                 | UnimplementedModule.Name         | 66.70%   | 1         |
+| ✅     |                 | UnimplementedModule.Name         | 66.67%   | 1         |
 | ✅     |                 | UnimplementedModule.Start        | 100.00%  | 1         |
-| ✅     |                 | UnimplementedModule.Stop         | 66.70%   | 1         |
+| ✅     |                 | UnimplementedModule.Stop         | 66.67%   | 1         |
 | ✅     |                 | Use                              | 100.00%  | 0         |
 | ✅     |                 | generationListener.Accept        | 90.00%   | 4         |
 | ✅     |                 | generationListener.Addr          | 100.00%  | 0         |
 | ✅     |                 | generationListener.Close         | 100.00%  | 2         |
+| ✅     |                 | init                             | 100.00%  | 0         |
 | ✅     |                 | listenerURL                      | 100.00%  | 0         |
 | ✅     |                 | loggerFromContext                | 100.00%  | 1         |
 | ✅     |                 | newSharedListener                | 100.00%  | 0         |
 | ✅     |                 | registration.instance            | 100.00%  | 1         |
-| ✅     |                 | routePattern                     | 66.70%   | 2         |
+| ✅     |                 | routePattern                     | 66.67%   | 2         |
 | ✅     |                 | setupConnections                 | 100.00%  | 4         |
 | ✅     |                 | sharedListener.Close             | 100.00%  | 1         |
 | ✅     |                 | sharedListener.handoff           | 100.00%  | 1         |
 | ✅     |                 | sharedListener.next              | 100.00%  | 1         |
-| ✅     | cmd             | Main                             | 46.70%   | 2         |
+| ✅     | cmd             | Main                             | 46.67%   | 2         |
 | ✅     | internal        | CountRoutes                      | 100.00%  | 2         |
 | ✅     |                 | DatabaseOption.Apply             | 75.00%   | 1         |
-| ✅     |                 | DatabaseProvider.Connect         | 66.70%   | 2         |
+| ✅     |                 | DatabaseProvider.Connect         | 66.67%   | 2         |
 | ✅     |                 | DatabaseProvider.Open            | 100.00%  | 0         |
 | ✅     |                 | DatabaseProvider.Register        | 100.00%  | 0         |
-| ✅     |                 | DatabaseProvider.cached          | 92.90%   | 5         |
+| ✅     |                 | DatabaseProvider.cached          | 92.86%   | 5         |
 | ✅     |                 | DatabaseProvider.parseCredential | 80.00%   | 4         |
-| ✅     |                 | DatabaseProvider.with            | 83.30%   | 7         |
+| ✅     |                 | DatabaseProvider.with            | 83.33%   | 7         |
 | ✅     |                 | NewDatabaseProvider              | 100.00%  | 0         |
 | ✅     |                 | PrintRoutes                      | 100.00%  | 0         |
 | ✅     |                 | addOptionToDSN                   | 100.00%  | 1         |
