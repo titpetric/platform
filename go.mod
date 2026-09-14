@@ -9,7 +9,7 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/oklog/ulid/v2 v2.1.2
 	github.com/stretchr/testify v1.12.1
-	github.com/titpetric/oida v0.3.0
+	github.com/titpetric/oida v0.4.0
 	modernc.org/sqlite v1.58.0
 )
 
