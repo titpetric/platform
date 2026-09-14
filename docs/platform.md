@@ -22,8 +22,7 @@ Each `Platform` instance clones the global registry, enabling isolated test inst
 
 ## Logging
 
-The platform doesn't use the `log` package. It writes through the exported
-`Platform.Logger` field, declared as:
+The platform doesn't use the `log` package. It writes through the exported `Platform.Logger` field, declared as:
 
 ```go
 type Logger interface {
@@ -32,17 +31,14 @@ type Logger interface {
 }
 ```
 
-`New` sets the field to `slog.Default()`, or to a discarding logger when
-`Options.Quiet` is set. A `*slog.Logger` satisfies the interface as it is, so
-a consumer application can hand the platform its own logger:
+`New` sets the field to `slog.Default()`, or to a discarding logger when `Options.Quiet` is set. A `*slog.Logger` satisfies the interface as it is, so a consumer application can hand the platform its own logger:
 
 ```go
 p := platform.New(platform.NewOptions())
 p.Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 ```
 
-Assign the field before calling `Start`. The platform reads it once there,
-and keeps logging through that value for the lifetime of the instance.
+Assign the field before calling `Start`. The platform reads it once there, and keeps logging through that value for the lifetime of the instance.
 
 Modules reach the same logger from a request or a context:
 
@@ -55,16 +51,12 @@ platform.FromRequest(r).Logger.Info("handled", "path", r.URL.Path)
 1. **Register modules** via `platform.RegisterFunc()` (or `Register` on a `*Platform` instance).
 2. **Add middleware** via `platform.Use()` before calling `Start(context.Context)`.
 3. **Start the platform** with `Start(context.Context)`; modules are started and then mounted.
-4. **Stop** with `Stop()`; the server is shut down gracefully with a 5 second
-   timeout, the platform context is cancelled, and the registry then stops
-   every module in parallel.
+4. **Stop** with `Stop()`; the server is shut down gracefully with a 5 second timeout, the platform context is cancelled, and the registry then stops every module in parallel.
 5. Application exit, reporting any error during shutdown.
 
 ## Reload
 
-A `*Platform` is a one-shot value. `Stop` clears its registry and cancels its
-context, and there is no way back from that, so a reload is a new platform.
-`Manager` is what outlives the old one and builds the new one:
+A `*Platform` is a one-shot value. `Stop` clears its registry and cancels its context, and there is no way back from that, so a reload is a new platform. `Manager` is what outlives the old one and builds the new one:
 
 ```go
 m := platform.NewManager(platform.NewOptions())
@@ -74,27 +66,15 @@ if err := m.Start(ctx); err != nil {
 m.Wait()
 ```
 
-`cmd.Main` runs a manager, so an app built on it reloads with `kill -HUP`.
-Used directly, `platform.Start` is unchanged, and `SIGHUP` keeps its default
-disposition, which terminates the process.
+`cmd.Main` runs a manager, so an app built on it reloads with `kill -HUP`. Used directly, `platform.Start` is unchanged, and `SIGHUP` keeps its default disposition, which terminates the process.
 
-The manager holds the listening socket, so a reload keeps the address it was
-reached on, along with the connections queued on it. Everything above the
-socket is new: the router, the registry, the server, the telemetry recorder,
-and the value `Platform()` returns.
+The manager holds the listening socket, so a reload keeps the address it was reached on, along with the connections queued on it. Everything above the socket is new: the router, the registry, the server, the telemetry recorder, and the value `Platform()` returns.
 
-Generations do not overlap: the old one is drained and stopped before the
-new one starts. Requests that arrive during the swap wait in the accept
-queue of the socket rather than being refused, and requests already in
-flight are served by the generation that took them.
+Generations do not overlap: the old one is drained and stopped before the new one starts. Requests that arrive during the swap wait in the accept queue of the socket rather than being refused, and requests already in flight are served by the generation that took them.
 
-Modules registered with `platform.RegisterFunc` are constructed per
-generation, so a reload starts fresh values. A module registered with the
-deprecated `platform.Register` is one value shared by every generation, and
-has to tolerate `Start` after `Stop`.
+Modules registered with `platform.RegisterFunc` are constructed per generation, so a reload starts fresh values. A module registered with the deprecated `platform.Register` is one value shared by every generation, and has to tolerate `Start` after `Stop`.
 
-Registrations made against a platform value do not survive a reload, because
-the value does not. `Manager.Setup` is where they belong:
+Registrations made against a platform value do not survive a reload, because the value does not. `Manager.Setup` is where they belong:
 
 ```go
 m.Setup = func(p *platform.Platform) error {
@@ -104,7 +84,4 @@ m.Setup = func(p *platform.Platform) error {
 }
 ```
 
-A reload that fails leaves nothing serving: the old generation is already
-gone, and a retry would read the same configuration again. `Reload` returns
-the error, and the `SIGHUP` handler stops the manager, so the failure is
-visible to whatever supervises the process.
+A reload that fails leaves nothing serving: the old generation is already gone, and a retry would read the same configuration again. `Reload` returns the error, and the `SIGHUP` handler stops the manager, so the failure is visible to whatever supervises the process.

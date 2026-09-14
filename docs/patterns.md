@@ -12,8 +12,7 @@ func (m *Module) Mount(_ context.Context, r platform.Router) error {
 }
 ```
 
-The `platform.Router` is an alias of `chi.Router` (v5). It allows you to
-use any of the methods defined in the interface.
+The `platform.Router` is an alias of `chi.Router` (v5). It allows you to use any of the methods defined in the interface.
 
 Handlers are methods on the module:
 
@@ -44,9 +43,7 @@ func (m *Module) PostItem(w http.ResponseWriter, r *http.Request) {
 
 ## Background jobs
 
-The module can implement its background job lifecycle by providing a
-`Start` and `Stop` function. Invoking `Stop` should be a blocking
-operation. For example, with `robfig/cron`:
+The module can implement its background job lifecycle by providing a `Start` and `Stop` function. Invoking `Stop` should be a blocking operation. For example, with `robfig/cron`:
 
 ```go
 func (c *Crontab) Start(context.Context) error {
@@ -69,8 +66,7 @@ func (c *Crontab) Stop(context.Context) error {
 }
 ```
 
-Since `Stop` is blocking, it will wait up to 3 seconds here, so that any
-running scheduled task is completed before exiting.
+Since `Stop` is blocking, it will wait up to 3 seconds here, so that any running scheduled task is completed before exiting.
 
 ## Middleware
 

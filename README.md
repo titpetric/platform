@@ -2,13 +2,9 @@
 
 ## Motivation
 
-The `platform` package is an extensible, modular system for building
-HTTP servers and sidecar services in Go.
+The `platform` package is an extensible, modular system for building HTTP servers and sidecar services in Go.
 
-It provides a global registry for modules and middleware, a lifecycle
-for graceful shutdown, named database connections, and a `SIGHUP` reload
-that replaces the running platform without dropping the socket, allowing
-you to structure services as composable, testable modules.
+It provides a global registry for modules and middleware, a lifecycle for graceful shutdown, named database connections, and a `SIGHUP` reload that replaces the running platform without dropping the socket, allowing you to structure services as composable, testable modules.
 
 Application examples, with database use:
 

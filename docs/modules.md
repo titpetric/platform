@@ -21,9 +21,7 @@ The functions run in this order. If `Mount` runs, `Start` has completed.
 
 ### Firewalling modules
 
-The context passed to the `Start` function may be used to invoke
-`platform.FromContext(ctx) *Platform`. This may then use the `Find` api to get a
-reference to a side-loaded module. It can be used with interfaces.
+The context passed to the `Start` function may be used to invoke `platform.FromContext(ctx) *Platform`. This may then use the `Find` api to get a reference to a side-loaded module. It can be used with interfaces.
 
 An example of that would be a user module that provides a certain API.
 
@@ -45,9 +43,7 @@ type UserService interface {
 }
 ```
 
-This allows API usage behind interfaces. In our case, we can expose
-module-scoped functionality from the individual modules. It's also
-possible to get a concrete `*user.Handler` type (no firewall).
+This allows API usage behind interfaces. In our case, we can expose module-scoped functionality from the individual modules. It's also possible to get a concrete `*user.Handler` type (no firewall).
 
 ### Using `UnimplementedModule`
 
@@ -85,9 +81,7 @@ func main() {
 }
 ```
 
-`platform.Start` returns as soon as the server is accepting, so `Wait` is what
-blocks until shutdown. To get `SIGHUP` reloads instead, run a `platform.Manager`
-or call `cmd.Main`; see [The Platform](platform.md).
+`platform.Start` returns as soon as the server is accepting, so `Wait` is what blocks until shutdown. To get `SIGHUP` reloads instead, run a `platform.Manager` or call `cmd.Main`; see [The Platform](platform.md).
 
 `loggingMiddleware` example:
 
