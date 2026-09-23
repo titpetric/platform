@@ -127,6 +127,12 @@ type Manager struct {
 	shared  *sharedListener
 	current atomic.Pointer[generation]
 
+	// pid is the file this process records its id in, disabled when
+	// Options.PidFile is empty. The manager holds it rather than the
+	// platform, because the file records a process and a reload does not
+	// make a new one.
+	pid pidfile
+
 	// final shutdown context, cancelled when the manager stops
 	context context.Context
 	cancel  context.CancelFunc
@@ -183,6 +189,20 @@ type Options struct {
 	// ServerAddr is the address the server listens to.
 	ServerAddr string
 
+	// PidFile is the file the process records its own process id in, for a
+	// service manager or a command line that signals it. Empty, the default,
+	// writes no file and is not an error.
+	//
+	// The file holds the decimal pid and a newline, created 0644 before the
+	// umask, and is removed on a clean stop. The directory has to exist: it
+	// belongs to whatever packages the service, and creating it here would
+	// mean guessing its owner and mode. An existing file is overwritten,
+	// because a pidfile is a record and not a lock.
+	//
+	// A Manager writes it for the process, and the platform generations it
+	// runs do not, so a reload leaves the file alone.
+	PidFile string
+
 	// Quiet silences the platform's own output: New installs a discarding
 	// logger as Platform.Logger instead of the default one. Set to true in
 	// tests. Assigning Platform.Logger afterwards overrules it.
@@ -238,6 +258,12 @@ type Platform struct {
 	stop     func()
 	once     sync.Once
 	stopping atomic.Bool
+
+	// pid is the file this process records its id in, disabled when
+	// Options.PidFile is empty. A Manager clears it on the generations it
+	// runs and holds its own: the file records a process, and a reload does
+	// not make a new one.
+	pid pidfile
 
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
@@ -352,6 +378,7 @@ var Database DatabaseProvider = global.db
 - `func OptionsFromRequest (r *http.Request) *Options`
 - `func Param (r *http.Request, name string) string`
 - `func QueryParam (r *http.Request, name string) string`
+- `func ReadPidFile (path string) (int, error)`
 - `func Register (m Module)`
 - `func RegisterFunc (f func() Module)`
 - `func SetupConnections (environment []string)`
@@ -506,6 +533,14 @@ QueryParam will return a named query parameter from the request.
 func QueryParam(r *http.Request, name string) string
 ```
 
+### ReadPidFile
+
+ReadPidFile returns the process id recorded in the file Options.PidFile names. It is what a command line sending a signal to a running platform reads, so the format stays owned by the package that writes it.
+
+```go
+func ReadPidFile(path string) (int, error)
+```
+
 ### Register
 
 Register will register a module in the platform global registry. It should not be relied upon in tests, keeping global state empty. This enables registering modules using blank imports.
@@ -600,7 +635,9 @@ func (*Manager) Reload(ctx context.Context) error
 
 ### Start
 
-Start binds the listener, starts the first platform generation on it, and arms the SIGHUP handler. Cancelling ctx stops the manager.
+Start binds the listener, starts the first platform generation on it, writes Options.PidFile and arms the SIGHUP handler. Cancelling ctx stops the manager.
+
+The pidfile is the manager's rather than the generation's: it records a process, and a reload replaces the platform without making a new one.
 
 ```go
 func (*Manager) Start(ctx context.Context) error
@@ -656,7 +693,9 @@ func (*Platform) Register(m Module)
 
 ### Start
 
-Start will start the server and print the registered routes. It respects cancellation from the passed context, as well as sets up signal notification to respond to SIGTERM.
+Start will start the server and print the registered routes. It respects cancellation from the passed context, and stops on SIGINT or SIGTERM. SIGKILL is not among them because it cannot be caught.
+
+Options.PidFile is written here, once the modules have started and the socket is bound, so the file never names a process that then failed to come up. A platform a Manager runs writes nothing: the Manager holds the file for the process.
 
 ```go
 func (*Platform) Start(ctx context.Context) error

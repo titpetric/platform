@@ -12,7 +12,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 
 | Status | Package         | Coverage | Cognitive | Lines |
 |--------|-----------------|----------|-----------|-------|
-| ✅     | .               | 93.16%   | 122       | 900   |
+| ✅     | .               | 93.32%   | 140       | 985   |
 | ✅     | cmd             | 46.67%   | 2         | 20    |
 | ✅     | cmd/platform    | 0.00%    | 0         | 3     |
 | ✅     | internal        | 85.32%   | 31        | 176   |
@@ -31,13 +31,13 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                 | JSON                             | 100.00%  | 1         |
 | ✅     |                 | Manager.Platform                 | 100.00%  | 1         |
 | ✅     |                 | Manager.Reload                   | 100.00%  | 1         |
-| ✅     |                 | Manager.Start                    | 83.87%   | 11        |
-| ✅     |                 | Manager.Stop                     | 100.00%  | 2         |
+| ✅     |                 | Manager.Start                    | 85.71%   | 12        |
+| ✅     |                 | Manager.Stop                     | 96.43%   | 4         |
 | ✅     |                 | Manager.URL                      | 100.00%  | 0         |
 | ✅     |                 | Manager.Wait                     | 100.00%  | 0         |
 | ✅     |                 | Manager.logger                   | 66.67%   | 1         |
 | ✅     |                 | Manager.retire                   | 100.00%  | 1         |
-| ✅     |                 | Manager.startGeneration          | 92.31%   | 4         |
+| ✅     |                 | Manager.startGeneration          | 93.94%   | 4         |
 | ✅     |                 | Manager.watch                    | 100.00%  | 1         |
 | ✅     |                 | New                              | 88.24%   | 6         |
 | ✅     |                 | NewManager                       | 87.50%   | 2         |
@@ -52,9 +52,9 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                 | Platform.Context                 | 100.00%  | 0         |
 | ✅     |                 | Platform.Find                    | 100.00%  | 0         |
 | ✅     |                 | Platform.Register                | 100.00%  | 0         |
-| ✅     |                 | Platform.Start                   | 96.43%   | 6         |
+| ✅     |                 | Platform.Start                   | 96.67%   | 7         |
 | ✅     |                 | Platform.Stats                   | 100.00%  | 0         |
-| ✅     |                 | Platform.Stop                    | 100.00%  | 4         |
+| ✅     |                 | Platform.Stop                    | 95.83%   | 7         |
 | ✅     |                 | Platform.URL                     | 100.00%  | 0         |
 | ✅     |                 | Platform.Use                     | 100.00%  | 0         |
 | ✅     |                 | Platform.Wait                    | 100.00%  | 0         |
@@ -64,6 +64,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                 | Platform.setupListener           | 100.00%  | 3         |
 | ✅     |                 | Platform.setupRequestContext     | 100.00%  | 0         |
 | ✅     |                 | QueryParam                       | 100.00%  | 0         |
+| ✅     |                 | ReadPidFile                      | 100.00%  | 3         |
 | ✅     |                 | RegisterFunc                     | 100.00%  | 0         |
 | ✅     |                 | Registry.Cleanup                 | 100.00%  | 0         |
 | ✅     |                 | Registry.Clone                   | 100.00%  | 1         |
@@ -83,7 +84,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                 | Registry.startModule             | 100.00%  | 0         |
 | ✅     |                 | Registry.stopModule              | 80.00%   | 3         |
 | ✅     |                 | SetupConnections                 | 100.00%  | 0         |
-| ✅     |                 | Start                            | 75.00%   | 1         |
+| ✅     |                 | Start                            | 100.00%  | 1         |
 | ✅     |                 | TelemetryModule.Middleware       | 100.00%  | 0         |
 | ✅     |                 | TelemetryModule.Mount            | 100.00%  | 0         |
 | ✅     |                 | TelemetryModule.Tracer           | 100.00%  | 0         |
@@ -101,7 +102,10 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                 | init                             | 100.00%  | 0         |
 | ✅     |                 | listenerURL                      | 100.00%  | 0         |
 | ✅     |                 | loggerFromContext                | 100.00%  | 1         |
+| ✅     |                 | newPidfile                       | 100.00%  | 0         |
 | ✅     |                 | newSharedListener                | 100.00%  | 0         |
+| ✅     |                 | pidfile.remove                   | 85.71%   | 6         |
+| ✅     |                 | pidfile.write                    | 100.00%  | 2         |
 | ✅     |                 | registration.instance            | 100.00%  | 1         |
 | ✅     |                 | routePattern                     | 66.67%   | 2         |
 | ✅     |                 | setupConnections                 | 100.00%  | 4         |
