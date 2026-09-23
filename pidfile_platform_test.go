@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/titpetric/platform"
+	"github.com/titpetric/platform/internal/pidfile"
 	"github.com/titpetric/platform/pkg/require"
 )
 
@@ -30,7 +31,7 @@ func TestPlatformPidFile(t *testing.T) {
 		svc := platform.New(testOptions(path))
 		require.NoError(t, svc.Start(t.Context()))
 
-		pid, err := platform.ReadPidFile(path)
+		pid, err := pidfile.Read(path)
 		require.NoError(t, err)
 		require.Equal(t, os.Getpid(), pid)
 
@@ -110,7 +111,7 @@ func TestManagerPidFile(t *testing.T) {
 		m := newManager(t, path)
 		require.NoError(t, m.Start(t.Context()))
 
-		pid, err := platform.ReadPidFile(path)
+		pid, err := pidfile.Read(path)
 		require.NoError(t, err)
 		require.Equal(t, os.Getpid(), pid)
 
@@ -136,7 +137,7 @@ func TestManagerPidFile(t *testing.T) {
 
 		require.NotEqual(t, before, m.Platform())
 
-		pid, err := platform.ReadPidFile(path)
+		pid, err := pidfile.Read(path)
 		require.NoError(t, err)
 		require.Equal(t, os.Getpid(), pid)
 	})

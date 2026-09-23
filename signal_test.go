@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/titpetric/platform"
+	"github.com/titpetric/platform/internal/pidfile"
 	"github.com/titpetric/platform/pkg/require"
 )
 
@@ -99,7 +100,7 @@ func TestPlatformSignals(t *testing.T) {
 
 			// The one place the pid means something: in process it would
 			// compare the test to itself.
-			pid, err := platform.ReadPidFile(path)
+			pid, err := pidfile.Read(path)
 			require.NoError(t, err)
 			require.Equal(t, cmd.Process.Pid, pid)
 

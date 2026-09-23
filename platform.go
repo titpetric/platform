@@ -341,12 +341,6 @@ func FromContext(ctx context.Context) *Platform {
 	return platformContext.GetContext(ctx)
 }
 
-// ReadPidFile returns the process id recorded in the file Options.PidFile
-// names, for a command that signals a running platform.
-func ReadPidFile(path string) (int, error) {
-	return pidfile.Read(path)
-}
-
 // Start is a shorthand to create a new *Platform instance and
 // immediately starts the server listener and handles requests.
 func Start(ctx context.Context, options *Options) (*Platform, error) {

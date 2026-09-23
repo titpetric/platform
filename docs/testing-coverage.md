@@ -12,7 +12,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 
 | Status | Package          | Coverage | Cognitive | Lines |
 |--------|------------------|----------|-----------|-------|
-| ✅     | .                | 93.43%   | 137       | 955   |
+| ✅     | .                | 93.42%   | 137       | 952   |
 | ✅     | cmd              | 46.67%   | 2         | 20    |
 | ✅     | cmd/platform     | 0.00%    | 0         | 3     |
 | ✅     | internal         | 85.32%   | 31        | 176   |
@@ -66,7 +66,6 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                  | Platform.setupListener           | 100.00%  | 3         |
 | ✅     |                  | Platform.setupRequestContext     | 100.00%  | 0         |
 | ✅     |                  | QueryParam                       | 100.00%  | 0         |
-| ✅     |                  | ReadPidFile                      | 100.00%  | 0         |
 | ✅     |                  | RegisterFunc                     | 100.00%  | 0         |
 | ✅     |                  | Registry.Cleanup                 | 100.00%  | 0         |
 | ✅     |                  | Registry.Clone                   | 100.00%  | 1         |

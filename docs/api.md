@@ -377,7 +377,6 @@ var Database DatabaseProvider = global.db
 - `func OptionsFromRequest (r *http.Request) *Options`
 - `func Param (r *http.Request, name string) string`
 - `func QueryParam (r *http.Request, name string) string`
-- `func ReadPidFile (path string) (int, error)`
 - `func Register (m Module)`
 - `func RegisterFunc (f func() Module)`
 - `func SetupConnections (environment []string)`
@@ -530,14 +529,6 @@ QueryParam will return a named query parameter from the request.
 
 ```go
 func QueryParam(r *http.Request, name string) string
-```
-
-### ReadPidFile
-
-ReadPidFile returns the process id recorded in the file Options.PidFile names, for a command that signals a running platform.
-
-```go
-func ReadPidFile(path string) (int, error)
 ```
 
 ### Register
