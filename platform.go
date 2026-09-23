@@ -35,10 +35,10 @@ import (
 	"os/signal"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	chi "github.com/go-chi/chi/v5"
-
 	"github.com/titpetric/oida"
 
 	"github.com/titpetric/platform/internal"
@@ -155,8 +155,8 @@ func (p *Platform) Find(target any) bool {
 }
 
 // Start will start the server and print the registered routes.
-// It respects cancellation from the passed context, as well as
-// sets up signal notification to respond to SIGTERM.
+// It respects cancellation from the passed context, and stops on SIGINT or
+// SIGTERM. SIGKILL is not among them because it cannot be caught.
 //
 // Options.PidFile is written here, once the modules have started and the
 // socket is bound, so the file never names a process that then failed to
@@ -177,8 +177,8 @@ func (p *Platform) Start(ctx context.Context) error {
 		return err
 	}
 
-	// If the program receives a SIGTERM, trigger shutdown.
-	sigctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+	// If the program receives a SIGINT or a SIGTERM, trigger shutdown.
+	sigctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	p.stop = stop
 
 	go func() {
