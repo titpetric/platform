@@ -18,6 +18,13 @@ type Options struct {
 	// ServerAddr is the address the server listens to.
 	ServerAddr string
 
+	// PidFile is the file the process records its own id in, for a service
+	// manager or a command line that signals it. Empty writes none. The
+	// directory has to exist, an existing file is overwritten, and the file
+	// is removed on a clean stop. A Manager writes it for the process, so a
+	// reload leaves it alone.
+	PidFile string
+
 	// Quiet silences the platform's own output: New installs a discarding
 	// logger as Platform.Logger instead of the default one. Set to true in
 	// tests. Assigning Platform.Logger afterwards overrules it.
@@ -45,6 +52,7 @@ type Options struct {
 func NewOptions() *Options {
 	opt := &Options{}
 	opt.ServerAddr = opt.env("PLATFORM_SERVER_ADDR", ":8080")
+	opt.PidFile = opt.env("PLATFORM_PIDFILE", "")
 	opt.Modules = opt.envCSV("PLATFORM_MODULES")
 
 	// oida.NewOptions carries the recorder's own defaults (ring buffer,
@@ -94,6 +102,9 @@ func NewTestOptions() *Options {
 		// one, which keeps the global state they observe empty. A
 		// literal leaves ReadEnv off, so an OIDA_* variable in the
 		// environment cannot turn a test run into a recording one.
+		// It leaves PidFile empty for the same reason: one test binary
+		// runs many platforms, and an inherited PLATFORM_PIDFILE would
+		// have every one of them write the same path.
 		Telemetry: oida.Options{Enabled: false},
 	}
 }

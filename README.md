@@ -15,17 +15,18 @@ Status: the app and maillist packages still need implementation surface.
 
 ## Coverage
 
-| Status | Package                            | Coverage | Cognitive | Lines |
-|--------|------------------------------------|----------|-----------|-------|
-| ✅     | titpetric/platform                 | 89.25%   | 122       | 1041  |
-| ✅     | titpetric/platform/cmd             | 46.70%   | 2         | 30    |
-| ✅     | titpetric/platform/cmd/platform    | 0.00%    | 0         | 3     |
-| ✅     | titpetric/platform/internal        | 81.12%   | 31        | 195   |
-| ✅     | titpetric/platform/pkg/assert      | 0.00%    | 0         | 0     |
-| ✅     | titpetric/platform/pkg/drivers     | 0.00%    | 0         | 0     |
-| ✅     | titpetric/platform/pkg/httpcontext | 100.00%  | 1         | 23    |
-| ✅     | titpetric/platform/pkg/require     | 0.00%    | 0         | 0     |
-| ✅     | titpetric/platform/pkg/ulid        | 100.00%  | 0         | 18    |
+| Status | Package                             | Coverage | Cognitive | Lines |
+|--------|-------------------------------------|----------|-----------|-------|
+| ✅     | titpetric/platform                  | 93.43%   | 137       | 955   |
+| ✅     | titpetric/platform/cmd              | 46.67%   | 2         | 20    |
+| ✅     | titpetric/platform/cmd/platform     | 0.00%    | 0         | 3     |
+| ✅     | titpetric/platform/internal         | 85.32%   | 31        | 176   |
+| ✅     | titpetric/platform/internal/pidfile | 95.83%   | 11        | 44    |
+| ✅     | titpetric/platform/pkg/assert       | 0.00%    | 0         | 0     |
+| ✅     | titpetric/platform/pkg/drivers      | 0.00%    | 0         | 0     |
+| ✅     | titpetric/platform/pkg/httpcontext  | 100.00%  | 1         | 18    |
+| ✅     | titpetric/platform/pkg/require      | 0.00%    | 0         | 0     |
+| ✅     | titpetric/platform/pkg/ulid         | 100.00%  | 0         | 13    |
 
 For more detail, see: [Testing Coverage](./docs/testing-coverage.md).
 

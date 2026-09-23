@@ -117,8 +117,17 @@ type Manager struct {
 
 	// Setup runs against every platform generation before it starts.
 	// Registration against a platform value belongs here, as a reload
-	// discards the value it was made against.
+	// discards the value it was made against. Assign it before Start: a
+	// reload runs it from the signal handler's goroutine.
 	Setup func(*Platform) error
+
+	// Check runs before a reload retires the generation that is serving,
+	// and a non-nil error abandons that reload with the generation left
+	// alone. Reading the configuration a reload would apply belongs here:
+	// Setup runs against the new generation, which exists only once the old
+	// one has stopped. Nil reloads unconditionally. Assign before Start, as
+	// with Setup, because the signal handler reads it from a goroutine.
+	Check func() error
 
 	options *Options
 
@@ -126,6 +135,10 @@ type Manager struct {
 	mu      sync.Mutex
 	shared  *sharedListener
 	current atomic.Pointer[generation]
+
+	// pid records this process's id. The manager holds it rather than the
+	// platform, because a reload replaces the platform and not the process.
+	pid pidfile.Pidfile
 
 	// final shutdown context, cancelled when the manager stops
 	context context.Context
@@ -183,6 +196,13 @@ type Options struct {
 	// ServerAddr is the address the server listens to.
 	ServerAddr string
 
+	// PidFile is the file the process records its own id in, for a service
+	// manager or a command line that signals it. Empty writes none. The
+	// directory has to exist, an existing file is overwritten, and the file
+	// is removed on a clean stop. A Manager writes it for the process, so a
+	// reload leaves it alone.
+	PidFile string
+
 	// Quiet silences the platform's own output: New installs a discarding
 	// logger as Platform.Logger instead of the default one. Set to true in
 	// tests. Assigning Platform.Logger afterwards overrules it.
@@ -238,6 +258,11 @@ type Platform struct {
 	stop     func()
 	once     sync.Once
 	stopping atomic.Bool
+
+	// pid records this process's id, disabled when Options.PidFile is
+	// empty. A Manager clears it on the generations it runs and holds its
+	// own, because the file records a process and a reload makes no new one.
+	pid pidfile.Pidfile
 
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
@@ -592,7 +617,7 @@ func (*Manager) Platform() *Platform
 
 ### Reload
 
-Reload stops the running platform and starts a new one on the same socket. Generations never overlap, so a module registered as a value, rather than as a constructor, has to survive a restart.
+Reload stops the running platform and starts a new one on the same socket, unless Check refuses it first. Generations never overlap, so a module registered as a value has to survive a restart.
 
 ```go
 func (*Manager) Reload(ctx context.Context) error
@@ -600,7 +625,7 @@ func (*Manager) Reload(ctx context.Context) error
 
 ### Start
 
-Start binds the listener, starts the first platform generation on it, and arms the SIGHUP handler. Cancelling ctx stops the manager.
+Start binds the listener, starts the first platform generation on it, writes Options.PidFile and arms the SIGHUP handler. Cancelling ctx stops the manager.
 
 ```go
 func (*Manager) Start(ctx context.Context) error
@@ -656,7 +681,7 @@ func (*Platform) Register(m Module)
 
 ### Start
 
-Start will start the server and print the registered routes. It respects cancellation from the passed context, as well as sets up signal notification to respond to SIGTERM.
+Start starts the server, writes Options.PidFile and prints the registered routes. It stops on a cancelled context, SIGINT or SIGTERM.
 
 ```go
 func (*Platform) Start(ctx context.Context) error

@@ -35,13 +35,14 @@ import (
 	"os/signal"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	chi "github.com/go-chi/chi/v5"
-
 	"github.com/titpetric/oida"
 
 	"github.com/titpetric/platform/internal"
+	"github.com/titpetric/platform/internal/pidfile"
 	"github.com/titpetric/platform/pkg/httpcontext"
 )
 
@@ -71,6 +72,11 @@ type Platform struct {
 	once     sync.Once
 	stopping atomic.Bool
 
+	// pid records this process's id, disabled when Options.PidFile is
+	// empty. A Manager clears it on the generations it runs and holds its
+	// own, because the file records a process and a reload makes no new one.
+	pid pidfile.Pidfile
+
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
 	registry *Registry
@@ -94,6 +100,7 @@ func New(options *Options) *Platform {
 		router:  chi.NewRouter(),
 		stop:    func() {},
 		served:  make(chan struct{}),
+		pid:     pidfile.New(options.PidFile),
 	}
 
 	// Set up the platform logger. It's set before anything that logs, and
@@ -147,9 +154,8 @@ func (p *Platform) Find(target any) bool {
 	return p.registry.Find(target)
 }
 
-// Start will start the server and print the registered routes.
-// It respects cancellation from the passed context, as well as
-// sets up signal notification to respond to SIGTERM.
+// Start starts the server, writes Options.PidFile and prints the registered
+// routes. It stops on a cancelled context, SIGINT or SIGTERM.
 func (p *Platform) Start(ctx context.Context) error {
 	// Read the logger once. The field is exported, and the goroutine below
 	// outlives this call, so it gets a value and not a shared field.
@@ -159,8 +165,14 @@ func (p *Platform) Start(ctx context.Context) error {
 		return fmt.Errorf("error in platform setup: %w", err)
 	}
 
-	// If the program receives a SIGTERM, trigger shutdown.
-	sigctx, stop := signal.NotifyContext(ctx, os.Interrupt, os.Kill)
+	// Before the signal goroutine exists: it reaches Stop, and Stop reads
+	// what this records.
+	if err := p.pid.Write(); err != nil {
+		return err
+	}
+
+	// If the program receives a SIGINT or a SIGTERM, trigger shutdown.
+	sigctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	p.stop = stop
 
 	go func() {
@@ -284,7 +296,12 @@ func (p *Platform) Stop() {
 		defer cancel()
 
 		// When done, exit main. It's waiting for the cancelled context there.
+		// The pidfile goes first, so it is gone once the server has
+		// drained rather than once the modules have torn down.
 		defer func() {
+			if err := p.pid.Remove(); err != nil {
+				p.logger().Error("pidfile", "error", err)
+			}
 			p.stop()
 			p.cancel()
 			p.registry.Close(p.context)
@@ -329,6 +346,9 @@ func FromContext(ctx context.Context) *Platform {
 func Start(ctx context.Context, options *Options) (*Platform, error) {
 	svc := New(options)
 	if err := svc.Start(ctx); err != nil {
+		// The caller is handed nothing, so nothing else can release the
+		// modules that started and the socket that bound.
+		svc.Stop()
 		return nil, err
 	}
 	return svc, nil

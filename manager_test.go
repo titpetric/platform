@@ -2,7 +2,11 @@ package platform_test
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -11,6 +15,7 @@ import (
 	"time"
 
 	"github.com/titpetric/platform"
+	"github.com/titpetric/platform/internal/pidfile"
 	"github.com/titpetric/platform/pkg/require"
 )
 
@@ -243,4 +248,158 @@ func TestManager_start_error(t *testing.T) {
 
 	m.Stop()
 	m.Wait()
+}
+
+func TestManagerPidFile(t *testing.T) {
+	newManager := func(tb testing.TB, path string) *platform.Manager {
+		tb.Helper()
+
+		m := platform.NewManager(testOptions(path))
+		m.Setup = func(p *platform.Platform) error {
+			p.Use(platform.TestMiddleware())
+			return nil
+		}
+		tb.Cleanup(m.Stop)
+		return m
+	}
+
+	t.Run("written on start and removed on stop", func(t *testing.T) {
+		path := pidPath(t)
+
+		m := newManager(t, path)
+		require.NoError(t, m.Start(t.Context()))
+
+		pid, err := pidfile.Read(path)
+		require.NoError(t, err)
+		require.Equal(t, os.Getpid(), pid)
+
+		m.Stop()
+		m.Wait()
+
+		_, err = os.Stat(path)
+		require.ErrorIs(t, err, fs.ErrNotExist)
+	})
+
+	// A reload replaces the platform, not the process, so there is no
+	// window in which a command reading the file finds it missing.
+	t.Run("a reload leaves the file alone", func(t *testing.T) {
+		path := pidPath(t)
+
+		m := newManager(t, path)
+		require.NoError(t, m.Start(t.Context()))
+
+		before := m.Platform()
+		require.NotNil(t, before)
+
+		require.NoError(t, m.Reload(t.Context()))
+
+		require.NotEqual(t, before, m.Platform())
+
+		pid, err := pidfile.Read(path)
+		require.NoError(t, err)
+		require.Equal(t, os.Getpid(), pid)
+	})
+
+	t.Run("a path that cannot be written fails the start", func(t *testing.T) {
+		m := newManager(t, filepath.Join(t.TempDir(), "absent", "run.pid"))
+
+		require.Error(t, m.Start(t.Context()))
+		require.Nil(t, m.Platform())
+	})
+}
+
+// TestManagerCheck covers the hook that decides whether a reload happens,
+// separating a refusal that keeps serving from a failure that does not.
+func TestManagerCheck(t *testing.T) {
+	// Check is read from the handler's goroutine, so it goes on before Start.
+	newManager := func(tb testing.TB, mod platform.Module, check func() error) *platform.Manager {
+		tb.Helper()
+
+		m := platform.NewManager(platform.NewTestOptions())
+		m.Setup = func(p *platform.Platform) error {
+			p.Register(mod)
+			p.Use(platform.TestMiddleware())
+			return nil
+		}
+		m.Check = check
+		tb.Cleanup(m.Stop)
+		require.NoError(tb, m.Start(tb.Context()))
+		return m
+	}
+
+	t.Run("a refused reload leaves the generation serving", func(t *testing.T) {
+		mod := &countingModule{}
+		refused := errors.New("the configuration does not load")
+		m := newManager(t, mod, func() error { return refused })
+
+		serving := m.Platform()
+		require.NotNil(t, serving)
+
+		require.ErrorIs(t, m.Reload(t.Context()), refused)
+
+		// Nothing was torn down to find out the configuration was bad.
+		require.Equal(t, serving, m.Platform())
+		require.Equal(t, int64(1), mod.starts.Load())
+		require.Equal(t, int64(0), mod.stops.Load())
+
+		status, body := get(t, m.URL()+"/generation")
+		require.Equal(t, 200, status)
+		require.Equal(t, "1", string(body))
+	})
+
+	t.Run("a passing check reloads", func(t *testing.T) {
+		mod := &countingModule{}
+
+		var called atomic.Int64
+		m := newManager(t, mod, func() error {
+			called.Add(1)
+			return nil
+		})
+
+		require.NoError(t, m.Reload(t.Context()))
+		require.Equal(t, int64(1), called.Load())
+		require.Equal(t, int64(2), mod.starts.Load())
+
+		_, body := get(t, m.URL()+"/generation")
+		require.Equal(t, "2", string(body))
+	})
+
+	t.Run("the error names the refusal", func(t *testing.T) {
+		m := newManager(t, &countingModule{}, func() error {
+			return errors.New("mail.host is not a server name")
+		})
+
+		err := m.Reload(t.Context())
+		require.ErrorContains(t, err, "reload refused")
+		require.ErrorContains(t, err, "mail.host is not a server name")
+	})
+
+	// The handler decides from what is serving rather than from the error,
+	// so a refused SIGHUP must not take the process down.
+	t.Run("a refused reload survives sighup", func(t *testing.T) {
+		mod := &countingModule{}
+		m := newManager(t, mod, func() error {
+			return errors.New("the configuration does not load")
+		})
+
+		serving := m.Platform()
+
+		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
+
+		// The handler runs on a goroutine; give it time, then assert
+		// nothing moved.
+		time.Sleep(500 * time.Millisecond)
+
+		require.Equal(t, serving, m.Platform())
+		require.Equal(t, int64(0), mod.stops.Load())
+
+		select {
+		case <-m.Context().Done():
+			t.Fatal("the manager stopped on a refused reload")
+		default:
+		}
+
+		status, _ := get(t, m.URL()+"/generation")
+		require.Equal(t, 200, status)
+	})
 }

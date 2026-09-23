@@ -24,7 +24,7 @@ Embed `platform.UnimplementedModule` and override only the methods you need.
 
 The package provides `Start(context.Context, *Options)`, a shorthand that allocates a platform and starts it. The options object configures how it starts; `nil` takes the defaults from `NewOptions()`.
 
-The platform is shut down when the context passed to `Start` is cancelled or when a SIGTERM signal is intercepted in the system.
+The platform is shut down when the context passed to `Start` is cancelled, or when the process is sent a `SIGINT` or a `SIGTERM`.
 
 ```go
 p, err := platform.Start(ctx, platform.NewOptions())
@@ -56,7 +56,7 @@ Implement your `Mount(ctx context.Context, r Router)` to register GET/POST handl
 
 Graceful shutdown is implemented by the platform. In your modules you need to implement `Start` and `Stop` functions, which should create and cancel any goroutines needed by your module.
 
-The platform will shut itself down if a `SIGTERM` is caught. For testing, the passed context is expected to be a `t.Context()` (for `testing.TB`).
+The platform will shut itself down if a `SIGINT` or a `SIGTERM` is caught. `SIGKILL` cannot be caught by any process, so nothing runs on it. For testing, the passed context is expected to be a `t.Context()` (for `testing.TB`).
 
 Start has a platform instance attached to the context, and can use `platform.FromContext` to get the instance, and the `Find` function on the instance to get a reference to any side loaded module.
 
@@ -74,3 +74,33 @@ m.Wait()
 ```
 
 The manager holds the listening socket and replaces the platform under it, so the address survives the reload while the router, the registry and the modules are new. Modules registered with `RegisterFunc` are constructed per generation; a module registered as a value with the deprecated `Register` is shared across generations, and has to tolerate `Start` after `Stop`. Registrations that are not in the global registry belong in `Manager.Setup`, which runs against every generation. See the reload section in [The Platform](platform.md).
+
+## How do I stop a bad configuration from taking the server down on reload?
+
+Set `Manager.Check`. It runs before the reload retires the platform that is serving, and a non-nil error abandons the reload with that platform left answering requests:
+
+```go
+m.Check = func() error {
+	_, err := config.Load(filename)
+	return err
+}
+```
+
+Without it, a `SIGHUP` carrying a configuration that does not load stops the old generation first and then fails to build the new one, which leaves nothing serving and stops the process.
+
+Assign it before `Start`, as with `Setup`: the signal handler reads it from a goroutine of its own.
+
+## How does something else find the process to signal it?
+
+Set `Options.PidFile`, or `PLATFORM_PIDFILE`, and the process records its own id there on start and removes it on a clean stop:
+
+```go
+options := platform.NewOptions()
+options.PidFile = "/run/myapp.pid"
+```
+
+The file holds the decimal pid and a newline, which is the form `kill -HUP $(cat /run/myapp.pid)` and every service manager expects. `platform.ReadPidFile` reads it back for a command line that sends the signal itself.
+
+Empty, the default, writes no file at all. The directory has to exist: it belongs to whatever packages the service, and creating it here would mean guessing its owner and mode. An existing file is overwritten rather than treated as a running instance, because a pidfile is a record and not a lock.
+
+A `Manager` writes the file once for the process, and the generations it runs do not, so a reload leaves it alone. A file still present after the process is gone means the process did not stop cleanly.
