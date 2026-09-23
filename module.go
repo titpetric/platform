@@ -1,6 +1,8 @@
 package platform
 
-import "context"
+import (
+	"context"
+)
 
 // Module is the implementation contract for modules.
 //

@@ -1,6 +1,8 @@
 package assert
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestAssert(t *testing.T) {
 	True(t, true)
