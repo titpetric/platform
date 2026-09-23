@@ -75,6 +75,21 @@ m.Wait()
 
 The manager holds the listening socket and replaces the platform under it, so the address survives the reload while the router, the registry and the modules are new. Modules registered with `RegisterFunc` are constructed per generation; a module registered as a value with the deprecated `Register` is shared across generations, and has to tolerate `Start` after `Stop`. Registrations that are not in the global registry belong in `Manager.Setup`, which runs against every generation. See the reload section in [The Platform](platform.md).
 
+## How do I stop a bad configuration from taking the server down on reload?
+
+Set `Manager.Check`. It runs before the reload retires the platform that is serving, and a non-nil error abandons the reload with that platform left answering requests:
+
+```go
+m.Check = func() error {
+	_, err := config.Load(filename)
+	return err
+}
+```
+
+Without it, a `SIGHUP` carrying a configuration that does not load stops the old generation first and then fails to build the new one, which leaves nothing serving and stops the process.
+
+Assign it before `Start`, as with `Setup`: the signal handler reads it from a goroutine of its own.
+
 ## How does something else find the process to signal it?
 
 Set `Options.PidFile`, or `PLATFORM_PIDFILE`, and the process records its own id there on start and removes it on a clean stop:

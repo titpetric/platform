@@ -22,7 +22,27 @@ type Manager struct {
 	// Setup runs against every platform generation before it starts.
 	// Registration against a platform value belongs here, as a reload
 	// discards the value it was made against.
+	//
+	// Assign it before Start: a reload runs it from the signal handler's
+	// goroutine, so assigning it to a running manager is a data race.
 	Setup func(*Platform) error
+
+	// Check runs before a reload retires the generation that is serving,
+	// and a non-nil error abandons that reload with the generation left
+	// alone and still answering requests.
+	//
+	// It is where reading the configuration a reload would apply belongs.
+	// Setup is too late for that: it runs against the new generation, which
+	// is built only after the old one has been stopped, so a failure there
+	// leaves nothing serving. A signal is not a safe way to hand a process
+	// a configuration it has not read yet, and this is what makes it one.
+	//
+	// Nil, the default, reloads unconditionally.
+	//
+	// Assign it before Start, as with Setup: the signal handler reads it
+	// from a goroutine of its own, so assigning it to a running manager is
+	// a data race.
+	Check func() error
 
 	options *Options
 
@@ -120,6 +140,15 @@ func (m *Manager) Start(ctx context.Context) error {
 				m.logger().Info("caught sighup, reloading")
 
 				if err := m.Reload(ctx); err != nil {
+					// Whether to carry on is decided from what is
+					// serving, not from the error: Check refuses before
+					// retire and leaves the generation in place, while a
+					// failure after it leaves current nil.
+					if m.Platform() != nil {
+						m.logger().Error("reload refused, still serving", "error", err)
+						continue
+					}
+
 					// Nothing is serving after a failed reload, and a
 					// retry would read the same configuration again.
 					// Exiting is the honest outcome: it is visible to
@@ -138,9 +167,22 @@ func (m *Manager) Start(ctx context.Context) error {
 // Reload stops the running platform and starts a new one on the same
 // socket. Generations never overlap, so a module registered as a value,
 // rather than as a constructor, has to survive a restart.
+//
+// Check decides whether the swap happens at all. It runs first, while the
+// current generation is still serving, so a reload that is refused costs
+// nothing: the error comes back and the platform that was answering
+// requests goes on answering them.
 func (m *Manager) Reload(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
+	// Before retire, which is the whole point: past this line the generation
+	// that was serving is gone and there is no way back to it.
+	if m.Check != nil {
+		if err := m.Check(); err != nil {
+			return fmt.Errorf("reload refused: %w", err)
+		}
+	}
 
 	m.retire()
 

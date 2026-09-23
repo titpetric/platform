@@ -87,6 +87,19 @@ m.Setup = func(p *platform.Platform) error {
 
 A reload that fails leaves nothing serving: the old generation is already gone, and a retry would read the same configuration again. `Reload` returns the error, and the `SIGHUP` handler stops the manager, so the failure is visible to whatever supervises the process.
 
+`Manager.Check` is how that is avoided. It runs before the generation that is serving is retired, and a non-nil error abandons the reload with that generation left alone:
+
+```go
+m.Check = func() error {
+	_, err := config.Load(filename)
+	return err
+}
+```
+
+Reading the configuration a reload would apply belongs here rather than in `Setup`, which runs against the new generation and is therefore reached only after the old one has been stopped. A signal carries no way to report a problem back, so without `Check` a `kill -HUP` with a configuration that does not parse is indistinguishable from one that does, right up until nothing is serving.
+
+The `SIGHUP` handler tells the two apart from what is serving rather than from the error: a refused reload leaves the current generation in place and the handler logs and carries on, while a failure after the retire leaves nothing and stops the manager.
+
 ## Pidfile
 
 `kill -HUP` needs the pid, and `Options.PidFile` is where the process writes it:

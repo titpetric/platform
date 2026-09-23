@@ -12,7 +12,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 
 | Status | Package         | Coverage | Cognitive | Lines |
 |--------|-----------------|----------|-----------|-------|
-| ✅     | .               | 93.32%   | 140       | 985   |
+| ✅     | .               | 93.50%   | 148       | 1002  |
 | ✅     | cmd             | 46.67%   | 2         | 20    |
 | ✅     | cmd/platform    | 0.00%    | 0         | 3     |
 | ✅     | internal        | 85.32%   | 31        | 176   |
@@ -29,9 +29,10 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     | .               | Error                            | 100.00%  | 1         |
 | ✅     |                 | FromContext                      | 100.00%  | 0         |
 | ✅     |                 | JSON                             | 100.00%  | 1         |
+| ✅     |                 | Manager.Context                  | 100.00%  | 0         |
 | ✅     |                 | Manager.Platform                 | 100.00%  | 1         |
-| ✅     |                 | Manager.Reload                   | 100.00%  | 1         |
-| ✅     |                 | Manager.Start                    | 85.71%   | 12        |
+| ✅     |                 | Manager.Reload                   | 100.00%  | 4         |
+| ✅     |                 | Manager.Start                    | 86.84%   | 17        |
 | ✅     |                 | Manager.Stop                     | 96.43%   | 4         |
 | ✅     |                 | Manager.URL                      | 100.00%  | 0         |
 | ✅     |                 | Manager.Wait                     | 100.00%  | 0         |
