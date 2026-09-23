@@ -18,7 +18,8 @@ Each `Platform` instance clones the global registry, enabling isolated test inst
 - Registry - package and instance level container value managing modules and middleware; enables `init` usage via package API.
 - Database - named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed.
 - Logger - the `Platform.Logger` field, an interface with `Info` and `Error`, receiving the platform's own output.
-- Manager - owns the listening socket and the `*Platform` serving on it, replacing the platform on `SIGHUP`.
+- Manager - owns the listening socket and the `*Platform` serving on it, replacing the platform on `SIGHUP`. It also owns the pidfile, because a reload does not make a new process.
+- Pidfile - the file `Options.PidFile` names, holding the process id something else sends a signal to. Empty writes none.
 
 ## Logging
 
@@ -50,7 +51,7 @@ platform.FromRequest(r).Logger.Info("handled", "path", r.URL.Path)
 
 1. **Register modules** via `platform.RegisterFunc()` (or `Register` on a `*Platform` instance).
 2. **Add middleware** via `platform.Use()` before calling `Start(context.Context)`.
-3. **Start the platform** with `Start(context.Context)`; modules are started and then mounted.
+3. **Start the platform** with `Start(context.Context)`; modules are started and then mounted, the socket is bound, and `Options.PidFile` is written when one is named.
 4. **Stop** with `Stop()`; the server is shut down gracefully with a 5 second timeout, the platform context is cancelled, and the registry then stops every module in parallel.
 5. Application exit, reporting any error during shutdown.
 
@@ -85,3 +86,20 @@ m.Setup = func(p *platform.Platform) error {
 ```
 
 A reload that fails leaves nothing serving: the old generation is already gone, and a retry would read the same configuration again. `Reload` returns the error, and the `SIGHUP` handler stops the manager, so the failure is visible to whatever supervises the process.
+
+## Pidfile
+
+`kill -HUP` needs the pid, and `Options.PidFile` is where the process writes it:
+
+```go
+options := platform.NewOptions()
+options.PidFile = "/run/myapp.pid"
+```
+
+The file holds the decimal pid and a newline, created 0644 before the umask, and `platform.ReadPidFile` reads it back. Empty, the default, writes nothing.
+
+It is written once the modules have started and the socket is bound, so the file never names a process that then failed to come up, and removed once the server has drained. A file still present after the process is gone means the process did not stop cleanly.
+
+The manager owns the file, not the generations it runs. A pidfile records a process, and a reload does not make a new one, so a generation neither writes nor removes one: `startGeneration` clears it. Without that, every reload would remove the file and write it again, and the moment a `SIGHUP` sender reads it is exactly the moment it would be missing.
+
+The directory has to exist. It belongs to whatever packages the service, `RuntimeDirectory=` in a systemd unit being the usual case, and creating it here would mean guessing its owner and mode, so a path that names a missing directory fails the start rather than being created. An existing file is overwritten rather than treated as a running instance: a pidfile is a record and not a lock, and refusing to start because of a file a killed process left behind is how a service fails to come back after a power cut.

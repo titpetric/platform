@@ -31,6 +31,12 @@ type Manager struct {
 	shared  *sharedListener
 	current atomic.Pointer[generation]
 
+	// pid is the file this process records its id in, disabled when
+	// Options.PidFile is empty. The manager holds it rather than the
+	// platform, because the file records a process and a reload does not
+	// make a new one.
+	pid pidfile
+
 	// final shutdown context, cancelled when the manager stops
 	context context.Context
 	cancel  context.CancelFunc
@@ -56,6 +62,7 @@ func NewManager(options *Options) *Manager {
 	m := &Manager{
 		options: options,
 		stop:    func() {},
+		pid:     newPidfile(options.PidFile),
 	}
 
 	m.Logger = slog.Default()
@@ -67,8 +74,12 @@ func NewManager(options *Options) *Manager {
 	return m
 }
 
-// Start binds the listener, starts the first platform generation on it, and
-// arms the SIGHUP handler. Cancelling ctx stops the manager.
+// Start binds the listener, starts the first platform generation on it,
+// writes Options.PidFile and arms the SIGHUP handler. Cancelling ctx stops
+// the manager.
+//
+// The pidfile is the manager's rather than the generation's: it records a
+// process, and a reload replaces the platform without making a new one.
 func (m *Manager) Start(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -80,6 +91,15 @@ func (m *Manager) Start(ctx context.Context) error {
 	m.shared = newSharedListener(listener)
 
 	if err := m.startGeneration(ctx); err != nil {
+		_ = m.shared.Close()
+		return err
+	}
+
+	// Once something is serving, and before the handler that a signal would
+	// arrive at. A file naming a process that then failed to come up is
+	// what a service manager acts on.
+	if err := m.pid.write(); err != nil {
+		m.retire()
 		_ = m.shared.Close()
 		return err
 	}
@@ -138,6 +158,11 @@ func (m *Manager) startGeneration(ctx context.Context) error {
 	p := New(m.options)
 	p.Logger = m.Logger
 	p.listener = m.shared.next()
+
+	// The pidfile records the process, and the manager holds it. Leaving a
+	// generation one of its own would have every reload remove the file and
+	// write it again, and `-s reload` reads it in exactly that window.
+	p.pid = pidfile{}
 
 	if m.Setup != nil {
 		if err := m.Setup(p); err != nil {
@@ -218,6 +243,10 @@ func (m *Manager) Stop() {
 
 		m.retire()
 		m.stop()
+
+		if err := m.pid.remove(); err != nil {
+			m.logger().Error("pidfile", "error", err)
+		}
 
 		if m.shared != nil {
 			_ = m.shared.Close()

@@ -71,6 +71,12 @@ type Platform struct {
 	once     sync.Once
 	stopping atomic.Bool
 
+	// pid is the file this process records its id in, disabled when
+	// Options.PidFile is empty. A Manager clears it on the generations it
+	// runs and holds its own: the file records a process, and a reload does
+	// not make a new one.
+	pid pidfile
+
 	// registry holds settings for plugins and middleware.
 	// It's auto-filled from global scope.
 	registry *Registry
@@ -94,6 +100,7 @@ func New(options *Options) *Platform {
 		router:  chi.NewRouter(),
 		stop:    func() {},
 		served:  make(chan struct{}),
+		pid:     newPidfile(options.PidFile),
 	}
 
 	// Set up the platform logger. It's set before anything that logs, and
@@ -150,6 +157,11 @@ func (p *Platform) Find(target any) bool {
 // Start will start the server and print the registered routes.
 // It respects cancellation from the passed context, as well as
 // sets up signal notification to respond to SIGTERM.
+//
+// Options.PidFile is written here, once the modules have started and the
+// socket is bound, so the file never names a process that then failed to
+// come up. A platform a Manager runs writes nothing: the Manager holds the
+// file for the process.
 func (p *Platform) Start(ctx context.Context) error {
 	// Read the logger once. The field is exported, and the goroutine below
 	// outlives this call, so it gets a value and not a shared field.
@@ -157,6 +169,12 @@ func (p *Platform) Start(ctx context.Context) error {
 
 	if err := p.setup(ctx); err != nil {
 		return fmt.Errorf("error in platform setup: %w", err)
+	}
+
+	// Before the signal goroutine exists, because that goroutine reaches
+	// Stop and Stop reads what write records here.
+	if err := p.pid.write(); err != nil {
+		return err
 	}
 
 	// If the program receives a SIGTERM, trigger shutdown.
@@ -284,7 +302,14 @@ func (p *Platform) Stop() {
 		defer cancel()
 
 		// When done, exit main. It's waiting for the cancelled context there.
+		// The pidfile goes first: it is removed once the server has
+		// drained rather than once the modules have torn down, so it does
+		// not outlive the serving by however long that takes. A start that
+		// failed before the file was written removes nothing.
 		defer func() {
+			if err := p.pid.remove(); err != nil {
+				p.logger().Error("pidfile", "error", err)
+			}
 			p.stop()
 			p.cancel()
 			p.registry.Close(p.context)
@@ -329,6 +354,10 @@ func FromContext(ctx context.Context) *Platform {
 func Start(ctx context.Context, options *Options) (*Platform, error) {
 	svc := New(options)
 	if err := svc.Start(ctx); err != nil {
+		// The caller is handed nothing, so it has nothing to call Stop on.
+		// Start can fail after the modules started and the socket bound,
+		// and releasing those is this function's to do.
+		svc.Stop()
 		return nil, err
 	}
 	return svc, nil
