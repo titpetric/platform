@@ -10,6 +10,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"syscall"
+
+	"github.com/titpetric/platform/internal/pidfile"
 )
 
 // Manager owns the socket, and the platform generation serving on it. It
@@ -21,27 +23,16 @@ type Manager struct {
 
 	// Setup runs against every platform generation before it starts.
 	// Registration against a platform value belongs here, as a reload
-	// discards the value it was made against.
-	//
-	// Assign it before Start: a reload runs it from the signal handler's
-	// goroutine, so assigning it to a running manager is a data race.
+	// discards the value it was made against. Assign it before Start: a
+	// reload runs it from the signal handler's goroutine.
 	Setup func(*Platform) error
 
 	// Check runs before a reload retires the generation that is serving,
 	// and a non-nil error abandons that reload with the generation left
-	// alone and still answering requests.
-	//
-	// It is where reading the configuration a reload would apply belongs.
-	// Setup is too late for that: it runs against the new generation, which
-	// is built only after the old one has been stopped, so a failure there
-	// leaves nothing serving. A signal is not a safe way to hand a process
-	// a configuration it has not read yet, and this is what makes it one.
-	//
-	// Nil, the default, reloads unconditionally.
-	//
-	// Assign it before Start, as with Setup: the signal handler reads it
-	// from a goroutine of its own, so assigning it to a running manager is
-	// a data race.
+	// alone. Reading the configuration a reload would apply belongs here:
+	// Setup runs against the new generation, which exists only once the old
+	// one has stopped. Nil reloads unconditionally. Assign before Start, as
+	// with Setup, because the signal handler reads it from a goroutine.
 	Check func() error
 
 	options *Options
@@ -51,11 +42,9 @@ type Manager struct {
 	shared  *sharedListener
 	current atomic.Pointer[generation]
 
-	// pid is the file this process records its id in, disabled when
-	// Options.PidFile is empty. The manager holds it rather than the
-	// platform, because the file records a process and a reload does not
-	// make a new one.
-	pid pidfile
+	// pid records this process's id. The manager holds it rather than the
+	// platform, because a reload replaces the platform and not the process.
+	pid pidfile.Pidfile
 
 	// final shutdown context, cancelled when the manager stops
 	context context.Context
@@ -82,7 +71,7 @@ func NewManager(options *Options) *Manager {
 	m := &Manager{
 		options: options,
 		stop:    func() {},
-		pid:     newPidfile(options.PidFile),
+		pid:     pidfile.New(options.PidFile),
 	}
 
 	m.Logger = slog.Default()
@@ -97,9 +86,6 @@ func NewManager(options *Options) *Manager {
 // Start binds the listener, starts the first platform generation on it,
 // writes Options.PidFile and arms the SIGHUP handler. Cancelling ctx stops
 // the manager.
-//
-// The pidfile is the manager's rather than the generation's: it records a
-// process, and a reload replaces the platform without making a new one.
 func (m *Manager) Start(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -115,10 +101,9 @@ func (m *Manager) Start(ctx context.Context) error {
 		return err
 	}
 
-	// Once something is serving, and before the handler that a signal would
-	// arrive at. A file naming a process that then failed to come up is
-	// what a service manager acts on.
-	if err := m.pid.write(); err != nil {
+	// Once something is serving, so the file never names a process that
+	// failed to come up, and before the handler a signal arrives at.
+	if err := m.pid.Write(); err != nil {
 		m.retire()
 		_ = m.shared.Close()
 		return err
@@ -140,10 +125,9 @@ func (m *Manager) Start(ctx context.Context) error {
 				m.logger().Info("caught sighup, reloading")
 
 				if err := m.Reload(ctx); err != nil {
-					// Whether to carry on is decided from what is
-					// serving, not from the error: Check refuses before
-					// retire and leaves the generation in place, while a
-					// failure after it leaves current nil.
+					// Decided from what is serving, not from the error:
+					// a refusal leaves the generation in place, a
+					// failure after retire leaves current nil.
 					if m.Platform() != nil {
 						m.logger().Error("reload refused, still serving", "error", err)
 						continue
@@ -164,20 +148,14 @@ func (m *Manager) Start(ctx context.Context) error {
 	return nil
 }
 
-// Reload stops the running platform and starts a new one on the same
-// socket. Generations never overlap, so a module registered as a value,
-// rather than as a constructor, has to survive a restart.
-//
-// Check decides whether the swap happens at all. It runs first, while the
-// current generation is still serving, so a reload that is refused costs
-// nothing: the error comes back and the platform that was answering
-// requests goes on answering them.
+// Reload stops the running platform and starts a new one on the same socket,
+// unless Check refuses it first. Generations never overlap, so a module
+// registered as a value has to survive a restart.
 func (m *Manager) Reload(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Before retire, which is the whole point: past this line the generation
-	// that was serving is gone and there is no way back to it.
+	// Before retire: past that line the generation that was serving is gone.
 	if m.Check != nil {
 		if err := m.Check(); err != nil {
 			return fmt.Errorf("reload refused: %w", err)
@@ -204,7 +182,7 @@ func (m *Manager) startGeneration(ctx context.Context) error {
 	// The pidfile records the process, and the manager holds it. Leaving a
 	// generation one of its own would have every reload remove the file and
 	// write it again, and `-s reload` reads it in exactly that window.
-	p.pid = pidfile{}
+	p.pid = pidfile.Pidfile{}
 
 	if m.Setup != nil {
 		if err := m.Setup(p); err != nil {
@@ -286,7 +264,7 @@ func (m *Manager) Stop() {
 		m.retire()
 		m.stop()
 
-		if err := m.pid.remove(); err != nil {
+		if err := m.pid.Remove(); err != nil {
 			m.logger().Error("pidfile", "error", err)
 		}
 

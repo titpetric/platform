@@ -11,15 +11,10 @@ import (
 	"github.com/titpetric/platform/pkg/require"
 )
 
-// TestManagerCheck covers the hook that decides whether a reload happens.
-//
-// The generation a reload retires is gone the moment retire returns, so a
-// configuration that will not load has to be found before then. These are
-// the cases that separate "refused, still serving the old one" from
-// "failed, nothing serving".
+// TestManagerCheck covers the hook that decides whether a reload happens,
+// separating a refusal that keeps serving from a failure that does not.
 func TestManagerCheck(t *testing.T) {
-	// Check is read from the signal handler's goroutine, so it goes on
-	// before Start, the way Setup does.
+	// Check is read from the handler's goroutine, so it goes on before Start.
 	newManager := func(tb testing.TB, mod platform.Module, check func() error) *platform.Manager {
 		tb.Helper()
 
@@ -45,9 +40,7 @@ func TestManagerCheck(t *testing.T) {
 
 		require.ErrorIs(t, m.Reload(t.Context()), refused)
 
-		// The same platform value, still answering, and the module was
-		// never stopped: nothing was torn down to find out the new
-		// configuration was bad.
+		// Nothing was torn down to find out the configuration was bad.
 		require.Equal(t, serving, m.Platform())
 		require.Equal(t, int64(1), mod.starts.Load())
 		require.Equal(t, int64(0), mod.stops.Load())
@@ -84,9 +77,8 @@ func TestManagerCheck(t *testing.T) {
 		require.ErrorContains(t, err, "mail.host is not a server name")
 	})
 
-	// A SIGHUP whose reload is refused must not take the process down. The
-	// handler decides that from what is serving rather than from the error,
-	// so this is the case that pins the distinction end to end.
+	// The handler decides from what is serving rather than from the error,
+	// so a refused SIGHUP must not take the process down.
 	t.Run("a refused reload survives sighup", func(t *testing.T) {
 		mod := &countingModule{}
 		m := newManager(t, mod, func() error {
@@ -97,8 +89,8 @@ func TestManagerCheck(t *testing.T) {
 
 		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
 
-		// The handler runs on a goroutine, so give it time to have run and
-		// then assert nothing moved.
+		// The handler runs on a goroutine; give it time, then assert
+		// nothing moved.
 		time.Sleep(500 * time.Millisecond)
 
 		require.Equal(t, serving, m.Platform())

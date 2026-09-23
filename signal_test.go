@@ -30,9 +30,7 @@ const (
 	signalStopped = "stopped"
 )
 
-// TestPlatformSignalChild is the other half of TestPlatformSignals. It runs
-// only in the child process the parent re-executes, and is skipped in an
-// ordinary run of the suite.
+// TestPlatformSignalChild runs only as the child TestPlatformSignals starts.
 func TestPlatformSignalChild(t *testing.T) {
 	if os.Getenv(signalChildEnv) == "" {
 		t.Skip("runs only as the child of TestPlatformSignals")
@@ -51,14 +49,11 @@ func TestPlatformSignalChild(t *testing.T) {
 	os.Stdout.WriteString(signalStopped + "\n")
 }
 
-// TestPlatformSignals covers the two signals a platform stops on, in a
-// process of its own.
+// TestPlatformSignals covers the two signals a platform stops on.
 //
-// The signal cannot be sent inside the test binary. signal.Notify is
-// process-wide and additive, so a SIGTERM raised here would be delivered to
-// every platform the rest of the suite has running, and a moment when no
-// handler is armed kills the test binary rather than failing a test. A child
-// process bounds the blast radius to itself.
+// It signals a child rather than raising in process: signal.Notify is
+// process-wide, so a SIGTERM raised here would reach every platform the
+// suite has running, and an unarmed moment kills the test binary.
 func TestPlatformSignals(t *testing.T) {
 	if testing.Short() {
 		t.Skip("re-executes the test binary")
@@ -97,14 +92,13 @@ func TestPlatformSignals(t *testing.T) {
 
 			require.NoError(t, cmd.Start())
 
-			// Blocking on the ready line is what makes the signal safe to
-			// send: the child prints it only after Start returned, and
-			// Start arms the handler before it does.
+			// Safe to signal only after this: Start arms the handler
+			// before the child prints the line.
 			lines := bufio.NewScanner(stdout)
 			require.True(t, waitFor(lines, signalReady), "the child never reported ready")
 
-			// The one place the pid is worth asserting: in process,
-			// os.Getpid() would be comparing the test to itself.
+			// The one place the pid means something: in process it would
+			// compare the test to itself.
 			pid, err := platform.ReadPidFile(path)
 			require.NoError(t, err)
 			require.Equal(t, cmd.Process.Pid, pid)
@@ -113,9 +107,8 @@ func TestPlatformSignals(t *testing.T) {
 
 			require.True(t, waitFor(lines, signalStopped), "the child did not stop gracefully")
 
-			// A non-nil error here is the child having been killed by the
-			// signal instead of catching it, which is the defect this test
-			// exists for.
+			// An error here is the child killed by the signal rather than
+			// catching it, which is the defect this test exists for.
 			require.NoError(t, cmd.Wait())
 			require.Contains(t, stderr.String(), test.logged)
 

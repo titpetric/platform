@@ -10,16 +10,13 @@ import (
 	"github.com/titpetric/platform/pkg/require"
 )
 
-// pidPath returns a path in a temporary directory for a test to point
-// Options.PidFile at. The file itself is not created: whether it appears is
-// what these tests are about.
+// pidPath returns an uncreated path for a test to point Options.PidFile at.
 func pidPath(tb testing.TB) string {
 	tb.Helper()
 	return filepath.Join(tb.TempDir(), "run.pid")
 }
 
-// testOptions is NewTestOptions with a pidfile, which NewTestOptions
-// deliberately leaves empty.
+// testOptions is NewTestOptions with a pidfile.
 func testOptions(path string) *platform.Options {
 	options := platform.NewTestOptions()
 	options.PidFile = path
@@ -124,10 +121,8 @@ func TestManagerPidFile(t *testing.T) {
 		require.ErrorIs(t, err, fs.ErrNotExist)
 	})
 
-	// A reload replaces the platform, not the process. The generation the
-	// manager retires holds no pidfile of its own, so there is no window in
-	// which the file is missing: this is what a command reading it to send a
-	// signal depends on.
+	// A reload replaces the platform, not the process, so there is no
+	// window in which a command reading the file finds it missing.
 	t.Run("a reload leaves the file alone", func(t *testing.T) {
 		path := pidPath(t)
 

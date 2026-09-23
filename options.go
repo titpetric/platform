@@ -18,18 +18,11 @@ type Options struct {
 	// ServerAddr is the address the server listens to.
 	ServerAddr string
 
-	// PidFile is the file the process records its own process id in, for a
-	// service manager or a command line that signals it. Empty, the default,
-	// writes no file and is not an error.
-	//
-	// The file holds the decimal pid and a newline, created 0644 before the
-	// umask, and is removed on a clean stop. The directory has to exist: it
-	// belongs to whatever packages the service, and creating it here would
-	// mean guessing its owner and mode. An existing file is overwritten,
-	// because a pidfile is a record and not a lock.
-	//
-	// A Manager writes it for the process, and the platform generations it
-	// runs do not, so a reload leaves the file alone.
+	// PidFile is the file the process records its own id in, for a service
+	// manager or a command line that signals it. Empty writes none. The
+	// directory has to exist, an existing file is overwritten, and the file
+	// is removed on a clean stop. A Manager writes it for the process, so a
+	// reload leaves it alone.
 	PidFile string
 
 	// Quiet silences the platform's own output: New installs a discarding
