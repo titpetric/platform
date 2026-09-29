@@ -17,13 +17,19 @@ In practice, a singular modular monolith may share the complete schema and no na
 db, err := platform.Database.Connect(ctx)
 ```
 
-The platform automatically imports three drivers:
+The platform imports no driver. It speaks to `database/sql` through `sqlx`, and the driver is the choice of whoever builds the binary. Register one with a blank import in your `main` package:
 
-1. `go-sql-driver/mysql` for MySQL, Percona, MariaDB,
-2. `github.com/jackc/pgx/v5/stdlib` for PostgreSQL,
-3. `modernc.org/sqlite` for sqlite,
+```go
+import (
+	_ "github.com/go-sql-driver/mysql" // MySQL, Percona, MariaDB
+	_ "github.com/jackc/pgx/v5/stdlib" // PostgreSQL
+	_ "modernc.org/sqlite"             // sqlite
+)
+```
 
-The extensions are imported by `pkg/drivers`, integration tests need to import the package to provide database functionality, or import the packages (or any other) on their own. The platform is database agnostic.
+Any driver that registers itself with `database/sql` works, under whatever name it registers. The DSN prefix selects it; see [Connection strings](#connection-strings).
+
+Pinning a driver in the platform would push that pin onto every consumer and duplicate the dependency tree of anyone already on a newer version. The tests in `tests/` are a separate Go module for the same reason: they register all three drivers in `tests/main_test.go`, and none of that reaches the platform `go.mod`.
 
 ## Named Connections
 

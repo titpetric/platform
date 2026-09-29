@@ -16,11 +16,9 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     | cmd              | 46.67%   | 2         | 20    |
 | ✅     | cmd/platform     | 0.00%    | 0         | 3     |
 | ✅     | internal         | 85.32%   | 31        | 176   |
+| ✅     | internal/assert  | 98.57%   | 67        | 270   |
 | ✅     | internal/pidfile | 95.83%   | 11        | 44    |
-| ✅     | pkg/assert       | 0.00%    | 0         | 0     |
-| ✅     | pkg/drivers      | 0.00%    | 0         | 0     |
 | ✅     | pkg/httpcontext  | 100.00%  | 1         | 18    |
-| ✅     | pkg/require      | 0.00%    | 0         | 0     |
 | ✅     | pkg/ulid         | 100.00%  | 0         | 13    |
 
 ## Functions
@@ -125,6 +123,38 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                  | cleanDSN                         | 100.00%  | 3         |
 | ✅     |                  | databaseOption                   | 100.00%  | 2         |
 | ✅     |                  | isSQLiteMemoryDSN                | 100.00%  | 2         |
+| ✅     | internal/assert  | Assert                           | 100.00%  | 1         |
+| ✅     |                  | CheckEquals                      | 100.00%  | 1         |
+| ✅     |                  | Contains                         | 100.00%  | 1         |
+| ✅     |                  | Empty                            | 100.00%  | 1         |
+| ✅     |                  | Equal                            | 100.00%  | 1         |
+| ✅     |                  | EqualValues                      | 100.00%  | 1         |
+| ✅     |                  | Error                            | 100.00%  | 1         |
+| ✅     |                  | ErrorContains                    | 100.00%  | 2         |
+| ✅     |                  | ErrorIs                          | 100.00%  | 1         |
+| ✅     |                  | Errorf                           | 100.00%  | 0         |
+| ✅     |                  | Fail                             | 100.00%  | 1         |
+| ✅     |                  | False                            | 100.00%  | 1         |
+| ✅     |                  | Greater                          | 100.00%  | 1         |
+| ✅     |                  | IsIncreasing                     | 100.00%  | 5         |
+| ✅     |                  | Len                              | 100.00%  | 2         |
+| ✅     |                  | Nil                              | 100.00%  | 1         |
+| ✅     |                  | NoError                          | 100.00%  | 1         |
+| ✅     |                  | NotContains                      | 100.00%  | 1         |
+| ✅     |                  | NotEmpty                         | 100.00%  | 1         |
+| ✅     |                  | NotEqual                         | 100.00%  | 1         |
+| ✅     |                  | NotNil                           | 100.00%  | 1         |
+| ✅     |                  | ObjectsAreEqualValues            | 100.00%  | 0         |
+| ✅     |                  | Run                              | 100.00%  | 10        |
+| ✅     |                  | TestSuite.SetT                   | 100.00%  | 0         |
+| ✅     |                  | TestSuite.T                      | 100.00%  | 0         |
+| ✅     |                  | True                             | 100.00%  | 1         |
+| ✅     |                  | compare                          | 80.00%   | 2         |
+| ✅     |                  | containsElement                  | 100.00%  | 9         |
+| ✅     |                  | hasLength                        | 100.00%  | 1         |
+| ✅     |                  | isEmpty                          | 100.00%  | 2         |
+| ✅     |                  | isNil                            | 100.00%  | 2         |
+| ✅     |                  | orderedCompare                   | 92.86%   | 14        |
 | ✅     | internal/pidfile | New                              | 100.00%  | 0         |
 | ✅     |                  | Pidfile.Remove                   | 85.71%   | 6         |
 | ✅     |                  | Pidfile.Write                    | 100.00%  | 2         |
