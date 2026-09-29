@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/titpetric/platform/pkg/require"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 func newTestSharedListener(tb testing.TB) *sharedListener {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(tb, err)
+	assert.NoError(tb, err)
 
 	shared := newSharedListener(listener)
 	tb.Cleanup(func() { _ = shared.Close() })
@@ -26,37 +26,37 @@ func TestSharedListener(t *testing.T) {
 	addr := shared.Addr().String()
 
 	first := shared.next()
-	require.Equal(t, addr, first.Addr().String())
+	assert.Equal(t, addr, first.Addr().String())
 
 	client, err := net.Dial("tcp", addr)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	t.Cleanup(func() { _ = client.Close() })
 
 	conn, err := first.Accept()
-	require.NoError(t, err)
-	require.NoError(t, conn.Close())
+	assert.NoError(t, err)
+	assert.NoError(t, conn.Close())
 
 	// Retiring the generation is what http.Server.Shutdown does to the
 	// listener it serves. The socket has to survive it.
-	require.NoError(t, first.Close())
+	assert.NoError(t, first.Close())
 
 	_, err = first.Accept()
-	require.ErrorIs(t, err, net.ErrClosed)
+	assert.ErrorIs(t, err, net.ErrClosed)
 
 	// A connection made while no generation is accepting waits in the
 	// accept queue of the socket, and the next generation serves it.
 	waiting, err := net.Dial("tcp", addr)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	t.Cleanup(func() { _ = waiting.Close() })
 
 	second := shared.next()
-	require.Equal(t, addr, second.Addr().String())
+	assert.Equal(t, addr, second.Addr().String())
 
 	conn, err = second.Accept()
-	require.NoError(t, err)
-	require.NoError(t, conn.Close())
+	assert.NoError(t, err)
+	assert.NoError(t, conn.Close())
 
-	require.NoError(t, shared.Close())
+	assert.NoError(t, shared.Close())
 }
 
 // TestSharedListener_unblocks covers the accept loop of a generation that
@@ -74,11 +74,11 @@ func TestSharedListener_unblocks(t *testing.T) {
 
 	// Give the accept loop a chance to block on the socket.
 	time.Sleep(10 * time.Millisecond)
-	require.NoError(t, first.Close())
+	assert.NoError(t, first.Close())
 
 	select {
 	case err := <-accepted:
-		require.ErrorIs(t, err, net.ErrClosed)
+		assert.ErrorIs(t, err, net.ErrClosed)
 	case <-time.After(5 * time.Second):
 		t.Fatal("accept did not return after the generation was retired")
 	}
@@ -95,8 +95,8 @@ func TestSharedListener_handoff(t *testing.T) {
 	shared.handoff(server)
 
 	conn, err := shared.next().Accept()
-	require.NoError(t, err)
-	require.Equal(t, server, conn)
+	assert.NoError(t, err)
+	assert.Equal(t, server, conn)
 
 	t.Run("only one connection can be parked", func(t *testing.T) {
 		first, _ := net.Pipe()
@@ -108,12 +108,12 @@ func TestSharedListener_handoff(t *testing.T) {
 		// The slot is taken, so the second connection is closed rather
 		// than held for a generation that may never arrive.
 		_, err := second.Write([]byte("x"))
-		require.ErrorIs(t, err, io.ErrClosedPipe)
+		assert.ErrorIs(t, err, io.ErrClosedPipe)
 
-		require.NoError(t, shared.Close())
+		assert.NoError(t, shared.Close())
 
 		// Closing the socket releases what was parked on it.
 		_, err = first.Write([]byte("x"))
-		require.ErrorIs(t, err, io.ErrClosedPipe)
+		assert.ErrorIs(t, err, io.ErrClosedPipe)
 	})
 }

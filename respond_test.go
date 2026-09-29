@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/titpetric/platform/pkg/require"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 func TestError(t *testing.T) {
@@ -23,7 +23,7 @@ func TestError(t *testing.T) {
 	Error(rec, req, want.Error.Code, errors.New(want.Error.Message))
 
 	var got ErrorResponse
-	require.NoError(t, json.NewDecoder(rec.Body).Decode(&got), "should decode JSON response")
+	assert.NoError(t, json.NewDecoder(rec.Body).Decode(&got), "should decode JSON response")
 
-	require.Equal(t, want, got)
+	assert.Equal(t, want, got)
 }

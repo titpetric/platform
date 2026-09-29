@@ -3,7 +3,7 @@ package platform
 import (
 	"testing"
 
-	"github.com/titpetric/platform/pkg/require"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 // TestDatabaseEnv checks that we properly decode the expected environment
@@ -26,5 +26,5 @@ func TestDatabaseEnv(t *testing.T) {
 		"default": "sqlite://:memory:",
 	}
 
-	require.Equal(t, want, got)
+	assert.Equal(t, want, got)
 }

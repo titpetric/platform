@@ -16,15 +16,15 @@ import (
 	"time"
 
 	"github.com/titpetric/platform"
+	"github.com/titpetric/platform/internal/assert"
 	"github.com/titpetric/platform/internal/pidfile"
-	"github.com/titpetric/platform/pkg/require"
 )
 
 func NewTestPlatform(tb testing.TB) *platform.Platform {
 	svc, err := platform.Start(tb.Context(), platform.NewTestOptions())
 
-	require.NoError(tb, err)
-	require.NotNil(tb, svc)
+	assert.NoError(tb, err)
+	assert.NotNil(tb, svc)
 
 	tb.Cleanup(svc.Stop)
 	return svc
@@ -51,25 +51,25 @@ func TestPlatform(t *testing.T) {
 		t.Run("find", func(t *testing.T) {
 			var mod *platform.UnimplementedModule
 
-			require.True(t, svc.Find(&mod))
-			require.Equal(t, "TestPlatform", mod.Name())
+			assert.True(t, svc.Find(&mod))
+			assert.Equal(t, "TestPlatform", mod.Name())
 		})
 
 		plugins, mws := svc.Stats()
-		require.Equal(t, 1, plugins)
-		require.Equal(t, 1, mws)
+		assert.Equal(t, 1, plugins)
+		assert.Equal(t, 1, mws)
 
-		require.NoError(t, svc.Start(t.Context()))
+		assert.NoError(t, svc.Start(t.Context()))
 
 		resp, err := http.Get(svc.URL() + "/404")
-		require.NoError(t, err)
-		t.Cleanup(func() { require.NoError(t, resp.Body.Close()) })
+		assert.NoError(t, err)
+		t.Cleanup(func() { assert.NoError(t, resp.Body.Close()) })
 
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 		body, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
-		require.Equal(t, string(body), "You found a valid route")
+		assert.NoError(t, err)
+		assert.Equal(t, string(body), "You found a valid route")
 	})
 
 	t.Run("multi", func(t *testing.T) {
@@ -94,8 +94,8 @@ func TestPlatform_goroutine_leaks(t *testing.T) {
 		for i := range 30 {
 			svc, err := platform.Start(t.Context(), platform.NewTestOptions())
 
-			require.NoError(t, err)
-			require.NotNil(t, svc)
+			assert.NoError(t, err)
+			assert.NotNil(t, svc)
 
 			svc.Stop()
 
@@ -115,8 +115,8 @@ func BenchmarkPlatform(b *testing.B) {
 		for pb.Next() {
 			svc, err := platform.Start(b.Context(), platform.NewTestOptions())
 
-			require.NoError(b, err)
-			require.NotNil(b, svc)
+			assert.NoError(b, err)
+			assert.NotNil(b, svc)
 
 			svc.Stop()
 		}
@@ -131,7 +131,7 @@ func TestPlatform_stop_after_failed_start(t *testing.T) {
 	options.ServerAddr = "127.0.0.1:not-a-port"
 
 	svc := platform.New(options)
-	require.Error(t, svc.Start(t.Context()))
+	assert.Error(t, svc.Start(t.Context()))
 
 	svc.Stop()
 	svc.Wait()
@@ -155,17 +155,17 @@ func TestPlatformPidFile(t *testing.T) {
 		path := pidPath(t)
 
 		svc := platform.New(testOptions(path))
-		require.NoError(t, svc.Start(t.Context()))
+		assert.NoError(t, svc.Start(t.Context()))
 
 		pid, err := pidfile.Read(path)
-		require.NoError(t, err)
-		require.Equal(t, os.Getpid(), pid)
+		assert.NoError(t, err)
+		assert.Equal(t, os.Getpid(), pid)
 
 		svc.Stop()
 		svc.Wait()
 
 		_, err = os.Stat(path)
-		require.ErrorIs(t, err, fs.ErrNotExist)
+		assert.ErrorIs(t, err, fs.ErrNotExist)
 	})
 
 	t.Run("an empty path writes nothing", func(t *testing.T) {
@@ -173,18 +173,18 @@ func TestPlatformPidFile(t *testing.T) {
 
 		svc := platform.New(platform.NewTestOptions())
 		t.Cleanup(svc.Stop)
-		require.NoError(t, svc.Start(t.Context()))
+		assert.NoError(t, svc.Start(t.Context()))
 
 		entries, err := os.ReadDir(dir)
-		require.NoError(t, err)
-		require.Empty(t, entries)
+		assert.NoError(t, err)
+		assert.Empty(t, entries)
 	})
 
 	t.Run("a path that cannot be written fails the start", func(t *testing.T) {
 		options := testOptions(filepath.Join(t.TempDir(), "absent", "run.pid"))
 
 		svc := platform.New(options)
-		require.Error(t, svc.Start(t.Context()))
+		assert.Error(t, svc.Start(t.Context()))
 
 		svc.Stop()
 		svc.Wait()
@@ -197,12 +197,12 @@ func TestPlatformPidFile(t *testing.T) {
 		options.ServerAddr = "127.0.0.1:not-a-port"
 
 		svc := platform.New(options)
-		require.Error(t, svc.Start(t.Context()))
+		assert.Error(t, svc.Start(t.Context()))
 
 		// A file naming a process that never came up is what a service
 		// manager would act on.
 		_, err := os.Stat(path)
-		require.ErrorIs(t, err, fs.ErrNotExist)
+		assert.ErrorIs(t, err, fs.ErrNotExist)
 
 		svc.Stop()
 		svc.Wait()
@@ -213,8 +213,8 @@ func TestPlatformPidFile(t *testing.T) {
 		options.ServerAddr = "127.0.0.1:0"
 
 		svc, err := platform.Start(t.Context(), options)
-		require.Error(t, err)
-		require.Nil(t, svc)
+		assert.Error(t, err)
+		assert.Nil(t, svc)
 	})
 }
 
@@ -264,7 +264,7 @@ func TestPlatformSignals(t *testing.T) {
 	}
 
 	executable, err := os.Executable()
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	for _, test := range []struct {
 		name   string
@@ -292,32 +292,32 @@ func TestPlatformSignals(t *testing.T) {
 			cmd.Stderr = &stderr
 
 			stdout, err := cmd.StdoutPipe()
-			require.NoError(t, err)
+			assert.NoError(t, err)
 
-			require.NoError(t, cmd.Start())
+			assert.NoError(t, cmd.Start())
 
 			// Safe to signal only after this: Start arms the handler
 			// before the child prints the line.
 			lines := bufio.NewScanner(stdout)
-			require.True(t, waitFor(lines, signalReady), "the child never reported ready")
+			assert.True(t, waitFor(lines, signalReady), "the child never reported ready")
 
 			// The one place the pid means something: in process it would
 			// compare the test to itself.
 			pid, err := pidfile.Read(path)
-			require.NoError(t, err)
-			require.Equal(t, cmd.Process.Pid, pid)
+			assert.NoError(t, err)
+			assert.Equal(t, cmd.Process.Pid, pid)
 
-			require.NoError(t, cmd.Process.Signal(test.signal))
+			assert.NoError(t, cmd.Process.Signal(test.signal))
 
-			require.True(t, waitFor(lines, signalStopped), "the child did not stop gracefully")
+			assert.True(t, waitFor(lines, signalStopped), "the child did not stop gracefully")
 
 			// An error here is the child killed by the signal rather than
 			// catching it, which is the defect this test exists for.
-			require.NoError(t, cmd.Wait())
-			require.Contains(t, stderr.String(), test.logged)
+			assert.NoError(t, cmd.Wait())
+			assert.Contains(t, stderr.String(), test.logged)
 
 			_, err = os.Stat(path)
-			require.Error(t, err, "the pidfile outlived the process")
+			assert.Error(t, err, "the pidfile outlived the process")
 		})
 	}
 }

@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/titpetric/platform"
+	"github.com/titpetric/platform/internal/assert"
 	"github.com/titpetric/platform/internal/pidfile"
-	"github.com/titpetric/platform/pkg/require"
 )
 
 // countingModule records how often it was started and stopped, and serves
@@ -60,7 +60,7 @@ func newTestManager(tb testing.TB, mod platform.Module) *platform.Manager {
 	}
 
 	tb.Cleanup(m.Stop)
-	require.NoError(tb, m.Start(tb.Context()))
+	assert.NoError(tb, m.Start(tb.Context()))
 
 	return m
 }
@@ -70,36 +70,36 @@ func TestManager(t *testing.T) {
 	m := newTestManager(t, mod)
 
 	first := m.Platform()
-	require.NotNil(t, first)
+	assert.NotNil(t, first)
 
 	status, body := get(t, m.URL()+"/generation")
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, "1", string(body))
+	assert.Equal(t, http.StatusOK, status)
+	assert.Equal(t, "1", string(body))
 
 	url := m.URL()
 
-	require.NoError(t, m.Reload(t.Context()))
+	assert.NoError(t, m.Reload(t.Context()))
 
 	t.Run("platform is replaced", func(t *testing.T) {
-		require.NotNil(t, m.Platform())
-		require.True(t, first != m.Platform(), "reload should replace the platform value")
+		assert.NotNil(t, m.Platform())
+		assert.True(t, first != m.Platform(), "reload should replace the platform value")
 
 		// The retired generation is stopped, the new one is not.
-		require.Error(t, first.Context().Err())
-		require.NoError(t, m.Platform().Context().Err())
+		assert.Error(t, first.Context().Err())
+		assert.NoError(t, m.Platform().Context().Err())
 	})
 
 	t.Run("modules restart", func(t *testing.T) {
-		require.Equal(t, int64(2), mod.starts.Load())
-		require.Equal(t, int64(1), mod.stops.Load())
+		assert.Equal(t, int64(2), mod.starts.Load())
+		assert.Equal(t, int64(1), mod.stops.Load())
 	})
 
 	t.Run("address survives the reload", func(t *testing.T) {
-		require.Equal(t, url, m.URL())
+		assert.Equal(t, url, m.URL())
 
 		status, body := get(t, m.URL()+"/generation")
-		require.Equal(t, http.StatusOK, status)
-		require.Equal(t, "2", string(body))
+		assert.Equal(t, http.StatusOK, status)
+		assert.Equal(t, "2", string(body))
 	})
 
 	t.Run("stop ends wait", func(t *testing.T) {
@@ -109,8 +109,8 @@ func TestManager(t *testing.T) {
 		m.Stop()
 		wg.Wait()
 
-		require.Nil(t, m.Platform())
-		require.Equal(t, int64(2), mod.stops.Load())
+		assert.Nil(t, m.Platform())
+		assert.Equal(t, int64(2), mod.stops.Load())
 	})
 }
 
@@ -122,7 +122,7 @@ func TestManager_sighup(t *testing.T) {
 
 	first := m.Platform()
 
-	require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
+	assert.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
 
 	// The signal is delivered asynchronously, and the reload it triggers
 	// takes as long as the modules take to stop and start. Platform is nil
@@ -135,13 +135,13 @@ func TestManager_sighup(t *testing.T) {
 		next = m.Platform()
 	}
 
-	require.NotNil(t, next)
-	require.True(t, next != first, "sighup should replace the platform value")
-	require.Equal(t, int64(2), mod.starts.Load())
+	assert.NotNil(t, next)
+	assert.True(t, next != first, "sighup should replace the platform value")
+	assert.Equal(t, int64(2), mod.starts.Load())
 
 	status, body := get(t, m.URL()+"/generation")
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, "2", string(body))
+	assert.Equal(t, http.StatusOK, status)
+	assert.Equal(t, "2", string(body))
 }
 
 // TestManager_reload_drains covers a request in flight while the reload
@@ -188,14 +188,14 @@ func TestManager_reload_drains(t *testing.T) {
 	}()
 
 	wg.Wait()
-	require.NoError(t, <-reloaded)
+	assert.NoError(t, <-reloaded)
 
-	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, "drained", string(body))
+	assert.Equal(t, http.StatusOK, status)
+	assert.Equal(t, "drained", string(body))
 
 	// The new generation serves on the same address.
 	status, _ = get(t, m.URL()+"/slow")
-	require.Equal(t, http.StatusOK, status)
+	assert.Equal(t, http.StatusOK, status)
 }
 
 // TestManager_failed_reload covers a module that refuses to start again.
@@ -213,8 +213,8 @@ func TestManager_failed_reload(t *testing.T) {
 
 	m := newTestManager(t, mod)
 
-	require.Error(t, m.Reload(t.Context()))
-	require.Nil(t, m.Platform())
+	assert.Error(t, m.Reload(t.Context()))
+	assert.Nil(t, m.Platform())
 
 	m.Stop()
 	m.Wait()
@@ -228,12 +228,12 @@ func TestManager_context_cancel(t *testing.T) {
 	m := platform.NewManager(platform.NewTestOptions())
 	t.Cleanup(m.Stop)
 
-	require.NoError(t, m.Start(ctx))
+	assert.NoError(t, m.Start(ctx))
 
 	cancel()
 	m.Wait()
 
-	require.Nil(t, m.Platform())
+	assert.Nil(t, m.Platform())
 }
 
 // TestManager_start_error covers a manager that never came up. The socket
@@ -243,8 +243,8 @@ func TestManager_start_error(t *testing.T) {
 	options.ServerAddr = "127.0.0.1:not-a-port"
 
 	m := platform.NewManager(options)
-	require.Error(t, m.Start(t.Context()))
-	require.Nil(t, m.Platform())
+	assert.Error(t, m.Start(t.Context()))
+	assert.Nil(t, m.Platform())
 
 	m.Stop()
 	m.Wait()
@@ -267,17 +267,17 @@ func TestManagerPidFile(t *testing.T) {
 		path := pidPath(t)
 
 		m := newManager(t, path)
-		require.NoError(t, m.Start(t.Context()))
+		assert.NoError(t, m.Start(t.Context()))
 
 		pid, err := pidfile.Read(path)
-		require.NoError(t, err)
-		require.Equal(t, os.Getpid(), pid)
+		assert.NoError(t, err)
+		assert.Equal(t, os.Getpid(), pid)
 
 		m.Stop()
 		m.Wait()
 
 		_, err = os.Stat(path)
-		require.ErrorIs(t, err, fs.ErrNotExist)
+		assert.ErrorIs(t, err, fs.ErrNotExist)
 	})
 
 	// A reload replaces the platform, not the process, so there is no
@@ -286,25 +286,25 @@ func TestManagerPidFile(t *testing.T) {
 		path := pidPath(t)
 
 		m := newManager(t, path)
-		require.NoError(t, m.Start(t.Context()))
+		assert.NoError(t, m.Start(t.Context()))
 
 		before := m.Platform()
-		require.NotNil(t, before)
+		assert.NotNil(t, before)
 
-		require.NoError(t, m.Reload(t.Context()))
+		assert.NoError(t, m.Reload(t.Context()))
 
-		require.NotEqual(t, before, m.Platform())
+		assert.NotEqual(t, before, m.Platform())
 
 		pid, err := pidfile.Read(path)
-		require.NoError(t, err)
-		require.Equal(t, os.Getpid(), pid)
+		assert.NoError(t, err)
+		assert.Equal(t, os.Getpid(), pid)
 	})
 
 	t.Run("a path that cannot be written fails the start", func(t *testing.T) {
 		m := newManager(t, filepath.Join(t.TempDir(), "absent", "run.pid"))
 
-		require.Error(t, m.Start(t.Context()))
-		require.Nil(t, m.Platform())
+		assert.Error(t, m.Start(t.Context()))
+		assert.Nil(t, m.Platform())
 	})
 }
 
@@ -323,7 +323,7 @@ func TestManagerCheck(t *testing.T) {
 		}
 		m.Check = check
 		tb.Cleanup(m.Stop)
-		require.NoError(tb, m.Start(tb.Context()))
+		assert.NoError(tb, m.Start(tb.Context()))
 		return m
 	}
 
@@ -333,18 +333,18 @@ func TestManagerCheck(t *testing.T) {
 		m := newManager(t, mod, func() error { return refused })
 
 		serving := m.Platform()
-		require.NotNil(t, serving)
+		assert.NotNil(t, serving)
 
-		require.ErrorIs(t, m.Reload(t.Context()), refused)
+		assert.ErrorIs(t, m.Reload(t.Context()), refused)
 
 		// Nothing was torn down to find out the configuration was bad.
-		require.Equal(t, serving, m.Platform())
-		require.Equal(t, int64(1), mod.starts.Load())
-		require.Equal(t, int64(0), mod.stops.Load())
+		assert.Equal(t, serving, m.Platform())
+		assert.Equal(t, int64(1), mod.starts.Load())
+		assert.Equal(t, int64(0), mod.stops.Load())
 
 		status, body := get(t, m.URL()+"/generation")
-		require.Equal(t, 200, status)
-		require.Equal(t, "1", string(body))
+		assert.Equal(t, 200, status)
+		assert.Equal(t, "1", string(body))
 	})
 
 	t.Run("a passing check reloads", func(t *testing.T) {
@@ -356,12 +356,12 @@ func TestManagerCheck(t *testing.T) {
 			return nil
 		})
 
-		require.NoError(t, m.Reload(t.Context()))
-		require.Equal(t, int64(1), called.Load())
-		require.Equal(t, int64(2), mod.starts.Load())
+		assert.NoError(t, m.Reload(t.Context()))
+		assert.Equal(t, int64(1), called.Load())
+		assert.Equal(t, int64(2), mod.starts.Load())
 
 		_, body := get(t, m.URL()+"/generation")
-		require.Equal(t, "2", string(body))
+		assert.Equal(t, "2", string(body))
 	})
 
 	t.Run("the error names the refusal", func(t *testing.T) {
@@ -370,8 +370,8 @@ func TestManagerCheck(t *testing.T) {
 		})
 
 		err := m.Reload(t.Context())
-		require.ErrorContains(t, err, "reload refused")
-		require.ErrorContains(t, err, "mail.host is not a server name")
+		assert.ErrorContains(t, err, "reload refused")
+		assert.ErrorContains(t, err, "mail.host is not a server name")
 	})
 
 	// The handler decides from what is serving rather than from the error,
@@ -384,14 +384,14 @@ func TestManagerCheck(t *testing.T) {
 
 		serving := m.Platform()
 
-		require.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
+		assert.NoError(t, syscall.Kill(syscall.Getpid(), syscall.SIGHUP))
 
 		// The handler runs on a goroutine; give it time, then assert
 		// nothing moved.
 		time.Sleep(500 * time.Millisecond)
 
-		require.Equal(t, serving, m.Platform())
-		require.Equal(t, int64(0), mod.stops.Load())
+		assert.Equal(t, serving, m.Platform())
+		assert.Equal(t, int64(0), mod.stops.Load())
 
 		select {
 		case <-m.Context().Done():
@@ -400,6 +400,6 @@ func TestManagerCheck(t *testing.T) {
 		}
 
 		status, _ := get(t, m.URL()+"/generation")
-		require.Equal(t, 200, status)
+		assert.Equal(t, 200, status)
 	})
 }

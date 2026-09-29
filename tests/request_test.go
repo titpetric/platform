@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/titpetric/platform"
-	"github.com/titpetric/platform/pkg/require"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 func TestParam(t *testing.T) {
@@ -25,19 +25,19 @@ func TestParam(t *testing.T) {
 		},
 	})
 
-	require.NoError(t, svc.Start(t.Context()))
+	assert.NoError(t, svc.Start(t.Context()))
 
 	resp, err := http.Get(svc.URL() + "/user/test-id?foo=bar")
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, resp.Body.Close()) })
+	assert.NoError(t, err)
+	t.Cleanup(func() { assert.NoError(t, resp.Body.Close()) })
 
-	require.Equal(t, http.StatusOK, resp.StatusCode)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	want := "user: test-id foo: bar"
 
 	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-	require.Equal(t, want, string(body))
+	assert.NoError(t, err)
+	assert.Equal(t, want, string(body))
 
 	svc.Stop()
 }

@@ -1,4 +1,4 @@
-package platform
+package platform_test
 
 import (
 	"context"
@@ -9,8 +9,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 
+	"github.com/titpetric/platform"
 	"github.com/titpetric/platform/internal"
-	"github.com/titpetric/platform/pkg/require"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 func TestTransaction(t *testing.T) {
@@ -18,11 +19,11 @@ func TestTransaction(t *testing.T) {
 	provider.Register("test", "sqlite://:memory:")
 
 	db, err := provider.Connect(t.Context(), "test")
-	require.NoError(t, err)
-	require.NotNil(t, db)
+	assert.NoError(t, err)
+	assert.NotNil(t, db)
 
-	err = Transaction(t.Context(), db, func(context.Context, *sqlx.Tx) error {
+	err = platform.Transaction(t.Context(), db, func(context.Context, *sqlx.Tx) error {
 		return sql.ErrNoRows
 	})
-	require.ErrorIs(t, err, sql.ErrNoRows)
+	assert.ErrorIs(t, err, sql.ErrNoRows)
 }

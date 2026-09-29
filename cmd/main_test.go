@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/titpetric/platform"
-	"github.com/titpetric/platform/pkg/require"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 func TestStart(t *testing.T) {
@@ -28,5 +28,5 @@ func TestStart(t *testing.T) {
 
 	wg.Wait()
 
-	require.True(t, true)
+	assert.True(t, true)
 }

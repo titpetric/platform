@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/titpetric/platform"
-	"github.com/titpetric/platform/pkg/assert"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 func TestNewOptions(t *testing.T) {

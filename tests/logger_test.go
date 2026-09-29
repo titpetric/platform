@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/titpetric/platform"
-	"github.com/titpetric/platform/pkg/require"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 // recordLogger implements platform.Logger and keeps the messages it
@@ -46,8 +46,8 @@ func verboseTestOptions() *platform.Options {
 
 func TestLogger(t *testing.T) {
 	t.Run("New sets a logger", func(t *testing.T) {
-		require.NotNil(t, platform.New(platform.NewTestOptions()).Logger)
-		require.NotNil(t, platform.New(verboseTestOptions()).Logger)
+		assert.NotNil(t, platform.New(platform.NewTestOptions()).Logger)
+		assert.NotNil(t, platform.New(verboseTestOptions()).Logger)
 	})
 
 	t.Run("injected logger receives platform output", func(t *testing.T) {
@@ -59,11 +59,11 @@ func TestLogger(t *testing.T) {
 		svc.Logger = log
 		svc.Register(platform.NewUnimplementedModule("TestLogger"))
 
-		require.NoError(t, svc.Start(t.Context()))
+		assert.NoError(t, svc.Start(t.Context()))
 
-		require.True(t, log.has("modules started"), "registry should log through the platform logger")
-		require.True(t, log.has("server listening"), "listener should log through the platform logger")
-		require.True(t, log.has("routes registered"), "route printing should log through the platform logger")
+		assert.True(t, log.has("modules started"), "registry should log through the platform logger")
+		assert.True(t, log.has("server listening"), "listener should log through the platform logger")
+		assert.True(t, log.has("routes registered"), "route printing should log through the platform logger")
 	})
 
 	t.Run("nil logger discards output", func(t *testing.T) {
@@ -72,7 +72,7 @@ func TestLogger(t *testing.T) {
 
 		svc.Logger = nil
 
-		require.NoError(t, svc.Start(t.Context()))
+		assert.NoError(t, svc.Start(t.Context()))
 	})
 
 	// Stop releases the signal handler, and that cancels the same context
@@ -83,7 +83,7 @@ func TestLogger(t *testing.T) {
 		svc := platform.New(verboseTestOptions())
 		svc.Logger = log
 
-		require.NoError(t, svc.Start(t.Context()))
+		assert.NoError(t, svc.Start(t.Context()))
 
 		svc.Stop()
 		svc.Wait()
@@ -91,6 +91,6 @@ func TestLogger(t *testing.T) {
 		// The signal goroutine wakes on its own schedule.
 		time.Sleep(50 * time.Millisecond)
 
-		require.False(t, log.has("caught sigterm, stopping server"))
+		assert.False(t, log.has("caught sigterm, stopping server"))
 	})
 }

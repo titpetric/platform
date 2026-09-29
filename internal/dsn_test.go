@@ -3,7 +3,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/titpetric/platform/pkg/require"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 func TestCleanDSN(t *testing.T) {
@@ -49,7 +49,7 @@ func TestCleanDSN(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := cleanDSN("mysql", tt.dsn)
-			require.Equal(t, tt.want, got)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -59,7 +59,7 @@ func TestCleanDSNDriverSpecific(t *testing.T) {
 
 	for _, driver := range []string{"postgres", "pgx"} {
 		t.Run(driver, func(t *testing.T) {
-			require.Equal(t, dsn, cleanDSN(driver, dsn))
+			assert.Equal(t, dsn, cleanDSN(driver, dsn))
 		})
 	}
 }
@@ -109,7 +109,7 @@ func TestCleanSQLiteDSN(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, cleanDSN("sqlite", tt.dsn))
+			assert.Equal(t, tt.want, cleanDSN("sqlite", tt.dsn))
 		})
 	}
 }

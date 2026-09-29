@@ -3,7 +3,7 @@ package internal
 import (
 	"testing"
 
-	"github.com/titpetric/platform/pkg/require"
+	"github.com/titpetric/platform/internal/assert"
 )
 
 func TestSQLiteDatabaseOption(t *testing.T) {
@@ -22,8 +22,8 @@ func TestSQLiteDatabaseOption(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			option := databaseOption("sqlite", tt.dsn)
-			require.Equal(t, tt.maxOpen, option.MaxOpenConns)
-			require.Equal(t, tt.maxIdle, option.MaxIdleConns)
+			assert.Equal(t, tt.maxOpen, option.MaxOpenConns)
+			assert.Equal(t, tt.maxIdle, option.MaxIdleConns)
 		})
 	}
 }
