@@ -3,6 +3,7 @@ name: Platform test pipeline
 vars:
   name: platform
   image: titpetric/${{name}}
+  coverpkg: github.com/titpetric/platform/...
 
 env:
   include:
@@ -16,6 +17,22 @@ jobs:
       - task: go:fmt
       - task: go:lint
       - task: go:test
+      - task: tests
+
+  tests:
+    desc: "Tidy, lint and run the tests module"
+    passthru: true
+    tty: true
+    steps:
+      - dir: tests
+        run: go mod tidy
+      # pairing wants a source file beside every _test.go and modcheck
+      # objects to the replace directive. Both are what a test only module
+      # is, so the suite runs without them.
+      - dir: tests
+        run: splint --linters godoc,imports,func-args,func-returns,coverage,grouping,wraphandler,filecheck,visibility,selfcontained ./... || true
+      - dir: tests
+        run: gotestsum -- -count=1 -cover -coverpkg=${{coverpkg}} ./...
 
   test:
     desc: "Run tests with coverage"
@@ -23,6 +40,11 @@ jobs:
     tty: true
     steps:
       - go test -failfast -race -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
+      - dir: tests
+        run: go test -failfast -race -count=1 -cover -coverpkg=${{coverpkg}} -coverprofile=../tests.cov ./...
+      # One profile for the whole module. Both runs use the same covermode,
+      # so the second file contributes everything but its mode header.
+      - tail -n +2 tests.cov >> pkg.cov && rm -f tests.cov
 
   integration:
     desc: "Run integration tests"
@@ -30,6 +52,9 @@ jobs:
     tty: true
     steps:
       - go test -tags integration -failfast -race -count=1 -cover -coverpkg=./... -coverprofile=pkg.cov ./...
+      - dir: tests
+        run: go test -tags integration -failfast -race -count=1 -cover -coverpkg=${{coverpkg}} -coverprofile=../tests.cov ./...
+      - tail -n +2 tests.cov >> pkg.cov && rm -f tests.cov
 
   bench:
     desc: "Run benchmarks"
@@ -37,6 +62,8 @@ jobs:
     tty: true
     steps:
       - go test -failfast -run='Bench.+' -bench=. -benchmem -cpu 1,2,4 -race -v ./...
+      - dir: tests
+        run: go test -failfast -run='Bench.+' -bench=. -benchmem -cpu 1,2,4 -race -v ./...
 
   cover:
     desc: "Generate coverage reports"
@@ -50,4 +77,4 @@ jobs:
     steps:
       - go clean -cache
       - go clean -testcache
-      - rm -f ./${{name}} pkg.cov pkg.cov.json splint.json
+      - rm -f ./${{name}} pkg.cov pkg.cov.json tests.cov splint.json
