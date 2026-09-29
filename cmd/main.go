@@ -6,8 +6,6 @@ import (
 	"log/slog"
 	"os"
 
-	_ "github.com/titpetric/platform/pkg/drivers"
-
 	"github.com/titpetric/oida"
 
 	"github.com/titpetric/platform"
