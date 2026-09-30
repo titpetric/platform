@@ -38,8 +38,11 @@ type Manager struct {
 	options *Options
 
 	// mu serializes the generation swap.
-	mu      sync.Mutex
-	shared  *sharedListener
+	mu sync.Mutex
+
+	// shared is the socket every generation serves, set once by Start. It is
+	// read outside mu by URL, which must not wait out a reload.
+	shared  atomic.Pointer[sharedListener]
 	current atomic.Pointer[generation]
 
 	// pid records this process's id. The manager holds it rather than the
@@ -94,10 +97,11 @@ func (m *Manager) Start(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("setting up listener: %w", err)
 	}
-	m.shared = newSharedListener(listener)
+	shared := newSharedListener(listener)
+	m.shared.Store(shared)
 
 	if err := m.startGeneration(ctx); err != nil {
-		_ = m.shared.Close()
+		_ = shared.Close()
 		return err
 	}
 
@@ -105,18 +109,14 @@ func (m *Manager) Start(ctx context.Context) error {
 	// failed to come up, and before the handler a signal arrives at.
 	if err := m.pid.Write(); err != nil {
 		m.retire()
-		_ = m.shared.Close()
+		_ = shared.Close()
 		return err
 	}
 
-	// The manager owns the process signals: SIGHUP to reload, and SIGINT and
-	// SIGTERM to stop. Notify keeps SIGHUP from terminating the process, which
-	// is what it would do by default.
-	//
-	// The generations do not arm SIGINT or SIGTERM. One that did released them
-	// on retire, so a signal arriving between one generation stopping and the
-	// next arming its own took the default disposition and killed the process
-	// mid reload, with no drain and no module Stop.
+	// The manager owns the process signals for its whole life: SIGHUP to
+	// reload, SIGINT and SIGTERM to stop. Notify keeps SIGHUP from terminating
+	// the process, which is what it would do by default. The generations arm
+	// none of them, so a reload never leaves a moment with no handler.
 	reload := make(chan os.Signal, 1)
 	signal.Notify(reload, syscall.SIGHUP)
 
@@ -135,9 +135,6 @@ func (m *Manager) Start(ctx context.Context) error {
 				return
 
 			case <-ctx.Done():
-				// The manager watches this itself now. It used to arrive
-				// through the signal context Platform.Start derived from
-				// ctx, which the generations no longer build.
 				m.logger().Info("context cancelled, stopping")
 				m.Stop()
 				return
@@ -161,8 +158,8 @@ func (m *Manager) Start(ctx context.Context) error {
 
 					// Nothing is serving after a failed reload, and a
 					// retry would read the same configuration again.
-					// Exiting is the honest outcome: it is visible to
-					// whatever supervises the process.
+					// Stopping makes it visible to whatever supervises
+					// the process.
 					m.logger().Error("reload failed, stopping", "error", err)
 					m.Stop()
 					return
@@ -182,10 +179,7 @@ func (m *Manager) Reload(ctx context.Context) error {
 	defer m.mu.Unlock()
 
 	// A stopped manager does not start again. Stop cancels before it releases
-	// mu, so a Reload that was already queued on the lock sees this. Without
-	// it that Reload built a generation nothing could retire: Stop's once is
-	// spent, so the modules stayed started, its watch goroutine never
-	// returned, and Platform() was non-nil after Stop.
+	// mu, so a Reload already queued on the lock sees this.
 	if err := m.context.Err(); err != nil {
 		return fmt.Errorf("reload: manager stopped: %w", err)
 	}
@@ -203,7 +197,7 @@ func (m *Manager) Reload(ctx context.Context) error {
 		return fmt.Errorf("reload: %w", err)
 	}
 
-	m.logger().Info("platform reloaded", "url", m.url())
+	m.logger().Info("platform reloaded", "url", m.URL())
 	return nil
 }
 
@@ -212,7 +206,7 @@ func (m *Manager) Reload(ctx context.Context) error {
 func (m *Manager) startGeneration(ctx context.Context) error {
 	p := New(m.options)
 	p.Logger = m.Logger
-	p.listener = m.shared.next()
+	p.listener = m.shared.Load().next()
 	p.managed = true
 
 	// The pidfile records the process, and the manager holds it. Leaving a
@@ -275,20 +269,12 @@ func (m *Manager) Platform() *Platform {
 // URL gives the e2e endpoint URL for requests. A reload does not change it.
 // Before a successful Start there is no socket and the URL is empty.
 func (m *Manager) URL() string {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	return m.url()
-}
-
-// url gives the endpoint URL. The caller holds the lock. Reload logs the URL
-// while holding it, so taking it again there deadlocks the goroutine.
-func (m *Manager) url() string {
-	if m.shared == nil {
+	shared := m.shared.Load()
+	if shared == nil {
 		return ""
 	}
 
-	return listenerURL(m.shared)
+	return listenerURL(shared)
 }
 
 // Context returns the cancellation context for the manager. When the context
@@ -318,8 +304,8 @@ func (m *Manager) Stop() {
 			m.logger().Error("pidfile", "error", err)
 		}
 
-		if m.shared != nil {
-			_ = m.shared.Close()
+		if shared := m.shared.Load(); shared != nil {
+			_ = shared.Close()
 		}
 	})
 }
