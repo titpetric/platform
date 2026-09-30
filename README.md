@@ -15,16 +15,16 @@ Status: the app and maillist packages still need implementation surface.
 
 ## Coverage
 
-| Status | Package                             | Coverage | Cognitive | Lines |
-|--------|-------------------------------------|----------|-----------|-------|
-| ✅     | titpetric/platform                  | 93.42%   | 137       | 952   |
-| ✅     | titpetric/platform/cmd              | 46.67%   | 2         | 20    |
-| ✅     | titpetric/platform/cmd/platform     | 0.00%    | 0         | 3     |
-| ✅     | titpetric/platform/internal         | 85.32%   | 31        | 176   |
-| ✅     | titpetric/platform/internal/assert  | 98.57%   | 67        | 270   |
-| ✅     | titpetric/platform/internal/pidfile | 95.83%   | 11        | 44    |
-| ✅     | titpetric/platform/pkg/httpcontext  | 100.00%  | 1         | 18    |
-| ✅     | titpetric/platform/pkg/ulid         | 100.00%  | 0         | 13    |
+| Status | Package                                 | Coverage | Cognitive | Lines |
+|--------|-----------------------------------------|----------|-----------|-------|
+| ✅     | titpetric/platform                      | 93.42%   | 137       | 952   |
+| ✅     | titpetric/platform/cmd                  | 46.67%   | 2         | 20    |
+| ✅     | titpetric/platform/cmd/platform         | 0.00%    | 0         | 3     |
+| ✅     | titpetric/platform/internal             | 85.32%   | 31        | 176   |
+| ✅     | titpetric/platform/internal/assert      | 98.57%   | 67        | 270   |
+| ✅     | titpetric/platform/internal/httpcontext | 100.00%  | 1         | 18    |
+| ✅     | titpetric/platform/internal/pidfile     | 95.83%   | 11        | 44    |
+| ✅     | titpetric/platform/pkg/ulid             | 100.00%  | 0         | 13    |
 
 For more detail, see: [Testing Coverage](./docs/testing-coverage.md).
 

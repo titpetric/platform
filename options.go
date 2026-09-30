@@ -10,7 +10,7 @@ import (
 
 	"github.com/titpetric/oida"
 
-	"github.com/titpetric/platform/pkg/httpcontext"
+	"github.com/titpetric/platform/internal/httpcontext"
 )
 
 // Options is a configuration struct for platform behaviour.

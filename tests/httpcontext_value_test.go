@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/titpetric/platform/internal/assert"
-	"github.com/titpetric/platform/pkg/httpcontext"
+	"github.com/titpetric/platform/internal/httpcontext"
 )
 
 func TestContextValue_GetSet(t *testing.T) {

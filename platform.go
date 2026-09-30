@@ -42,8 +42,8 @@ import (
 	"github.com/titpetric/oida"
 
 	"github.com/titpetric/platform/internal"
+	"github.com/titpetric/platform/internal/httpcontext"
 	"github.com/titpetric/platform/internal/pidfile"
-	"github.com/titpetric/platform/pkg/httpcontext"
 )
 
 // Platform is our world struct.

@@ -1,7 +1,7 @@
 @startuml
 [github.com/titpetric/platform] --|> [github.com/titpetric/platform/internal]
+[github.com/titpetric/platform] --|> [github.com/titpetric/platform/internal/httpcontext]
 [github.com/titpetric/platform] --|> [github.com/titpetric/platform/internal/pidfile]
-[github.com/titpetric/platform] --|> [github.com/titpetric/platform/pkg/httpcontext]
 [github.com/titpetric/platform/cmd] --|> [github.com/titpetric/platform]
 [github.com/titpetric/platform/cmd/platform] --|> [github.com/titpetric/platform/cmd]
 @enduml
