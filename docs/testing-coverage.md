@@ -12,10 +12,10 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 
 | Status | Package              | Coverage | Cognitive | Lines |
 |--------|----------------------|----------|-----------|-------|
-| ✅     | .                    | 93.74%   | 135       | 969   |
+| ✅     | .                    | 93.71%   | 142       | 994   |
 | ✅     | cmd                  | 46.67%   | 2         | 20    |
 | ✅     | cmd/platform         | 0.00%    | 0         | 3     |
-| ✅     | internal             | 85.32%   | 31        | 176   |
+| ✅     | internal             | 88.51%   | 46        | 246   |
 | ✅     | internal/assert      | 98.57%   | 67        | 270   |
 | ✅     | internal/httpcontext | 100.00%  | 1         | 18    |
 | ✅     | internal/pidfile     | 95.83%   | 11        | 44    |
@@ -37,6 +37,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                      | Manager.logger                   | 66.67%   | 1         |
 | ✅     |                      | Manager.retire                   | 100.00%  | 1         |
 | ✅     |                      | Manager.startGeneration          | 93.94%   | 4         |
+| ✅     |                      | Manager.url                      | 100.00%  | 1         |
 | ✅     |                      | Manager.watch                    | 100.00%  | 1         |
 | ✅     |                      | New                              | 88.24%   | 6         |
 | ✅     |                      | NewManager                       | 87.50%   | 2         |
@@ -101,30 +102,36 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                      | generationListener.Addr          | 100.00%  | 0         |
 | ✅     |                      | generationListener.Close         | 100.00%  | 2         |
 | ✅     |                      | init                             | 100.00%  | 0         |
-| ✅     |                      | listenerURL                      | 100.00%  | 0         |
+| ✅     |                      | listenerURL                      | 85.71%   | 2         |
 | ✅     |                      | loggerFromContext                | 100.00%  | 1         |
 | ✅     |                      | newSharedListener                | 100.00%  | 0         |
 | ✅     |                      | registration.instance            | 100.00%  | 1         |
 | ✅     |                      | routePattern                     | 66.67%   | 2         |
-| ✅     |                      | setupConnections                 | 100.00%  | 4         |
+| ✅     |                      | setupConnections                 | 100.00%  | 8         |
 | ✅     |                      | sharedListener.Close             | 100.00%  | 1         |
 | ✅     |                      | sharedListener.handoff           | 100.00%  | 1         |
 | ✅     |                      | sharedListener.next              | 100.00%  | 1         |
 | ✅     | cmd                  | Main                             | 46.67%   | 2         |
 | ✅     | internal             | CountRoutes                      | 100.00%  | 2         |
 | ✅     |                      | DatabaseOption.Apply             | 75.00%   | 1         |
-| ✅     |                      | DatabaseProvider.Connect         | 66.67%   | 2         |
+| ✅     |                      | DatabaseProvider.Connect         | 85.71%   | 2         |
 | ✅     |                      | DatabaseProvider.Open            | 100.00%  | 0         |
 | ✅     |                      | DatabaseProvider.Register        | 100.00%  | 0         |
-| ✅     |                      | DatabaseProvider.cached          | 92.86%   | 5         |
+| ✅     |                      | DatabaseProvider.cached          | 94.12%   | 5         |
+| ✅     |                      | DatabaseProvider.evict           | 100.00%  | 3         |
 | ✅     |                      | DatabaseProvider.parseCredential | 80.00%   | 4         |
-| ✅     |                      | DatabaseProvider.with            | 83.33%   | 7         |
+| ✅     |                      | DatabaseProvider.with            | 91.67%   | 7         |
 | ✅     |                      | NewDatabaseProvider              | 100.00%  | 0         |
 | ✅     |                      | PrintRoutes                      | 100.00%  | 0         |
-| ✅     |                      | addOptionToDSN                   | 100.00%  | 1         |
+| ✅     |                      | addOption                        | 100.00%  | 1         |
 | ✅     |                      | cleanDSN                         | 100.00%  | 3         |
-| ✅     |                      | databaseOption                   | 100.00%  | 2         |
+| ✅     |                      | databaseOption                   | 100.00%  | 3         |
+| ✅     |                      | handlerName                      | 90.91%   | 7         |
+| ✅     |                      | hasOption                        | 66.67%   | 1         |
 | ✅     |                      | isSQLiteMemoryDSN                | 100.00%  | 2         |
+| ✅     |                      | joinDSN                          | 66.67%   | 1         |
+| ✅     |                      | joinOption                       | 100.00%  | 1         |
+| ✅     |                      | splitDSN                         | 100.00%  | 1         |
 | ✅     | internal/assert      | Assert                           | 100.00%  | 1         |
 | ✅     |                      | CheckEquals                      | 100.00%  | 1         |
 | ✅     |                      | Contains                         | 100.00%  | 1         |

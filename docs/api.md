@@ -641,7 +641,7 @@ func (*Manager) Stop()
 
 ### URL
 
-URL gives the e2e endpoint URL for requests. A reload does not change it.
+URL gives the e2e endpoint URL for requests. A reload does not change it. Before a successful Start there is no socket and the URL is empty.
 
 ```go
 func (*Manager) URL() string
