@@ -109,16 +109,42 @@ func (m *Manager) Start(ctx context.Context) error {
 		return err
 	}
 
-	// SIGHUP is the reload signal. Notify keeps the process from being
-	// terminated by it, which is what it would do by default.
+	// The manager owns the process signals: SIGHUP to reload, and SIGINT and
+	// SIGTERM to stop. Notify keeps SIGHUP from terminating the process, which
+	// is what it would do by default.
+	//
+	// The generations do not arm SIGINT or SIGTERM. One that did released them
+	// on retire, so a signal arriving between one generation stopping and the
+	// next arming its own took the default disposition and killed the process
+	// mid reload, with no drain and no module Stop.
 	reload := make(chan os.Signal, 1)
 	signal.Notify(reload, syscall.SIGHUP)
-	m.stop = func() { signal.Stop(reload) }
+
+	terminate := make(chan os.Signal, 1)
+	signal.Notify(terminate, os.Interrupt, syscall.SIGTERM)
+
+	m.stop = func() {
+		signal.Stop(reload)
+		signal.Stop(terminate)
+	}
 
 	go func() {
 		for {
 			select {
 			case <-m.context.Done():
+				return
+
+			case <-ctx.Done():
+				// The manager watches this itself now. It used to arrive
+				// through the signal context Platform.Start derived from
+				// ctx, which the generations no longer build.
+				m.logger().Info("context cancelled, stopping")
+				m.Stop()
+				return
+
+			case <-terminate:
+				m.logger().Info("caught sigterm, stopping server")
+				m.Stop()
 				return
 
 			case <-reload:
@@ -155,6 +181,15 @@ func (m *Manager) Reload(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
+	// A stopped manager does not start again. Stop cancels before it releases
+	// mu, so a Reload that was already queued on the lock sees this. Without
+	// it that Reload built a generation nothing could retire: Stop's once is
+	// spent, so the modules stayed started, its watch goroutine never
+	// returned, and Platform() was non-nil after Stop.
+	if err := m.context.Err(); err != nil {
+		return fmt.Errorf("reload: manager stopped: %w", err)
+	}
+
 	// Before retire: past that line the generation that was serving is gone.
 	if m.Check != nil {
 		if err := m.Check(); err != nil {
@@ -178,6 +213,7 @@ func (m *Manager) startGeneration(ctx context.Context) error {
 	p := New(m.options)
 	p.Logger = m.Logger
 	p.listener = m.shared.next()
+	p.managed = true
 
 	// The pidfile records the process, and the manager holds it. Leaving a
 	// generation one of its own would have every reload remove the file and
