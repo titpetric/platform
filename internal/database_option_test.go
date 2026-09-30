@@ -27,3 +27,36 @@ func TestSQLiteDatabaseOption(t *testing.T) {
 		})
 	}
 }
+
+// TestDatabaseOptionUnknownDriver covers the bare map read databaseOption used
+// to end in. A driver with no entry got the zero DatabaseOption, and Apply
+// calls the setters unconditionally, so SetMaxIdleConns(0) retained no idle
+// connection: every query on a pgx connection dialled a new one, with no cap on
+// how many. That is worse than the database/sql default of 2.
+func TestDatabaseOptionUnknownDriver(t *testing.T) {
+	for _, driver := range []string{"pgx", "postgres", "sqlite3", "clickhouse", ""} {
+		t.Run(driver, func(t *testing.T) {
+			option := databaseOption(driver, "")
+
+			assert.Greater(t, option.MaxOpenConns, 0, "an unknown driver must get an open limit")
+			assert.Greater(t, option.MaxIdleConns, 0, "an unknown driver must retain idle connections")
+		})
+	}
+}
+
+// TestDatabaseOptionKnownDrivers pins the entries that do exist, so the
+// fallback above cannot quietly start applying to them.
+func TestDatabaseOptionKnownDrivers(t *testing.T) {
+	mysql := databaseOption("mysql", "user@tcp(h)/db")
+	assert.Equal(t, 10, mysql.MaxOpenConns)
+	assert.Equal(t, 10, mysql.MaxIdleConns)
+
+	file := databaseOption("sqlite", "/tmp/app.db")
+	assert.Equal(t, 10, file.MaxOpenConns)
+	assert.Equal(t, 2, file.MaxIdleConns)
+
+	// One connection, so every query reaches the same in-memory database.
+	memory := databaseOption("sqlite", ":memory:")
+	assert.Equal(t, 1, memory.MaxOpenConns)
+	assert.Equal(t, 1, memory.MaxIdleConns)
+}
