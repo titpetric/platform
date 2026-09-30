@@ -24,7 +24,6 @@ Status: the app and maillist packages still need implementation surface.
 | ✅     | titpetric/platform/internal/assert      | 98.57%   | 67        | 270   |
 | ✅     | titpetric/platform/internal/httpcontext | 100.00%  | 1         | 18    |
 | ✅     | titpetric/platform/internal/pidfile     | 95.83%   | 11        | 44    |
-| ✅     | titpetric/platform/pkg/ulid             | 100.00%  | 0         | 13    |
 
 For more detail, see: [Testing Coverage](./docs/testing-coverage.md).
 

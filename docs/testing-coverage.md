@@ -19,7 +19,6 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     | internal/assert      | 98.57%   | 67        | 270   |
 | ✅     | internal/httpcontext | 100.00%  | 1         | 18    |
 | ✅     | internal/pidfile     | 95.83%   | 11        | 44    |
-| ✅     | pkg/ulid             | 100.00%  | 0         | 13    |
 
 ## Functions
 
@@ -164,7 +163,3 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                      | Pidfile.Remove                   | 85.71%   | 6         |
 | ✅     |                      | Pidfile.Write                    | 100.00%  | 2         |
 | ✅     |                      | Read                             | 100.00%  | 3         |
-| ✅     | pkg/ulid             | Parse                            | 100.00%  | 0         |
-| ✅     |                      | String                           | 100.00%  | 0         |
-| ✅     |                      | ULID                             | 100.00%  | 0         |
-| ✅     |                      | Valid                            | 100.00%  | 0         |
