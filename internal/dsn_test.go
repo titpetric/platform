@@ -44,6 +44,24 @@ func TestCleanDSN(t *testing.T) {
 			dsn:  "user:pass@tcp(localhost:3306)/dbname?collation=abc&parseTime=abc&loc=abc",
 			want: "user:pass@tcp(localhost:3306)/dbname?collation=abc&parseTime=abc&loc=abc",
 		},
+		{
+			// A "?" in the password is not the start of the query. Scanning
+			// the whole DSN for one appended the options with "&", which the
+			// driver read as part of the database name.
+			name: "question mark in the password",
+			dsn:  "user:pa?ss@tcp(localhost:3306)/dbname",
+			want: "user:pa?ss@tcp(localhost:3306)/dbname?collation=utf8mb4_general_ci&parseTime=true&loc=Local",
+		},
+		{
+			name: "question mark in the password and a real query",
+			dsn:  "user:pa?ss@tcp(localhost:3306)/dbname?loc=UTC",
+			want: "user:pa?ss@tcp(localhost:3306)/dbname?loc=UTC&collation=utf8mb4_general_ci&parseTime=true",
+		},
+		{
+			name: "question mark in the user",
+			dsn:  "us?er:pass@tcp(localhost:3306)/dbname",
+			want: "us?er:pass@tcp(localhost:3306)/dbname?collation=utf8mb4_general_ci&parseTime=true&loc=Local",
+		},
 	}
 
 	for _, tt := range tests {
@@ -104,6 +122,23 @@ func TestCleanSQLiteDSN(t *testing.T) {
 			name: "named shared memory database",
 			dsn:  "file:app?mode=memory&cache=shared",
 			want: "file:app?mode=memory&cache=shared",
+		},
+		{
+			// The "?" belongs to a directory name, so the path has no query
+			// and the options open one.
+			name: "question mark in a directory name",
+			dsn:  "/tmp/a?b/app.db",
+			want: "/tmp/a?b/app.db?_busy_timeout=5000&_journal_mode=wal",
+		},
+		{
+			name: "question mark in a directory name and a real query",
+			dsn:  "/tmp/a?b/app.db?cache=shared",
+			want: "/tmp/a?b/app.db?cache=shared&_busy_timeout=5000&_journal_mode=wal",
+		},
+		{
+			name: "absolute path",
+			dsn:  "/var/lib/app/app.db",
+			want: "/var/lib/app/app.db?_busy_timeout=5000&_journal_mode=wal",
 		},
 	}
 
