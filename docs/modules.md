@@ -19,7 +19,7 @@ The functions run in this order, and each phase completes across every module be
 - `Mount(context.Context, Router) error` - attach HTTP routes. Middleware belongs in `platform.Use` or `(*Platform).Use`, not here: `r.Use` from `Mount` panics once another module has registered a route.
 - `Stop(context.Context) error` - clean up and stop all background work. Every module's `Stop` runs in parallel on shutdown, so it must not depend on another module's teardown, and it runs for a module whose own `Start` returned an error, so it has to tolerate a partially built value. A panic in `Stop` is recovered and recorded.
 
-The context `Stop` receives is the platform's shutdown context, already cancelled by the time it arrives, so a `Stop` that needs a deadline has to make its own.
+The context `Stop` receives is live, with a five second budget of its own. It is not the platform's shutdown context: that one is cancelled only once every module has torn down, so `Wait` does not return while a `Stop` is still flushing. The budget is a deadline to honour, not an enforced one. The registry waits for every `Stop` to return, however long that takes.
 
 ### Firewalling modules
 

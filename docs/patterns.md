@@ -80,7 +80,7 @@ func (c *Crontab) Stop(context.Context) error {
 }
 ```
 
-Since `Stop` is blocking, it will wait up to 3 seconds here, so that any running scheduled task is completed before exiting. There is no deadline on this: `Platform.Stop` waits for every module's `Stop` to return. The context it passes is the platform's shutdown context and is already cancelled, so a `Stop` that needs a deadline has to make its own.
+Since `Stop` is blocking, it will wait up to 3 seconds here, so that any running scheduled task is completed before exiting. `Platform.Stop` waits for every module's `Stop` to return, however long that takes. The context it passes carries a five second budget, so a module with nothing better to go on can bound its own teardown by it.
 
 ## Middleware
 

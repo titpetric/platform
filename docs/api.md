@@ -259,6 +259,10 @@ type Platform struct {
 	once     sync.Once
 	stopping atomic.Bool
 
+	// managed marks a generation a Manager runs. It keeps the generation
+	// from arming the process signals, which the manager owns.
+	managed bool
+
 	// pid records this process's id, disabled when Options.PidFile is
 	// empty. A Manager clears it on the generations it runs and holds its
 	// own, because the file records a process and a reload makes no new one.

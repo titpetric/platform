@@ -54,7 +54,7 @@ platform.FromRequest(r).Logger.Info("handled", "path", r.URL.Path)
 1. **Register modules** via `platform.RegisterFunc()` (or `Register` on a `*Platform` instance).
 2. **Add middleware** via `platform.Use()` before calling `Start(context.Context)`.
 3. **Start the platform** with `Start(context.Context)`; modules are started and then mounted, the socket is bound, and `Options.PidFile` is written when one is named.
-4. **Stop** with `Stop()`, which is also what a `SIGINT` or a `SIGTERM` reaches; the server is shut down gracefully with a 5 second timeout, the platform context is cancelled, and the registry then stops every module in parallel.
+4. **Stop** with `Stop()`, which is also what a `SIGINT` or a `SIGTERM` reaches; the server is shut down gracefully with a 5 second timeout, the registry then stops every module in parallel on a live context with a 5 second budget of its own, and the platform context is cancelled last, once they have all returned. `Wait` therefore does not release while a module is still tearing down.
 5. Application exit. `Stop` returns nothing: a pidfile that could not be removed is logged through `Platform.Logger`, and a `server.Shutdown` error is handed to the telemetry sink on a context that carries no trace, so it is discarded.
 
 ## Reload
@@ -71,9 +71,13 @@ m.Wait()
 
 `cmd.Main` runs a manager, so an app built on it reloads with `kill -HUP`. Used directly, `platform.Start` is unchanged, and `SIGHUP` keeps its default disposition, which terminates the process.
 
+The manager owns the process signals: `SIGHUP` to reload, `SIGINT` and `SIGTERM` to stop, and a cancelled start context to stop. The generations it runs arm none of them. A generation that armed them released them when it was retired, which left a window as long as the next generation's module startup where a `SIGTERM` took its default disposition and killed the process with no drain and no module `Stop`.
+
 The manager holds the listening socket, so a reload keeps the address it was reached on, along with the connections queued on it. Everything above the socket is new: the router, the registry, the server, the telemetry recorder, and the value `Platform()` returns.
 
 Generations do not overlap: the old one is drained and stopped before the new one starts. Requests that arrive during the swap wait in the accept queue of the socket rather than being refused, and requests already in flight are served by the generation that took them.
+
+A reload is not free. A connection the outgoing generation had already accepted, whose request bytes arrive after `Shutdown` has begun, is closed without a response: `net/http` returns from the connection as soon as the server is shutting down, having read the request. Measured over 140 reloads under load with keep-alive off, that is 402 client-side `EOF` against 48393 served, and zero when no reload runs. A client that retries idempotent requests does not notice; one that does not should not be reloaded under load. Closing the gap needs overlapping generations, which is the guarantee above.
 
 Modules registered with `platform.RegisterFunc` are constructed per generation, so a reload starts fresh values. A module registered with the deprecated `platform.Register` is one value shared by every generation, and has to tolerate `Start` after `Stop`.
 
@@ -114,6 +118,8 @@ options.PidFile = "/run/myapp.pid"
 The file holds the decimal pid and a newline, created 0644 before the umask, which is the form `kill -HUP $(cat /run/myapp.pid)` and every service manager expects. The platform exports no reader for it: whatever sends the signal already has the path from its own configuration and needs one integer out of the file. Empty, the default, writes nothing.
 
 It is written once the modules have started and the socket is bound, so the file never names a process that then failed to come up, and removed once the server has drained. A file still present after the process is gone means the process did not stop cleanly.
+
+Removal reads the file and then unlinks it, which is not atomic. A process that claims the same path between the two loses its file. That follows from a pidfile being a record and not a lock: two processes sharing one path are already misconfigured.
 
 The manager owns the file, not the generations it runs. A pidfile records a process, and a reload does not make a new one, so a generation neither writes nor removes one: `startGeneration` clears it. Without that, every reload would remove the file and write it again, and the moment a `SIGHUP` sender reads it is exactly the moment it would be missing.
 

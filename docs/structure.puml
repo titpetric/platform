@@ -62,6 +62,7 @@ interface "platform.Platform" {
   - stop: func()
   - once: sync.Once
   - stopping: atomic.Bool
+  - managed: bool
   - pid: pidfile.Pidfile
   - registry: *Registry
   - telemetry: *TelemetryModule

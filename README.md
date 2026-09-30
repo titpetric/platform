@@ -19,7 +19,7 @@ Status: the app and maillist repositories still need implementation surface.
 
 | Status | Package                                 | Coverage | Cognitive | Lines |
 |--------|-----------------------------------------|----------|-----------|-------|
-| ✅     | titpetric/platform                      | 93.71%   | 142       | 994   |
+| ✅     | titpetric/platform                      | 93.65%   | 146       | 1057  |
 | ✅     | titpetric/platform/cmd                  | 46.67%   | 2         | 20    |
 | ✅     | titpetric/platform/cmd/platform         | 0.00%    | 0         | 3     |
 | ✅     | titpetric/platform/internal             | 88.51%   | 46        | 246   |

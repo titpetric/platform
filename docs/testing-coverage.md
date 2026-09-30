@@ -12,7 +12,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 
 | Status | Package              | Coverage | Cognitive | Lines |
 |--------|----------------------|----------|-----------|-------|
-| ✅     | .                    | 93.71%   | 142       | 994   |
+| ✅     | .                    | 93.65%   | 146       | 1057  |
 | ✅     | cmd                  | 46.67%   | 2         | 20    |
 | ✅     | cmd/platform         | 0.00%    | 0         | 3     |
 | ✅     | internal             | 88.51%   | 46        | 246   |
@@ -29,16 +29,16 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                      | JSON                             | 100.00%  | 1         |
 | ✅     |                      | Manager.Context                  | 100.00%  | 0         |
 | ✅     |                      | Manager.Platform                 | 100.00%  | 1         |
-| ✅     |                      | Manager.Reload                   | 100.00%  | 4         |
-| ✅     |                      | Manager.Start                    | 86.84%   | 17        |
+| ✅     |                      | Manager.Reload                   | 100.00%  | 5         |
+| ✅     |                      | Manager.Start                    | 85.96%   | 17        |
 | ✅     |                      | Manager.Stop                     | 96.43%   | 4         |
 | ✅     |                      | Manager.URL                      | 100.00%  | 0         |
 | ✅     |                      | Manager.Wait                     | 100.00%  | 0         |
 | ✅     |                      | Manager.logger                   | 66.67%   | 1         |
 | ✅     |                      | Manager.retire                   | 100.00%  | 1         |
-| ✅     |                      | Manager.startGeneration          | 93.94%   | 4         |
+| ✅     |                      | Manager.startGeneration          | 94.44%   | 4         |
 | ✅     |                      | Manager.url                      | 100.00%  | 1         |
-| ✅     |                      | Manager.watch                    | 100.00%  | 1         |
+| ✅     |                      | Manager.watch                    | 83.33%   | 1         |
 | ✅     |                      | New                              | 88.24%   | 6         |
 | ✅     |                      | NewManager                       | 87.50%   | 2         |
 | ✅     |                      | NewOptions                       | 100.00%  | 0         |
@@ -52,14 +52,15 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                      | Platform.Context                 | 100.00%  | 0         |
 | ✅     |                      | Platform.Find                    | 100.00%  | 0         |
 | ✅     |                      | Platform.Register                | 100.00%  | 0         |
-| ✅     |                      | Platform.Start                   | 96.67%   | 7         |
+| ✅     |                      | Platform.Start                   | 96.88%   | 9         |
 | ✅     |                      | Platform.Stats                   | 100.00%  | 0         |
-| ✅     |                      | Platform.Stop                    | 95.83%   | 7         |
+| ✅     |                      | Platform.Stop                    | 97.22%   | 7         |
 | ✅     |                      | Platform.URL                     | 100.00%  | 0         |
 | ✅     |                      | Platform.Use                     | 100.00%  | 0         |
 | ✅     |                      | Platform.Wait                    | 100.00%  | 0         |
 | ✅     |                      | Platform.logger                  | 100.00%  | 1         |
 | ✅     |                      | Platform.observe                 | 100.00%  | 1         |
+| ✅     |                      | Platform.releaseUnserved         | 100.00%  | 1         |
 | ✅     |                      | Platform.setup                   | 100.00%  | 4         |
 | ✅     |                      | Platform.setupListener           | 100.00%  | 3         |
 | ✅     |                      | Platform.setupRequestContext     | 100.00%  | 0         |
@@ -95,7 +96,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                      | UnimplementedModule.Mount        | 100.00%  | 1         |
 | ✅     |                      | UnimplementedModule.Name         | 66.67%   | 1         |
 | ✅     |                      | UnimplementedModule.Start        | 100.00%  | 1         |
-| ✅     |                      | UnimplementedModule.Stop         | 66.67%   | 1         |
+| ✅     |                      | UnimplementedModule.Stop         | 100.00%  | 1         |
 | ✅     |                      | Use                              | 100.00%  | 0         |
 | ✅     |                      | filter                           | 80.95%   | 10        |
 | ✅     |                      | generationListener.Accept        | 90.00%   | 4         |
