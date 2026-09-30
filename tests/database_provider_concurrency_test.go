@@ -1,6 +1,7 @@
 package platform_test
 
 import (
+	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
@@ -12,11 +13,9 @@ import (
 	"github.com/titpetric/platform/internal/assert"
 )
 
-// TestDatabaseProviderSingleton covers the cache holding its lock across the
-// open. It used to release between the miss and the build, so every concurrent
-// first caller opened a connection of its own: one was cached and the rest were
-// handed out unreachable, never closed. On an in-memory DSN they are not even
-// the same database.
+// TestDatabaseProviderSingleton covers concurrent first callers getting one
+// handle from one open, which an in-memory DSN depends on: two handles are two
+// databases.
 func TestDatabaseProviderSingleton(t *testing.T) {
 	var opens atomic.Int64
 
@@ -55,10 +54,8 @@ func TestDatabaseProviderSingleton(t *testing.T) {
 	assert.Equal(t, int64(1), opens.Load(), "the connection must be opened once")
 }
 
-// TestDatabaseProviderCachesUnderResolvedName covers the cache key. A fallback
-// list used to be cached under its first name rather than the one that
-// resolved, so an unregistered name started answering and the registered one
-// built a second handle to the same database.
+// TestDatabaseProviderCachesUnderResolvedName covers the cache key of a
+// fallback list: the name whose credential resolved, not the first requested.
 func TestDatabaseProviderCachesUnderResolvedName(t *testing.T) {
 	provider := internal.NewDatabaseProvider(sqlx.Open)
 	provider.Register("default", "sqlite://"+filepath.Join(t.TempDir(), "test.db"))
@@ -76,13 +73,14 @@ func TestDatabaseProviderCachesUnderResolvedName(t *testing.T) {
 	assert.Error(t, err, "a name with no credential must not be served from the cache")
 }
 
-// TestDatabaseProviderEvictsUnpingable covers Connect leaving a handle it could
-// not ping in the cache. Open reports no error of its own, because sql.Open
-// does not dial, so the dead handle was handed to every later caller with a nil
-// error and no way to tell.
-func TestDatabaseProviderEvictsUnpingable(t *testing.T) {
+// TestDatabaseProviderUnpingableRecovers covers a Connect whose ping fails. The
+// handle is a pool and reconnects on its own, so it stays cached and serves the
+// callers already holding it once the database is reachable.
+func TestDatabaseProviderUnpingableRecovers(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "missing")
+
 	provider := internal.NewDatabaseProvider(sqlx.Open)
-	provider.Register("broken", "sqlite://"+filepath.Join(t.TempDir(), "missing", "app.db"))
+	provider.Register("broken", "sqlite://"+filepath.Join(missing, "app.db"))
 
 	first, err := provider.Open(t.Context(), "broken")
 	assert.NoError(t, err, "sql.Open does not dial, so it does not fail here")
@@ -91,11 +89,13 @@ func TestDatabaseProviderEvictsUnpingable(t *testing.T) {
 	_, err = provider.Connect(t.Context(), "broken")
 	assert.Error(t, err, "a database in a directory that does not exist cannot be pinged")
 
-	second, err := provider.Open(t.Context(), "broken")
-	assert.NoError(t, err)
-	assert.NotEqual(t, first, second, "the handle whose ping failed must be evicted")
+	assert.NoError(t, os.MkdirAll(missing, 0o755))
 
-	// Evicting also closes it, so nothing is left holding a pool nobody can
-	// reach.
-	assert.Error(t, first.PingContext(t.Context()), "the evicted handle is closed")
+	second, err := provider.Connect(t.Context(), "broken")
+	assert.NoError(t, err, "the same handle pings once the database is reachable")
+	assert.Equal(t, first, second, "a failed ping must not replace the cached handle")
+
+	// The caller that took the handle before the failure still owns a usable
+	// one, which closing it on eviction would have taken away.
+	assert.NoError(t, first.PingContext(t.Context()))
 }

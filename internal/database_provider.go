@@ -45,13 +45,16 @@ func (r *DatabaseProvider) Register(name string, config string) {
 
 // Connect issues a PingContext to verify a live connection before returning.
 // The context is used to propagate tracing detail so ping is grouped correctly.
+//
+// A failed ping is reported and the handle stays cached. *sql.DB is a pool and
+// reconnects on its own, so a name that was unreachable once serves the same
+// handle when the database comes back.
 func (r *DatabaseProvider) Connect(ctx context.Context, names ...string) (*sqlx.DB, error) {
 	db, err := r.Open(ctx, names...)
 	if err != nil {
 		return nil, err
 	}
 	if err := db.PingContext(ctx); err != nil {
-		r.evict(db)
 		return nil, err
 	}
 	return db, nil
@@ -63,17 +66,12 @@ func (r *DatabaseProvider) Open(_ context.Context, names ...string) (*sqlx.DB, e
 	return db, err
 }
 
-// cached will return a singleton *db.DB from a named connection.
+// cached returns a singleton *sqlx.DB for the first name that has a
+// credential. names is a fallback list, and a name with no credential is
+// skipped rather than served from the cache.
 //
-// The lock is held across the build. Releasing it between the miss and the
-// open let every concurrent caller build a connection of its own: the first to
-// finish was cached, the rest were handed out and then unreachable, never
-// closed, each with a pool of its own. On the default sqlite://:memory: DSN
-// they are not even the same database.
-//
-// The connector is sql.Open, which does not dial, so the critical section is
-// short. A custom open function passed to NewDatabaseProvider serialises with
-// every other first-time open.
+// The lock is held across the build, so concurrent first callers get one
+// handle instead of one each. The connector is sql.Open, which does not dial.
 func (r *DatabaseProvider) cached(connector func(string, string) (*sqlx.DB, error), names ...string) (*sqlx.DB, error) {
 	if len(names) == 0 {
 		names = []string{"default"}
@@ -83,30 +81,29 @@ func (r *DatabaseProvider) cached(connector func(string, string) (*sqlx.DB, erro
 	defer r.mu.Unlock()
 
 	for _, name := range names {
+		if _, ok := r.credentials[name]; !ok {
+			continue
+		}
+
 		if db, ok := r.cache[name]; ok {
 			return db, nil
 		}
+
+		db, err := r.with(connector, name)
+		if err != nil {
+			return nil, err
+		}
+
+		r.cache[name] = db
+		return db, nil
 	}
 
-	name, db, err := r.with(connector, names...)
-	if err != nil {
-		return nil, err
-	}
-
-	// Keyed on the name that resolved, not on names[0]. Keying on the first
-	// name requested made Open(ctx, "replica", "default") cache the default
-	// connection as "replica", so a later Open(ctx, "replica") succeeded for a
-	// name that was never registered, and Open(ctx, "default") missed and
-	// built a second handle to the same database.
-	r.cache[name] = db
-
-	return db, nil
+	return nil, fmt.Errorf("no configuration found for database: %v", names)
 }
 
-// with will create a *db.DB given the connector (sqlx.Connect/Open). It
-// returns the name whose credential was used: names is a fallback list, and
-// the first entry that has one wins. The caller holds the lock.
-func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error), names ...string) (string, *sqlx.DB, error) {
+// with will create a *db.DB given the connector (sqlx.Connect/Open).
+// The caller holds the lock.
+func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error), names ...string) (*sqlx.DB, error) {
 	if len(names) == 0 {
 		names = []string{"default"}
 	}
@@ -116,30 +113,15 @@ func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error)
 			driver, dsn := r.parseCredential(value)
 			client, err := connector(driver, dsn)
 			if err != nil {
-				return "", nil, err
+				return nil, err
 			}
 
 			opt := databaseOption(driver, dsn)
 			opt.Apply(client)
-			return name, client, nil
+			return client, nil
 		}
 	}
-	return "", nil, fmt.Errorf("no configuration found for database: %v", names)
-}
-
-// evict drops a handle from the cache and closes it. Without it a Connect
-// whose ping failed left the handle cached, and every later Open returned that
-// dead connection with a nil error.
-func (r *DatabaseProvider) evict(db *sqlx.DB) {
-	r.mu.Lock()
-	for name, cached := range r.cache {
-		if cached == db {
-			delete(r.cache, name)
-		}
-	}
-	r.mu.Unlock()
-
-	_ = db.Close()
+	return nil, fmt.Errorf("no configuration found for database: %v", names)
 }
 
 func (r *DatabaseProvider) parseCredential(credential string) (driver string, dsn string) {

@@ -53,7 +53,7 @@ These are a few connection string examples that can be used to connect to variou
 
 The platform fills in driver defaults the DSN does not already set. MySQL gets `parseTime=true`, `collation=utf8mb4_general_ci` and `loc=Local`, and a pool of up to 10 open and 10 idle connections.
 
-The DSN defaults and the pool settings key on the exact driver names `sqlite` and `mysql`. Any other driver, `pgx` included, gets neither: the platform applies `MaxOpenConns` and `MaxIdleConns` of 0, which leaves the open pool unlimited and retains no idle connections at all. Set the pool yourself on the returned `*sqlx.DB` if that is not what you want. A driver registered under a different name, `sqlite3` rather than `sqlite`, opens fine and gets none of the defaults either, which for an in-memory DSN means the one-connection cap is not applied and each pooled connection sees a database of its own.
+The DSN defaults key on the exact driver names `sqlite` and `mysql`. Any other driver, `pgx` included, gets none of them, and a pool of up to 10 open and 2 idle connections. Set the pool yourself on the returned `*sqlx.DB` if that is not what you want. A driver registered under a different name, `sqlite3` rather than `sqlite`, opens fine and gets the same fallback, which for an in-memory DSN means the one-connection cap is not applied and each pooled connection sees a database of its own.
 
 File-backed SQLite connections default to WAL mode, a 5-second busy timeout, and a pool of up to 10 open and 2 idle connections. Explicit `_journal_mode` and `_busy_timeout` DSN options take precedence. In-memory SQLite connections do not receive these defaults and remain limited to one open and idle connection so every query uses the same database. A DSN counts as in-memory when its path is `:memory:` or `file::memory:`, or when its query sets `mode=memory`.
 
@@ -70,7 +70,9 @@ func (m *Module) Start(ctx context.Context) error {
 }
 ```
 
-The connection does not need to be explicitly closed. A named connection is reused between modules: repeated `Open` or `Connect` calls with the same name return the same `*sqlx.DB`. Passing several names is a fallback list, where the first name with a registered credential wins, and the handle is cached under the first name passed rather than the one that matched, so two callers using different fallback lists can end up with two handles to the same database.
+The connection does not need to be explicitly closed. A named connection is reused between modules: repeated `Open` or `Connect` calls with the same name return the same `*sqlx.DB`. Passing several names is a fallback list, and the first name with a registered credential is the one opened. The handle is cached under that name, so two callers with different fallback lists resolving to the same name share one handle.
+
+A `Connect` whose ping fails reports the error and leaves the handle cached. `*sqlx.DB` is a pool and reconnects on its own, so a name that was unreachable once serves the same handle when the database comes back.
 
 `platform.Transaction(ctx, db, fn)` runs `fn` in a transaction, committing when it returns nil and rolling back on an error or a panic.
 
