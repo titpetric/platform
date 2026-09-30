@@ -13,11 +13,13 @@ type Module interface {
 }
 ```
 
-The functions run in this order. If `Mount` runs, `Start` has completed.
+The functions run in this order, and each phase completes across every module before the next begins: every `Start` has returned before the first `Mount` runs, so a module may rely in `Mount` on state another module built in `Start`. Within a phase the order is registration order.
 
-- `Start(context.Context)` - start background goroutines or services.
-- `Mount(context.Context, Router)` - attach HTTP routes.
-- `Stop(context.Context)` - clean up and stop all background work.
+- `Start(context.Context) error` - start background goroutines or services.
+- `Mount(context.Context, Router) error` - attach HTTP routes. Middleware belongs in `platform.Use` or `(*Platform).Use`, not here: `r.Use` from `Mount` panics once another module has registered a route.
+- `Stop(context.Context) error` - clean up and stop all background work. Every module's `Stop` runs in parallel on shutdown, so it must not depend on another module's teardown, and it runs for a module whose own `Start` returned an error, so it has to tolerate a partially built value. A panic in `Stop` is recovered and recorded.
+
+The context `Stop` receives is the platform's shutdown context, already cancelled by the time it arrives, so a `Stop` that needs a deadline has to make its own.
 
 ### Firewalling modules
 
@@ -30,9 +32,18 @@ type SessionService interface {
 	IsLoggedIn(context.Context) bool
 	GetSessionUser(context.Context) (*model.User, error)
 }
-var api SessionService
-ok := platform.FromContext(r.Context()).Find(&api)
+
+func (m *Module) Start(ctx context.Context) error {
+	var api SessionService
+	if !platform.FromContext(ctx).Find(&api) {
+		return errors.New("session service not registered")
+	}
+	m.session = api
+	return nil
+}
 ```
+
+`Find` resolves against registrations, not against started modules, so it can hand back a module whose `Start` has not run yet. A module that needs its dependency ready should use it from `Mount` or from a request rather than from `Start`.
 
 Or it may expose its complete storage API:
 
@@ -47,7 +58,7 @@ This allows API usage behind interfaces. In our case, we can expose module-scope
 
 ### Using `UnimplementedModule`
 
-Embed `platform.UnimplementedModule` to reduce boilerplate and override only methods you need:
+Embed `platform.UnimplementedModule` to reduce boilerplate and override only the methods you need. `Name` is the exception: it has to return a non-empty string or startup fails with `module %T doesn't return name`. Override it, or embed the pointer `NewUnimplementedModule` returns, which fills `NameFn`:
 
 ```go
 type StaticModule struct {
@@ -63,6 +74,8 @@ func (m *StaticModule) Mount(_ context.Context, r platform.Router) error {
 	return nil
 }
 ```
+
+The type also carries a hook per method, `NameFn`, `StartFn`, `StopFn` and `MountFn`. Assigning those is the shorter route for a test or a module small enough not to want a type of its own.
 
 ## Minimal App Example
 

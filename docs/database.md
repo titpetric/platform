@@ -17,6 +17,8 @@ In practice, a singular modular monolith may share the complete schema and no na
 db, err := platform.Database.Connect(ctx)
 ```
 
+`Open` returns a handle without contacting the server, as `sql.Open` does. `Connect` is `Open` plus a `PingContext`, so it is the call that fails on a bad DSN, an unreachable server or a driver that was never registered. Both return the same cached handle for a given name.
+
 The platform imports no driver. It speaks to `database/sql` through `sqlx`, and the driver is the choice of whoever builds the binary. Register one with a blank import in your `main` package:
 
 ```go
@@ -33,9 +35,11 @@ Pinning a driver in the platform would push that pin onto every consumer and dup
 
 ## Named Connections
 
-The platform scans the runtime environment for `PLATFORM_DB_` prefixed environment variables. The remainder after the prefix is lowercased and used for the connection name, so `PLATFORM_DB_USERS` registers `"users"`.
+The platform scans the runtime environment for `PLATFORM_DB_` prefixed environment variables. The variable name after the prefix is lowercased and used for the connection name; the value is the connection string, taken verbatim. `PLATFORM_DB_USERS` registers `"users"`.
 
-The scan runs from an `init` function, and always registers a `"default"` connection of `sqlite://:memory:` first. Setting `PLATFORM_DB_DEFAULT` replaces it.
+The scan runs from an `init` function over `os.Environ()`. The `"default"` connection is seeded with `sqlite://:memory:` before the environment is read, so `PLATFORM_DB_DEFAULT` overrides it and a process with nothing set still has a usable default. Registration order across names is unspecified.
+
+`platform.SetupConnections([]string)` runs the same scan against an environment you supply. `platform.Database` exposes only `Open` and `Connect`, so that call and the `PLATFORM_DB_*` variables are the whole configuration surface; a consumer wanting different behaviour assigns its own implementation to `platform.Database`.
 
 ## Connection strings
 
@@ -45,11 +49,13 @@ postgres://user:pass@localhost:5432/dbname?sslmode=disable
 mysql://user:pass@tcp(localhost:3306)/dbname
 ```
 
-These are a few connection string examples that can be used to connect to various databases. The value is constructed as `<driver>://<dsn>`. Without the `<driver>://` prefix the value is taken as a MySQL DSN. `postgres` and `postgresql` map onto the `pgx` driver.
+These are a few connection string examples that can be used to connect to various databases. The value is constructed as `<driver>://<dsn>`. Without the `<driver>://` prefix the value is taken as a MySQL DSN. `postgres` and `postgresql` map onto the `pgx` driver, and the scheme is put back on the DSN handed to it, so both the URL form and a libpq keyword string work unmodified.
 
-The platform fills in driver defaults the DSN does not already set. MySQL gets `parseTime=true`, `collation=utf8mb4_general_ci` and `loc=Local`.
+The platform fills in driver defaults the DSN does not already set. MySQL gets `parseTime=true`, `collation=utf8mb4_general_ci` and `loc=Local`, and a pool of up to 10 open and 10 idle connections.
 
-File-backed SQLite connections default to WAL mode, a 5-second busy timeout, and a pool of up to 10 open and 2 idle connections. Explicit `_journal_mode` and `_busy_timeout` DSN options take precedence. In-memory SQLite connections do not receive these defaults and remain limited to one open and idle connection so every query uses the same database.
+The DSN defaults and the pool settings key on the exact driver names `sqlite` and `mysql`. Any other driver, `pgx` included, gets neither: the platform applies `MaxOpenConns` and `MaxIdleConns` of 0, which leaves the open pool unlimited and retains no idle connections at all. Set the pool yourself on the returned `*sqlx.DB` if that is not what you want. A driver registered under a different name, `sqlite3` rather than `sqlite`, opens fine and gets none of the defaults either, which for an in-memory DSN means the one-connection cap is not applied and each pooled connection sees a database of its own.
+
+File-backed SQLite connections default to WAL mode, a 5-second busy timeout, and a pool of up to 10 open and 2 idle connections. Explicit `_journal_mode` and `_busy_timeout` DSN options take precedence. In-memory SQLite connections do not receive these defaults and remain limited to one open and idle connection so every query uses the same database. A DSN counts as in-memory when its path is `:memory:` or `file::memory:`, or when its query sets `mode=memory`.
 
 ## Using Connections in Modules
 
@@ -64,6 +70,8 @@ func (m *Module) Start(ctx context.Context) error {
 }
 ```
 
-The connection does not need to be explicitly closed. A named connection is reused between modules, the `*sqlx.DB` value returned from repeated Open or Connect calls will be shared.
+The connection does not need to be explicitly closed. A named connection is reused between modules: repeated `Open` or `Connect` calls with the same name return the same `*sqlx.DB`. Passing several names is a fallback list, where the first name with a registered credential wins, and the handle is cached under the first name passed rather than the one that matched, so two callers using different fallback lists can end up with two handles to the same database.
+
+`platform.Transaction(ctx, db, fn)` runs `fn` in a transaction, committing when it returns nil and rolling back on an error or a panic.
 
 The returned database client is safe for concurrent use. Some restrictions may apply on a per-driver basis.

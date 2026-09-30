@@ -12,7 +12,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 
 | Status | Package              | Coverage | Cognitive | Lines |
 |--------|----------------------|----------|-----------|-------|
-| ✅     | .                    | 93.42%   | 137       | 952   |
+| ✅     | .                    | 93.74%   | 135       | 969   |
 | ✅     | cmd                  | 46.67%   | 2         | 20    |
 | ✅     | cmd/platform         | 0.00%    | 0         | 3     |
 | ✅     | internal             | 85.32%   | 31        | 176   |
@@ -67,19 +67,21 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                      | Registry.Cleanup                 | 100.00%  | 0         |
 | ✅     |                      | Registry.Clone                   | 100.00%  | 1         |
 | ✅     |                      | Registry.Close                   | 100.00%  | 0         |
-| ✅     |                      | Registry.Find                    | 86.21%   | 10        |
+| ✅     |                      | Registry.Find                    | 100.00%  | 0         |
 | ✅     |                      | Registry.Register                | 100.00%  | 0         |
 | ✅     |                      | Registry.RegisterFunc            | 100.00%  | 0         |
-| ✅     |                      | Registry.Start                   | 95.65%   | 3         |
+| ✅     |                      | Registry.Start                   | 97.73%   | 2         |
 | ✅     |                      | Registry.Stats                   | 100.00%  | 0         |
 | ✅     |                      | Registry.Use                     | 100.00%  | 0         |
-| ✅     |                      | Registry.close                   | 100.00%  | 3         |
-| ✅     |                      | Registry.filter                  | 80.95%   | 10        |
+| ✅     |                      | Registry.cleanup                 | 100.00%  | 0         |
+| ✅     |                      | Registry.close                   | 100.00%  | 2         |
+| ✅     |                      | Registry.find                    | 80.95%   | 10        |
 | ✅     |                      | Registry.materialize             | 100.00%  | 3         |
 | ✅     |                      | Registry.mount                   | 90.91%   | 4         |
 | ✅     |                      | Registry.register                | 100.00%  | 0         |
 | ✅     |                      | Registry.start                   | 100.00%  | 3         |
 | ✅     |                      | Registry.startModule             | 100.00%  | 0         |
+| ✅     |                      | Registry.stats                   | 100.00%  | 0         |
 | ✅     |                      | Registry.stopModule              | 80.00%   | 3         |
 | ✅     |                      | SetupConnections                 | 100.00%  | 0         |
 | ✅     |                      | Start                            | 100.00%  | 1         |
@@ -94,6 +96,7 @@ Low cognitive complexity means there are few conditional branches to cover. Test
 | ✅     |                      | UnimplementedModule.Start        | 100.00%  | 1         |
 | ✅     |                      | UnimplementedModule.Stop         | 66.67%   | 1         |
 | ✅     |                      | Use                              | 100.00%  | 0         |
+| ✅     |                      | filter                           | 80.95%   | 10        |
 | ✅     |                      | generationListener.Accept        | 90.00%   | 4         |
 | ✅     |                      | generationListener.Addr          | 100.00%  | 0         |
 | ✅     |                      | generationListener.Close         | 100.00%  | 2         |

@@ -13,10 +13,10 @@ Each `Platform` instance clones the global registry, enabling isolated test inst
 
 ## Key Concepts
 
-- Module - implements `Name()`, `Start(context.Context)`, `Mount(context.Context, Router)`, `Stop(context.Context)`. Registered as a constructor with `platform.RegisterFunc()`, so each platform builds its own.
+- Module - implements `Name() string`, `Start(context.Context) error`, `Stop(context.Context) error`, `Mount(context.Context, Router) error`. Registered as a constructor with `platform.RegisterFunc()`, so each platform builds its own.
 - Middleware - type `func(http.Handler) http.Handler`, added via `platform.Use()` or `(*Platform).Use()`.
 - Registry - package and instance level container value managing modules and middleware; enables `init` usage via package API.
-- Database - named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed.
+- Database - named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed, and is `sqlite://:memory:` unless `PLATFORM_DB_DEFAULT` replaces it. The platform imports no sql driver: the binary registers its own with a blank import. See [SQL Database Usage](database.md).
 - Logger - the `Platform.Logger` field, an interface with `Info` and `Error`, receiving the platform's own output.
 - Manager - owns the listening socket and the `*Platform` serving on it, replacing the platform on `SIGHUP`. It also owns the pidfile, because a reload does not make a new process.
 - Pidfile - the file `Options.PidFile` names, holding the process id something else sends a signal to. Empty writes none.
@@ -39,7 +39,9 @@ p := platform.New(platform.NewOptions())
 p.Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 ```
 
-Assign the field before calling `Start`. The platform reads it once there, and keeps logging through that value for the lifetime of the instance.
+Assign the field before calling `Start`. `Start` captures the logger once for the route dump and the signal handler goroutine; every other write resolves the field at call time, including `Stop` and the logger a module reaches through a request or a context.
+
+Under a `Manager` there is no platform value to assign to. `NewManager` defaults `Manager.Logger` the same way, and hands it to each generation before `Setup` runs, so set `m.Logger` or assign `p.Logger` from `Manager.Setup`.
 
 Modules reach the same logger from a request or a context:
 
@@ -53,7 +55,7 @@ platform.FromRequest(r).Logger.Info("handled", "path", r.URL.Path)
 2. **Add middleware** via `platform.Use()` before calling `Start(context.Context)`.
 3. **Start the platform** with `Start(context.Context)`; modules are started and then mounted, the socket is bound, and `Options.PidFile` is written when one is named.
 4. **Stop** with `Stop()`, which is also what a `SIGINT` or a `SIGTERM` reaches; the server is shut down gracefully with a 5 second timeout, the platform context is cancelled, and the registry then stops every module in parallel.
-5. Application exit, reporting any error during shutdown.
+5. Application exit. `Stop` returns nothing: a pidfile that could not be removed is logged through `Platform.Logger`, and a `server.Shutdown` error is handed to the telemetry sink on a context that carries no trace, so it is discarded.
 
 ## Reload
 
@@ -102,14 +104,14 @@ The `SIGHUP` handler tells the two apart from what is serving rather than from t
 
 ## Pidfile
 
-`kill -HUP` needs the pid, and `Options.PidFile` is where the process writes it:
+`kill -HUP` needs the pid, and `Options.PidFile`, or `PLATFORM_PIDFILE`, is where the process writes it:
 
 ```go
 options := platform.NewOptions()
 options.PidFile = "/run/myapp.pid"
 ```
 
-The file holds the decimal pid and a newline, created 0644 before the umask, and `platform.ReadPidFile` reads it back. Empty, the default, writes nothing.
+The file holds the decimal pid and a newline, created 0644 before the umask, which is the form `kill -HUP $(cat /run/myapp.pid)` and every service manager expects. The platform exports no reader for it: whatever sends the signal already has the path from its own configuration and needs one integer out of the file. Empty, the default, writes nothing.
 
 It is written once the modules have started and the socket is bound, so the file never names a process that then failed to come up, and removed once the server has drained. A file still present after the process is gone means the process did not stop cleanly.
 

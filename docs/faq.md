@@ -2,19 +2,29 @@
 
 ## How do I register a middleware?
 
-Use `platform.Use` (package) or `(*Platform).Use` (instance). Add before calling `Start(context.Context)`.
+Use `platform.Use` (package) or `(*Platform).Use` (instance). The package function writes to the global registry, which `platform.New` clones once, so call it from `main` or an `init` before `New` or `Start`. The instance method takes effect any time before `(*Platform).Start`. Added too late, middleware is silently never run.
 
 ## How do I register a module?
 
-Use `platform.RegisterFunc` (package) or `(*Platform).Register` (instance) before starting the server. The package function takes a constructor, and calls it once per platform, so a reload generation and a parallel test get a module of their own. `platform.Register` takes a value and is deprecated: one value is shared by every platform in the process.
+Use `platform.RegisterFunc` (package) or `(*Platform).Register` (instance). The package function has to run before `platform.New`, which is what clones the global registry; the instance method any time before the server starts. The package function takes a constructor, and calls it once per platform, so a reload generation and a parallel test get a module of their own. `platform.Register` takes a value and is deprecated: one value is shared by every platform in the process.
 
 ## How do I access a named database connection?
 
-Use `platform.Database.Connect(ctx, "name")` to Open + Ping a connection, or `Open(ctx, "name")` to skip the ping. Passing no name uses `"default"`.
+Use `platform.Database.Connect(ctx, "name")` to Open + Ping a connection, or `Open(ctx, "name")` to skip the ping. Passing no name uses `"default"`. `platform.SetupConnections(os.Environ())` decodes the `PLATFORM_DB_*` variables into the named connections.
+
+The platform imports no sql driver, so a blank import in your `main` package registers the one your DSN names:
+
+```go
+import (
+	_ "github.com/go-sql-driver/mysql"
+)
+```
+
+Without it the call fails with `sql: unknown driver "mysql" (forgotten import?)`. See [SQL Database Usage](database.md).
 
 ## How do I run the platform in tests?
 
-Create a `*Platform` instance with `platform.NewTestOptions()` and call `Register`/`Use` on it. Avoid package-level `Register` in tests. The test options bind to `127.0.0.1:0`, silence the platform's own output, and leave telemetry off, so parallel tests do not observe each other.
+Create the instance with `platform.New(platform.NewTestOptions())` and call `Register`/`Use` on it. Avoid package-level `Register` in tests. The test options bind to `127.0.0.1:0`, silence the platform's own output, and leave telemetry off, so parallel tests do not observe each other.
 
 ## How do I implement a module quickly?
 
@@ -50,7 +60,7 @@ The alternative to `p.Wait()` is to use `p.Stop()` explicitly when you want to s
 
 ## How do I attach routes in a module?
 
-Implement your `Mount(ctx context.Context, r Router)` to register GET/POST handlers via `r.Get()`/`r.Post()` and other options. Functions exist to add grouping to your endpoints, like `r.Route(prefix, func(Router))`. This gives you simple ways to use middleware in your routes.
+Implement your `Mount(ctx context.Context, r Router) error` to register GET/POST handlers via `r.Get()`/`r.Post()` and other options. Functions exist to add grouping to your endpoints, like `r.Route(prefix, func(Router))`. This gives you simple ways to use middleware in your routes.
 
 ## How do I handle graceful shutdown?
 
@@ -99,8 +109,10 @@ options := platform.NewOptions()
 options.PidFile = "/run/myapp.pid"
 ```
 
-The file holds the decimal pid and a newline, which is the form `kill -HUP $(cat /run/myapp.pid)` and every service manager expects. `platform.ReadPidFile` reads it back for a command line that sends the signal itself.
+The file holds the decimal pid and a newline, which is the form `kill -HUP $(cat /run/myapp.pid)` and every service manager expects. The platform exports no reader for it: whatever sends the signal already has the path from its own configuration.
 
 Empty, the default, writes no file at all. The directory has to exist: it belongs to whatever packages the service, and creating it here would mean guessing its owner and mode. An existing file is overwritten rather than treated as a running instance, because a pidfile is a record and not a lock.
 
 A `Manager` writes the file once for the process, and the generations it runs do not, so a reload leaves it alone. A file still present after the process is gone means the process did not stop cleanly.
+
+`SIGHUP` reloads only under a `Manager`. Sent to a process running a bare `platform.Start`, it keeps its default disposition and terminates it. `SIGTERM` stops either.
