@@ -45,6 +45,15 @@ func (s *sharedListener) next() *generationListener {
 
 // handoff parks a connection for the next generation, and closes it when
 // the slot is taken.
+//
+// One slot is enough because a retiring generation hands over at most the
+// connection it had accepted and not yet served. The connection closed when
+// the slot is full is the newer one, which matters only if something left a
+// stale connection parked: a reload that fails after retiring does that. The
+// SIGHUP handler stops the manager in exactly that case, and Close drains the
+// slot, so the stale connection does not outlive the failure and there is no
+// second handoff to lose. A caller driving Reload directly and ignoring its
+// error is the one way back into it.
 func (s *sharedListener) handoff(conn net.Conn) {
 	select {
 	case s.pending <- conn:
