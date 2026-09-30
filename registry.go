@@ -10,6 +10,18 @@ import (
 	"github.com/titpetric/oida"
 )
 
+// Locking convention: an exported method takes r.mu and delegates to an
+// unexported one of the same name, which assumes the caller holds it. Find
+// and find, Stats and stats, Cleanup and cleanup, Close and close. A method
+// documented as holding the lock never calls foreign code.
+//
+// Module Start, Module Mount, a module cleanup and a RegisterFunc constructor
+// are all foreign: they can register, add middleware or Find another module,
+// and each of those wants this same mutex. Start, Close and Clone therefore
+// snapshot what they need under the lock, release it, and only then call out.
+// Holding a read lock across a module's Start is what deadlocked the process
+// when that module called Find or Register.
+
 // Registry provides a programmatic API to manage middleware and modules.
 // A module registers middleware and has a contract to enforce lifecycle.
 type Registry struct {
@@ -62,7 +74,8 @@ func (r *Registry) RegisterFunc(f func() Module) {
 }
 
 // register adds a module value, and is what the platform registers into,
-// its registry being one platform's own.
+// its registry being one platform's own. It takes the lock: the callers
+// outside this file hold none of their own.
 func (r *Registry) register(m Module) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -72,10 +85,10 @@ func (r *Registry) register(m Module) {
 
 // materialize calls the constructors that have not been called yet. Clone
 // does it for a platform; a registry started as it stands does it here.
+//
+// The caller holds the write lock. A constructor is foreign code, so this is
+// only safe for a registry nothing else can reach yet.
 func (r *Registry) materialize() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	for i, e := range r.registrations {
 		if e.module == nil {
 			r.registrations[i] = registration{module: e.instance()}
@@ -86,6 +99,14 @@ func (r *Registry) materialize() {
 // Cleanup is sort of a testing.T.Cleanup but for the registry.
 // The cleanups are initialized in Start, and ran in Close.
 func (r *Registry) Cleanup(fn func(context.Context)) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.cleanup(fn)
+}
+
+// cleanup appends a cleanup. The caller holds the write lock.
+func (r *Registry) cleanup(fn func(context.Context)) {
 	r.cleanups = append(r.cleanups, fn)
 }
 
@@ -93,15 +114,20 @@ func (r *Registry) Cleanup(fn func(context.Context)) {
 // The target argument can be a pointer or an interface. The function returns true
 // if a module matching the type or interface was found and assigned to `target`.
 func (r *Registry) Find(target any) bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.find(target)
+}
+
+// find gets a Module from the registry. The caller holds the lock.
+func (r *Registry) find(target any) bool {
 	// target must be a pointer so we can set its underlying value
 	targetVal := reflect.ValueOf(target)
 	if targetVal.Kind() != reflect.Pointer || targetVal.IsNil() {
 		return false
 	}
 	targetElemType := targetVal.Elem().Type()
-
-	r.mu.RLock()
-	defer r.mu.RUnlock()
 
 	for _, e := range r.registrations {
 		// A constructor that Clone has not called yet is not an instance
@@ -144,17 +170,20 @@ func (r *Registry) Use(f Middleware) {
 // The registry's own output goes to the logger of the platform in the
 // context; without one it is discarded.
 func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
-	r.materialize()
-
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
 	ctx, span := oida.Start(ctx, "registry.Start")
 	defer span.End()
 
 	log := loggerFromContext(ctx)
 
-	modules, err := r.filter(log, opts)
+	// Snapshot under the lock, then let go of it. Everything below calls into
+	// modules, which are free to use the registry.
+	r.mu.Lock()
+	r.materialize()
+	registrations := slices.Clone(r.registrations)
+	middleware := slices.Clone(r.middleware)
+	r.mu.Unlock()
+
+	modules, err := filter(registrations, log, opts)
 	if err != nil {
 		return err
 	}
@@ -163,20 +192,19 @@ func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
 		return err
 	}
 
-	if err := r.mount(ctx, mux, modules); err != nil {
-		return err
-	}
-
-	return nil
+	return r.mount(ctx, mux, middleware, modules)
 }
 
 // filter will provide a set of enabled modules based on options
-// it prints which modules are enabled/disabled to the log
-func (r *Registry) filter(log Logger, opts *Options) ([]Module, error) {
+// it prints which modules are enabled/disabled to the log.
+//
+// It takes the registrations rather than reading them off the registry,
+// because Name is the module's own code and must not run under the lock.
+func filter(registrations []registration, log Logger, opts *Options) ([]Module, error) {
 	var enabled []Module
 	var disabled []string
 
-	for _, e := range r.registrations {
+	for _, e := range registrations {
 		mod := e.module
 		name := mod.Name()
 
@@ -205,11 +233,13 @@ func (r *Registry) filter(log Logger, opts *Options) ([]Module, error) {
 	return enabled, nil
 }
 
-func (r *Registry) mount(ctx context.Context, mux Router, modules []Module) error {
+// mount attaches the middleware and then every module's routes. It holds no
+// lock: Mount is the module's code and may reach back into the registry.
+func (r *Registry) mount(ctx context.Context, mux Router, middleware []Middleware, modules []Module) error {
 	ctx, span := oida.Start(ctx, "registry.mount")
 	defer span.End()
 
-	for _, mw := range r.middleware {
+	for _, mw := range middleware {
 		mux.Use(mw)
 	}
 
@@ -222,6 +252,7 @@ func (r *Registry) mount(ctx context.Context, mux Router, modules []Module) erro
 	return nil
 }
 
+// start runs every module's Start in registration order. It holds no lock.
 func (r *Registry) start(ctx context.Context, modules []Module, log Logger) error {
 	ctx, span := oida.Start(ctx, "registry.start")
 	defer span.End()
@@ -271,54 +302,70 @@ func (r *Registry) stopModule(ctx context.Context, mod Module) {
 // well as any defined middleware and invoked cleanups.
 func (r *Registry) Close(ctx context.Context) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	r.close(ctx)
+	cleanups := r.cleanups
 
 	r.registrations = r.registrations[:0]
 	r.middleware = r.middleware[:0]
-	r.cleanups = r.cleanups[:0]
+	// nil rather than truncated: the cleanups above still reference the
+	// backing array, and a later append must not write into it.
+	r.cleanups = nil
+	r.mu.Unlock()
+
+	r.close(ctx, cleanups)
 }
 
-func (r *Registry) close(ctx context.Context) {
+// close runs the cleanups in parallel and waits for them. It holds no lock: a
+// cleanup is a module's Stop, which may reach back into the registry.
+func (r *Registry) close(ctx context.Context, cleanups []func(context.Context)) {
 	ctx, span := oida.Start(ctx, "registry.close")
 	defer span.End()
 
-	if len(r.cleanups) > 0 {
-		var wg sync.WaitGroup
-		wg.Add(len(r.cleanups))
-
-		for _, fn := range r.cleanups {
-			go func() {
-				defer wg.Done()
-				fn(ctx)
-			}()
-		}
-		wg.Wait()
+	if len(cleanups) == 0 {
+		return
 	}
+
+	var wg sync.WaitGroup
+	wg.Add(len(cleanups))
+
+	for _, fn := range cleanups {
+		go func() {
+			defer wg.Done()
+			fn(ctx)
+		}()
+	}
+	wg.Wait()
 }
 
 // Clone provides a copy of the registry for use in the platform. Modules
 // registered as constructors are built here, one set per clone.
 func (r *Registry) Clone() *Registry {
 	r.mu.RLock()
-	defer r.mu.RUnlock()
+	registrations := slices.Clone(r.registrations)
+	middleware := slices.Clone(r.middleware)
+	r.mu.RUnlock()
 
 	clone := &Registry{
-		registrations: make([]registration, len(r.registrations)),
-		middleware:    make([]Middleware, len(r.middleware)),
+		registrations: make([]registration, len(registrations)),
+		middleware:    middleware,
 	}
 
-	for i, e := range r.registrations {
+	// The constructors are foreign code, so they run with no lock held.
+	for i, e := range registrations {
 		clone.registrations[i] = registration{module: e.instance()}
 	}
-
-	copy(clone.middleware, r.middleware)
 
 	return clone
 }
 
 // Stats returns counts for modules and middlewares in the registry.
 func (r *Registry) Stats() (modules, middleware int) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.stats()
+}
+
+// stats counts modules and middleware. The caller holds the lock.
+func (r *Registry) stats() (modules, middleware int) {
 	return len(r.registrations), len(r.middleware)
 }
