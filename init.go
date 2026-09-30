@@ -21,9 +21,15 @@ func setupConnections(environment []string, register func(string, string)) {
 
 	for _, e := range environment {
 		if clean, ok := strings.CutPrefix(e, "PLATFORM_DB_"); ok {
-			pair := strings.SplitN(clean, "=", 2)
+			name, dsn, ok := strings.Cut(clean, "=")
+			if !ok || name == "" {
+				// An entry with no "=" is not a variable. os.Environ never
+				// produces one, but SetupConnections is exported and an
+				// environment assembled for an exec'd process can.
+				continue
+			}
 
-			connections[strings.ToLower(pair[0])] = pair[1]
+			connections[strings.ToLower(name)] = dsn
 		}
 	}
 

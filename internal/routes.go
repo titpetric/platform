@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"net/http"
 	"reflect"
 	"runtime"
@@ -42,7 +43,33 @@ func PrintRoutes(log Logger, r chi.Routes) {
 
 	_ = chi.Walk(r, func(method string, route string, handler http.Handler, middlewares ...func(http.Handler) http.Handler) error {
 		log.Info("route", "method", method, "path", route,
-			"handler", runtime.FuncForPC(reflect.ValueOf(handler).Pointer()).Name())
+			"handler", handlerName(handler))
 		return nil
 	})
+}
+
+// handlerName names a handler for the route log. reflect.Value.Pointer panics
+// on any kind that is not a chan, func, map, pointer, slice or unsafe pointer,
+// and a handler is allowed to be a struct value with a ServeHTTP method, so
+// the kind decides whether there is a symbol to resolve. Without this the
+// route dump panicked inside Start, after the socket was bound and the modules
+// were running.
+func handlerName(handler http.Handler) string {
+	value := reflect.ValueOf(handler)
+
+	switch value.Kind() {
+	case reflect.Func:
+		if fn := runtime.FuncForPC(value.Pointer()); fn != nil {
+			return fn.Name()
+		}
+	case reflect.Chan, reflect.Map, reflect.Pointer, reflect.Slice, reflect.UnsafePointer:
+		if value.IsNil() {
+			break
+		}
+		if fn := runtime.FuncForPC(value.Pointer()); fn != nil {
+			return fn.Name()
+		}
+	}
+
+	return fmt.Sprintf("%T", handler)
 }

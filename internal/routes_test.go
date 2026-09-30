@@ -46,3 +46,38 @@ type testLogger struct {
 func (l *testLogger) Info(msg string, _ ...any) {
 	l.messages = append(l.messages, msg)
 }
+
+// structHandler is a legal http.Handler that is not a func or a pointer, which
+// chi accepts through Method/Handle.
+type structHandler struct{}
+
+func (structHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// TestPrintRoutesStructHandler covers the panic PrintRoutes used to raise.
+// reflect.Value.Pointer is only legal for a chan, func, map, pointer, slice or
+// unsafe pointer, so a struct value handler crashed the route dump with
+// "reflect: call of reflect.Value.Pointer on struct Value" from inside
+// Platform.Start, after the socket was bound and the modules were running.
+func TestPrintRoutesStructHandler(t *testing.T) {
+	r := chi.NewRouter()
+	r.Method(http.MethodGet, "/struct", structHandler{})
+	r.Get("/func", http.NotFoundHandler().ServeHTTP)
+	r.Method(http.MethodGet, "/pointer", http.NotFoundHandler())
+
+	PrintRoutes(discardLogger{}, r)
+}
+
+// TestHandlerName pins what each kind resolves to.
+func TestHandlerName(t *testing.T) {
+	assert.Equal(t, "internal.structHandler", handlerName(structHandler{}))
+	assert.Contains(t, handlerName(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {})), "TestHandlerName")
+
+	var nilHandler *http.ServeMux
+	assert.Equal(t, "*http.ServeMux", handlerName(nilHandler))
+}
+
+type discardLogger struct{}
+
+func (discardLogger) Info(string, ...any) {}

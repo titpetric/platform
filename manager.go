@@ -168,7 +168,7 @@ func (m *Manager) Reload(ctx context.Context) error {
 		return fmt.Errorf("reload: %w", err)
 	}
 
-	m.logger().Info("platform reloaded", "url", m.URL())
+	m.logger().Info("platform reloaded", "url", m.url())
 	return nil
 }
 
@@ -237,7 +237,21 @@ func (m *Manager) Platform() *Platform {
 }
 
 // URL gives the e2e endpoint URL for requests. A reload does not change it.
+// Before a successful Start there is no socket and the URL is empty.
 func (m *Manager) URL() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	return m.url()
+}
+
+// url gives the endpoint URL. The caller holds the lock. Reload logs the URL
+// while holding it, so taking it again there deadlocks the goroutine.
+func (m *Manager) url() string {
+	if m.shared == nil {
+		return ""
+	}
+
 	return listenerURL(m.shared)
 }
 

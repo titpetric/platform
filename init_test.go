@@ -28,3 +28,29 @@ func TestDatabaseEnv(t *testing.T) {
 
 	assert.Equal(t, want, got)
 }
+
+// TestDatabaseEnvMalformed covers the unguarded split setupConnections used to
+// do. An entry with no "=" panicked with an index out of range. os.Environ
+// never produces one, but SetupConnections is exported and an environment
+// assembled for an exec'd process can.
+func TestDatabaseEnvMalformed(t *testing.T) {
+	env := []string{
+		"PLATFORM_DB_MAIN",
+		"PLATFORM_DB_",
+		"PLATFORM_DB_=orphan",
+		"PLATFORM_DB_USERS=sqlite://:memory:",
+		"UNRELATED=value",
+	}
+
+	got := map[string]string{}
+	setupConnections(env, func(key, value string) {
+		got[key] = value
+	})
+
+	want := map[string]string{
+		"default": "sqlite://:memory:",
+		"users":   "sqlite://:memory:",
+	}
+
+	assert.Equal(t, want, got)
+}

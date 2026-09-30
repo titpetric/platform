@@ -119,8 +119,19 @@ func (l *generationListener) Addr() net.Addr {
 	return l.shared.Addr()
 }
 
-// listenerURL gives the e2e endpoint URL for a listener.
+// listenerURL gives the e2e endpoint URL for a listener. A platform or a
+// manager that has not started, or whose start failed, has no socket and no
+// URL, which is the case of logging the failure with the URL in hand.
 func listenerURL(l net.Listener) string {
-	_, port, _ := net.SplitHostPort(l.Addr().String())
+	if l == nil {
+		return ""
+	}
+
+	addr := l.Addr()
+	if addr == nil {
+		return ""
+	}
+
+	_, port, _ := net.SplitHostPort(addr.String())
 	return "http://127.0.0.1:" + port
 }
