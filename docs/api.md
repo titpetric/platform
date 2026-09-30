@@ -132,8 +132,11 @@ type Manager struct {
 	options *Options
 
 	// mu serializes the generation swap.
-	mu      sync.Mutex
-	shared  *sharedListener
+	mu sync.Mutex
+
+	// shared is the socket every generation serves, set once by Start. It is
+	// read outside mu by URL, which must not wait out a reload.
+	shared  atomic.Pointer[sharedListener]
 	current atomic.Pointer[generation]
 
 	// pid records this process's id. The manager holds it rather than the
@@ -737,7 +740,7 @@ func (*Platform) Wait()
 
 ### Cleanup
 
-Cleanup is sort of a testing.T.Cleanup but for the registry. The cleanups are initialized in Start, and ran in Close.
+Cleanup registers a function to run when the registry closes, as testing.T.Cleanup does for a test. The cleanups are registered in Start, and run in Close.
 
 ```go
 func (*Registry) Cleanup(fn func(context.Context))

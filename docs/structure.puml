@@ -25,7 +25,7 @@ interface "platform.Manager" {
   + Check: func() error
   - options: *Options
   - mu: sync.Mutex
-  - shared: *sharedListener
+  - shared: atomic.Pointer[sharedListener]
   - current: atomic.Pointer[generation]
   - pid: pidfile.Pidfile
   - context: context.Context
