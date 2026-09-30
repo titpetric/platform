@@ -172,17 +172,19 @@ func (p *Platform) Start(ctx context.Context) error {
 	// Before the signal goroutine exists: it reaches Stop, and Stop reads
 	// what this records.
 	if err := p.pid.Write(); err != nil {
-		p.releaseUnserved()
+		// setup bound the socket and built the server, but Serve runs
+		// below, so nothing else closes either. p.served is closed so the
+		// wait in Stop has a writer.
+		if p.listener != nil {
+			_ = p.listener.Close()
+		}
+		close(p.served)
 		return err
 	}
 
 	// If the program receives a SIGINT or a SIGTERM, trigger shutdown.
-	//
-	// A managed generation does not arm them. The handler belongs to the
-	// process, and a generation's is released by retire, so a SIGTERM that
-	// arrived between one generation stopping and the next arming its own hit
-	// the default disposition and killed the process with no drain and no
-	// module Stop. The manager arms them once and keeps them for its life.
+	// A managed generation arms neither: the handler belongs to the process,
+	// and the manager holds it across every reload.
 	if !p.managed {
 		sigctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 		p.stop = stop
@@ -191,7 +193,8 @@ func (p *Platform) Start(ctx context.Context) error {
 			<-sigctx.Done()
 
 			// Stop releases the signal handler, which cancels this context
-			// as a delivered signal does. Only one of the two is news.
+			// as a delivered signal does. A Stop already under way needs no
+			// second one.
 			if p.stopping.Load() {
 				return
 			}
@@ -276,25 +279,6 @@ func (p *Platform) setupListener() error {
 	return nil
 }
 
-// releaseUnserved closes what setup allocated when Start fails before the
-// serve goroutine runs.
-//
-// setup binds the socket and builds the server, but Serve is called after the
-// pidfile is written, so a pidfile that cannot be written leaves a listener
-// http.Server.Shutdown knows nothing about and a p.served nothing will close.
-// Stop then found a non-nil server, returned from Shutdown at once, and waited
-// out the whole timeout on a channel with no writer, with the port still bound
-// for the life of the process.
-//
-// Closing the listener is safe for a manager generation: generationListener
-// retires itself without touching the shared socket.
-func (p *Platform) releaseUnserved() {
-	if p.listener != nil {
-		_ = p.listener.Close()
-	}
-	close(p.served)
-}
-
 // Context returns the cancellation context for the service.
 // When the context finishes, the server has shut down.
 func (p *Platform) Context() context.Context {
@@ -336,14 +320,10 @@ func (p *Platform) Stop() {
 			}
 			p.stop()
 
-			// The modules tear down on a context of their own, and the
-			// cancel that releases Wait comes after they are done.
-			// Cancelling first handed every Module.Stop a context that was
-			// already done, which is the opposite of what this function
-			// documents, and let Wait return while a Stop was still
-			// flushing. The budget is what a module reads to bound its own
-			// teardown; the wait below it is not bounded, because a module
-			// that needs longer is not one to cut off.
+			// The modules tear down on a live context of their own, and
+			// the cancel that releases Wait comes after they are done.
+			// The five seconds are a budget a module can read, not an
+			// enforced one: Close waits for every Stop to return.
 			teardown, done := context.WithTimeout(context.WithoutCancel(p.context), 5*time.Second)
 			p.registry.Close(teardown)
 			done()

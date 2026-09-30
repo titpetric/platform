@@ -30,14 +30,11 @@ func cleanDSN(driver, dsn string) string {
 // splitDSN separates a DSN into the part before its query and the query
 // itself, neither carrying the "?".
 //
-// The query begins at the first "?" at or after the last "/". Every DSN form
-// the platform accepts puts the query last and cannot have a "/" in it: the
+// The query begins at the first "?" at or after the last "/". Both DSN forms
+// the platform accepts put the query last and cannot have a "/" in it: the
 // mysql grammar is [user[:pass]@][net[(addr)]]/dbname[?params], and a sqlite
-// DSN is a path or a file: URI. So a "?" earlier than that belongs to a
-// password or to a directory name, and is not a query at all. Scanning the
-// whole string for "?" instead turns user:pa?ss@tcp(h)/db into a connection to
-// a database named db&collation=... , because the options are then appended
-// with "&" to something that has no query to extend.
+// DSN is a path or a file: URI. A "?" before that belongs to a password or to
+// a directory name, not to a query.
 func splitDSN(dsn string) (head, query string) {
 	from := strings.LastIndex(dsn, "/") + 1
 
@@ -64,14 +61,10 @@ func addOption(query, key, value string) string {
 	if hasOption(query, key) {
 		return query
 	}
-	return joinOption(query, key+"="+value)
-}
-
-func joinOption(query, option string) string {
 	if query == "" {
-		return option
+		return key + "=" + value
 	}
-	return query + "&" + option
+	return query + "&" + key + "=" + value
 }
 
 // hasOption reports whether the query already sets key. A query the standard
