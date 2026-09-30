@@ -29,10 +29,8 @@ func TestDatabaseEnv(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
-// TestDatabaseEnvMalformed covers the unguarded split setupConnections used to
-// do. An entry with no "=" panicked with an index out of range. os.Environ
-// never produces one, but SetupConnections is exported and an environment
-// assembled for an exec'd process can.
+// TestDatabaseEnvMalformed covers an environment entry with no "=" or an empty
+// name, which SetupConnections accepts from a caller and skips.
 func TestDatabaseEnvMalformed(t *testing.T) {
 	env := []string{
 		"PLATFORM_DB_MAIN",

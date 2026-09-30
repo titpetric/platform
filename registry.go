@@ -19,8 +19,6 @@ import (
 // are all foreign: they can register, add middleware or Find another module,
 // and each of those wants this same mutex. Start, Close and Clone therefore
 // snapshot what they need under the lock, release it, and only then call out.
-// Holding a read lock across a module's Start is what deadlocked the process
-// when that module called Find or Register.
 
 // Registry provides a programmatic API to manage middleware and modules.
 // A module registers middleware and has a contract to enforce lifecycle.
@@ -96,8 +94,9 @@ func (r *Registry) materialize() {
 	}
 }
 
-// Cleanup is sort of a testing.T.Cleanup but for the registry.
-// The cleanups are initialized in Start, and ran in Close.
+// Cleanup registers a function to run when the registry closes, as
+// testing.T.Cleanup does for a test. The cleanups are registered in Start,
+// and run in Close.
 func (r *Registry) Cleanup(fn func(context.Context)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

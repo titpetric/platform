@@ -15,9 +15,8 @@ import (
 	"github.com/titpetric/platform/internal/assert"
 )
 
-// TestManagerReloadAfterStop covers Reload building a generation nothing could
-// retire. Stop's once is spent by then, so the modules stayed started, the
-// watch goroutine never returned, and Platform() was non-nil after Stop.
+// TestManagerReloadAfterStop covers a Reload against a stopped manager, which
+// is refused, leaves no generation, and stops every module it started.
 func TestManagerReloadAfterStop(t *testing.T) {
 	mod := &countingModule{}
 
@@ -41,9 +40,8 @@ func TestManagerReloadAfterStop(t *testing.T) {
 	assert.Equal(t, mod.starts.Load(), mod.stops.Load(), "every module that started was stopped")
 }
 
-// TestManagerStopContextLive covers the teardown order. cancel used to run
-// before the registry closed, so every Module.Stop was handed a context that
-// was already done and Wait returned while a Stop was still running.
+// TestManagerStopContextLive covers the teardown order: Module.Stop gets a live
+// context, and Wait releases only once every Stop has returned.
 func TestManagerStopContextLive(t *testing.T) {
 	var (
 		seen    atomic.Pointer[error]
@@ -82,11 +80,9 @@ func TestManagerStopContextLive(t *testing.T) {
 	assert.NoError(t, *err, "Module.Stop must get a live context")
 }
 
-// TestManagerPidFileFailureReleasesSocket covers the socket a failed pidfile
-// write used to leak. setup binds the listener before the pidfile is written,
-// and Serve runs after, so the listener was one http.Server.Shutdown knew
-// nothing about and p.served had no writer: Stop waited out its whole timeout
-// and the port stayed bound for the life of the process.
+// TestManagerPidFileFailureReleasesSocket covers a Start that fails on the
+// pidfile, after the listener bound and before Serve runs. Stop has to return
+// without waiting out its timeout, and the port has to be free.
 func TestManagerPidFileFailureReleasesSocket(t *testing.T) {
 	options := platform.NewTestOptions()
 	options.PidFile = "/proc/definitely/not/writable/run.pid"
@@ -95,7 +91,6 @@ func TestManagerPidFileFailureReleasesSocket(t *testing.T) {
 
 	assert.Error(t, p.Start(t.Context()), "an unwritable pidfile fails the start")
 
-	// The old code took the full five second timeout here.
 	start := time.Now()
 	p.Stop()
 	assert.True(t, time.Since(start) < 2*time.Second, "Stop waited on a channel with no writer")
@@ -142,10 +137,9 @@ func TestManagerReloadSignalChild(t *testing.T) {
 	os.Stdout.WriteString(reloadStopped + "\n")
 }
 
-// TestManagerSigtermDuringReload covers the window a reload used to leave with
-// no SIGTERM handler. The generation armed the process signals, and retire
-// released them, so a SIGTERM between one generation stopping and the next
-// arming its own took the default disposition and killed the process.
+// TestManagerSigtermDuringReload covers a SIGTERM landing while a reload is in
+// flight, which the manager has to catch and drain rather than take the default
+// disposition on.
 //
 // It signals a child rather than raising in process: signal.Notify is
 // process-wide, and an unarmed moment kills the test binary.

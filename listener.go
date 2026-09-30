@@ -43,17 +43,9 @@ func (s *sharedListener) next() *generationListener {
 	}
 }
 
-// handoff parks a connection for the next generation, and closes it when
-// the slot is taken.
-//
-// One slot is enough because a retiring generation hands over at most the
-// connection it had accepted and not yet served. The connection closed when
-// the slot is full is the newer one, which matters only if something left a
-// stale connection parked: a reload that fails after retiring does that. The
-// SIGHUP handler stops the manager in exactly that case, and Close drains the
-// slot, so the stale connection does not outlive the failure and there is no
-// second handoff to lose. A caller driving Reload directly and ignoring its
-// error is the one way back into it.
+// handoff parks a connection for the next generation, and closes it when the
+// slot is taken. One slot is enough: a retiring generation hands over at most
+// the one connection it accepted and did not serve.
 func (s *sharedListener) handoff(conn net.Conn) {
 	select {
 	case s.pending <- conn:
@@ -128,9 +120,8 @@ func (l *generationListener) Addr() net.Addr {
 	return l.shared.Addr()
 }
 
-// listenerURL gives the e2e endpoint URL for a listener. A platform or a
-// manager that has not started, or whose start failed, has no socket and no
-// URL, which is the case of logging the failure with the URL in hand.
+// listenerURL gives the e2e endpoint URL for a listener, and an empty string
+// for a listener with no address, which is one that never bound.
 func listenerURL(l net.Listener) string {
 	if l == nil {
 		return ""

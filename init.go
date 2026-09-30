@@ -23,9 +23,8 @@ func setupConnections(environment []string, register func(string, string)) {
 		if clean, ok := strings.CutPrefix(e, "PLATFORM_DB_"); ok {
 			name, dsn, ok := strings.Cut(clean, "=")
 			if !ok || name == "" {
-				// An entry with no "=" is not a variable. os.Environ never
-				// produces one, but SetupConnections is exported and an
-				// environment assembled for an exec'd process can.
+				// Not a variable. os.Environ never produces one, but
+				// SetupConnections takes an environment from a caller.
 				continue
 			}
 

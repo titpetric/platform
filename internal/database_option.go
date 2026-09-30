@@ -30,10 +30,9 @@ var databaseOptions = map[string]DatabaseOption{
 	},
 }
 
-// defaultDatabaseOption is what a driver with no entry of its own gets. The
-// zero value is not usable: Apply would call SetMaxIdleConns(0), which retains
-// no idle connection at all, so every query on an unnamed driver would dial a
-// new one. That is worse than the database/sql default, and pgx has no entry.
+// defaultDatabaseOption is what a driver with no entry of its own gets, pgx
+// included. The zero value is not usable: Apply calls the setters
+// unconditionally, and SetMaxIdleConns(0) retains no idle connection.
 var defaultDatabaseOption = DatabaseOption{
 	MaxOpenConns: 10,
 	MaxIdleConns: 2,

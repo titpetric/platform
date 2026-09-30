@@ -71,13 +71,13 @@ m.Wait()
 
 `cmd.Main` runs a manager, so an app built on it reloads with `kill -HUP`. Used directly, `platform.Start` is unchanged, and `SIGHUP` keeps its default disposition, which terminates the process.
 
-The manager owns the process signals: `SIGHUP` to reload, `SIGINT` and `SIGTERM` to stop, and a cancelled start context to stop. The generations it runs arm none of them. A generation that armed them released them when it was retired, which left a window as long as the next generation's module startup where a `SIGTERM` took its default disposition and killed the process with no drain and no module `Stop`.
+The manager owns the process signals for its whole life: `SIGHUP` to reload, `SIGINT` and `SIGTERM` to stop, and a cancelled start context to stop. The generations it runs arm none of them, so a reload never leaves a moment where a `SIGTERM` takes its default disposition and kills the process with no drain and no module `Stop`.
 
 The manager holds the listening socket, so a reload keeps the address it was reached on, along with the connections queued on it. Everything above the socket is new: the router, the registry, the server, the telemetry recorder, and the value `Platform()` returns.
 
 Generations do not overlap: the old one is drained and stopped before the new one starts. Requests that arrive during the swap wait in the accept queue of the socket rather than being refused, and requests already in flight are served by the generation that took them.
 
-A reload is not free. A connection the outgoing generation had already accepted, whose request bytes arrive after `Shutdown` has begun, is closed without a response: `net/http` returns from the connection as soon as the server is shutting down, having read the request. Measured over 140 reloads under load with keep-alive off, that is 402 client-side `EOF` against 48393 served, and zero when no reload runs. A client that retries idempotent requests does not notice; one that does not should not be reloaded under load. Closing the gap needs overlapping generations, which is the guarantee above.
+A reload costs a small number of dropped requests. A connection the outgoing generation had already accepted, whose request bytes arrive after `Shutdown` has begun, is closed without a response: `net/http` returns from the connection as soon as the server is shutting down, having read the request. Measured over 140 reloads under load with keep-alive off, that is 402 client-side `EOF` against 48393 served, and zero when no reload runs. A client that retries idempotent requests does not notice. Closing the gap needs generations that overlap, which contradicts the ordering guarantee above.
 
 Modules registered with `platform.RegisterFunc` are constructed per generation, so a reload starts fresh values. A module registered with the deprecated `platform.Register` is one value shared by every generation, and has to tolerate `Start` after `Stop`.
 

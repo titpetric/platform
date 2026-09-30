@@ -55,11 +55,8 @@ func (structHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// TestPrintRoutesStructHandler covers the panic PrintRoutes used to raise.
-// reflect.Value.Pointer is only legal for a chan, func, map, pointer, slice or
-// unsafe pointer, so a struct value handler crashed the route dump with
-// "reflect: call of reflect.Value.Pointer on struct Value" from inside
-// Platform.Start, after the socket was bound and the modules were running.
+// TestPrintRoutesStructHandler covers a route dump over the three handler
+// shapes chi accepts: a struct value, a func and a pointer.
 func TestPrintRoutesStructHandler(t *testing.T) {
 	r := chi.NewRouter()
 	r.Method(http.MethodGet, "/struct", structHandler{})

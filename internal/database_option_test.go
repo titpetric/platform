@@ -28,11 +28,9 @@ func TestSQLiteDatabaseOption(t *testing.T) {
 	}
 }
 
-// TestDatabaseOptionUnknownDriver covers the bare map read databaseOption used
-// to end in. A driver with no entry got the zero DatabaseOption, and Apply
-// calls the setters unconditionally, so SetMaxIdleConns(0) retained no idle
-// connection: every query on a pgx connection dialled a new one, with no cap on
-// how many. That is worse than the database/sql default of 2.
+// TestDatabaseOptionUnknownDriver covers the pool a driver with no entry of its
+// own gets. Apply calls the setters unconditionally, so the zero value would
+// cap the pool at unlimited open and 0 idle connections.
 func TestDatabaseOptionUnknownDriver(t *testing.T) {
 	for _, driver := range []string{"pgx", "postgres", "sqlite3", "clickhouse", ""} {
 		t.Run(driver, func(t *testing.T) {

@@ -13,10 +13,8 @@ import (
 )
 
 // reentrantModule reaches back into the registry from its own lifecycle
-// methods, which is what docs/modules.md tells a module author to do. Holding
-// a lock across these calls deadlocked the process with no timeout and no
-// error, so each one is a regression test for the locking convention in
-// registry.go rather than a test of the module API.
+// methods, which is what docs/modules.md tells a module author to do. Each test
+// over it covers the locking convention in registry.go, not the module API.
 type reentrantModule struct {
 	*platform.UnimplementedModule
 
@@ -120,8 +118,8 @@ func TestRegistryReentrantUseFromMount(t *testing.T) {
 	})
 }
 
-// TestRegistryStatsUnderStop covers the unsynchronised read Stats used to do:
-// Close truncates the slices Stats was measuring. Run with -race.
+// TestRegistryStatsUnderStop covers Stats reading the slices Close truncates.
+// Run with -race.
 func TestRegistryStatsUnderStop(t *testing.T) {
 	p := platform.New(platform.NewTestOptions())
 	p.Register(&sideModule{UnimplementedModule: platform.NewUnimplementedModule("side")})

@@ -48,12 +48,10 @@ func PrintRoutes(log Logger, r chi.Routes) {
 	})
 }
 
-// handlerName names a handler for the route log. reflect.Value.Pointer panics
-// on any kind that is not a chan, func, map, pointer, slice or unsafe pointer,
-// and a handler is allowed to be a struct value with a ServeHTTP method, so
-// the kind decides whether there is a symbol to resolve. Without this the
-// route dump panicked inside Start, after the socket was bound and the modules
-// were running.
+// handlerName names a handler for the route log, resolving the symbol where
+// the handler has one and falling back to its type. reflect.Value.Pointer is
+// legal only for a chan, func, map, pointer, slice or unsafe pointer, and a
+// handler may be a struct value with a ServeHTTP method, so the kind decides.
 func handlerName(handler http.Handler) string {
 	value := reflect.ValueOf(handler)
 

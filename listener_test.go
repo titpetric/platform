@@ -118,15 +118,13 @@ func TestSharedListener_handoff(t *testing.T) {
 	})
 }
 
-// TestListenerURLNoSocket covers the nil dereference listenerURL used to do. A
-// platform or manager that has not started, or whose start failed, has no
-// socket, and logging the failure with the URL in hand panicked.
+// TestListenerURLNoSocket covers the URL of a platform and a manager that have
+// no socket, which is every one before a successful Start.
 func TestListenerURLNoSocket(t *testing.T) {
 	assert.Equal(t, "", listenerURL(nil))
 
-	// Platform holds a nil net.Listener interface before Start. Manager holds
-	// a nil *sharedListener inside a non-nil one, which is why Manager.URL has
-	// a check of its own.
+	// Platform holds a nil net.Listener interface before Start; Manager holds
+	// a nil *sharedListener, which is why Manager.URL checks separately.
 	assert.Equal(t, "", New(NewTestOptions()).URL())
 	assert.Equal(t, "", NewManager(NewTestOptions()).URL())
 }
