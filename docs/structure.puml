@@ -1,22 +1,5 @@
 @startuml
 
-class "internal.DatabaseOption" {
-  + MaxOpenConns: int
-  + MaxIdleConns: int
-  + Apply (client *sqlx.DB)
-}
-
-interface "internal.DatabaseProvider" {
-  - open: func(string, string) (*sqlx.DB, error)
-  - mu: sync.Mutex
-  - cache: map[string]*sqlx.DB
-  - credentials: map[string]string
-}
-
-class "pkg.httpcontext.Value[T any]" {
-  + Key: any
-}
-
 interface "platform.DatabaseProvider" {
   + Open: Open (ctx context.Context, names ...string) (*sqlx.DB, error)
   + Connect: Connect (ctx context.Context, names ...string) (*sqlx.DB, error)
@@ -31,6 +14,26 @@ class "platform.ErrorResponseBody" {
   + Message: string
 }
 
+interface "platform.Logger" {
+  + Info: Info (msg string, args ...any)
+  + Error: Error (msg string, args ...any)
+}
+
+interface "platform.Manager" {
+  + Logger: Logger
+  + Setup: func(*Platform) error
+  + Check: func() error
+  - options: *Options
+  - mu: sync.Mutex
+  - shared: *sharedListener
+  - current: atomic.Pointer[generation]
+  - pid: pidfile.Pidfile
+  - context: context.Context
+  - cancel: context.CancelFunc
+  - stop: func()
+  - once: sync.Once
+}
+
 interface "platform.Module" {
   + Name: Name () string
   + Start: Start (context.Context) error
@@ -40,29 +43,33 @@ interface "platform.Module" {
 
 class "platform.Options" {
   + ServerAddr: string
+  + PidFile: string
   + Quiet: bool
   + Modules: []string
   + ConfigFS: fs.FS
   + Telemetry: oida.Options
-  + DisableTelemetry: bool
 }
 
 interface "platform.Platform" {
+  + Logger: Logger
   - options: *Options
   - router: *chi.Mux
   - server: *http.Server
   - listener: net.Listener
+  - served: chan struct{}
   - context: context.Context
   - cancel: context.CancelFunc
   - stop: func()
   - once: sync.Once
+  - stopping: atomic.Bool
+  - pid: pidfile.Pidfile
   - registry: *Registry
   - telemetry: *TelemetryModule
 }
 
 class "platform.Registry" {
   - mu: sync.RWMutex
-  - modules: []Module
+  - registrations: []registration
   - middleware: []Middleware
   - cleanups: []func(context.Context)
   + Cleanup (fn func(context.Context))
@@ -70,6 +77,7 @@ class "platform.Registry" {
   + Close (ctx context.Context)
   + Find (target any) bool
   + Register (m Module)
+  + RegisterFunc (f func() Module)
   + Start (ctx context.Context, mux Router, opts *Options) error
   + Stats () int
   + Use (f Middleware)
@@ -78,9 +86,8 @@ class "platform.Registry" {
 class "platform.TelemetryModule" {
   - options: oida.Options
   - tracer: *oida.Tracer
-  - middleware: func(http.Handler) http.Handler
   + Middleware (next http.Handler) http.Handler
-  + Mount (ctx context.Context, r Router) error
+  + Mount (_ context.Context, r Router) error
   + Options () oida.Options
   + Tracer () *oida.Tracer
 }
@@ -92,10 +99,84 @@ interface "platform.UnimplementedModule" {
   + MountFn: func(context.Context, Router) error
 }
 
+interface "platform.deadliner" {
+  + SetDeadline: SetDeadline (t time.Time) error
+}
 
+class "platform.generation" {
+  - platform: *Platform
+  - retired: atomic.Bool
+}
 
-"pkg.httpcontext.Value[T any]" --> "pkg.httpcontext.any" : .Key
+class "platform.generationListener" {
+  - shared: *sharedListener
+  - once: sync.Once
+  - closed: chan struct{}
+  + Accept () (net.Conn, error)
+  + Addr () net.Addr
+  + Close () error
+}
 
+interface "platform.registration" {
+  - module: Module
+  - factory: func() Module
+}
+
+class "platform.sharedListener" {
+  - pending: chan net.Conn
+  + Close () error
+}
+
+class "internal.DatabaseOption" {
+  + MaxOpenConns: int
+  + MaxIdleConns: int
+  + Apply (client *sqlx.DB)
+}
+
+interface "internal.DatabaseProvider" {
+  - open: func(string, string) (*sqlx.DB, error)
+  - mu: sync.Mutex
+  - cache: map[string]*sqlx.DB
+  - credentials: map[string]string
+}
+
+interface "internal.Logger" {
+  + Info: Info (msg string, args ...any)
+}
+
+class "internal.assert.TestSuite" {
+  - t: *testing.T
+  + SetT (t *testing.T)
+  + T () *testing.T
+}
+
+interface "internal.assert.hasSetupTest" {
+  + SetupTest: SetupTest ()
+}
+
+interface "internal.assert.hasT" {
+  + T: T () *testing.T
+  + SetT: SetT (t *testing.T)
+}
+
+interface "internal.assert.hasTearDown" {
+  + TearDownTest: TearDownTest ()
+}
+
+class "internal.httpcontext.Value[T any]" {
+  + Key: any
+  + Get (r *http.Request) T
+  + GetContext (ctx context.Context) T
+  + Set (r *http.Request, val T)
+  + SetContext (ctx context.Context, val T) context.Context
+}
+
+class "internal.pidfile.Pidfile" {
+  - path: string
+  - pid: int
+  + Remove () error
+  + Write () error
+}
 
 
 "platform.ErrorResponse" --> "platform.ErrorResponseBody" : .Error
@@ -104,11 +185,29 @@ interface "platform.UnimplementedModule" {
 
 
 
-"platform.Platform" --> "platform.TelemetryModule" : .telemetry
-"platform.TelemetryModule" --> "platform.UnimplementedModule" : embeds
 
-"platform.Registry" --> "platform.Module" : .modules
+
+"platform.Registry" --> "platform.registration" : .registrations
 "platform.Registry" --> "platform.Middleware" : .middleware
+
+"platform.TelemetryModule" --|> "platform.UnimplementedModule" : embeds
+
+
+
+"platform.generation" --> "platform.Platform" : .platform
+
+"platform.generationListener" --> "platform.sharedListener" : .shared
+
+
+
+
+
+
+
+
+
+
+"internal.httpcontext.Value[T any]" --> "internal.httpcontext.any" : .Key
 
 
 
