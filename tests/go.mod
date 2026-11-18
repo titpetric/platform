@@ -8,7 +8,6 @@ require (
 	github.com/go-chi/chi/v5 v5.5.0
 	github.com/go-sql-driver/mysql v1.10.1
 	github.com/jackc/pgx/v5 v5.11.0
-	github.com/jmoiron/sqlx v1.4.0
 	github.com/titpetric/oida v0.5.0
 	github.com/titpetric/platform v0.0.0-00010101000000-000000000000
 	modernc.org/sqlite v1.59.0

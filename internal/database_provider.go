@@ -2,27 +2,26 @@ package internal
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 	"sync"
-
-	"github.com/jmoiron/sqlx"
 )
 
 // DatabaseProvider holds a list of named sql connection credentials.
 type DatabaseProvider struct {
-	open func(string, string) (*sqlx.DB, error)
+	open func(string, string) (*sql.DB, error)
 
 	mu          sync.Mutex
-	cache       map[string]*sqlx.DB
+	cache       map[string]*sql.DB
 	credentials map[string]string
 }
 
 // NewDatabaseProvider will allocate a valid `*DatabaseProvider` and return it.
-func NewDatabaseProvider(open func(string, string) (*sqlx.DB, error)) *DatabaseProvider {
+func NewDatabaseProvider(open func(string, string) (*sql.DB, error)) *DatabaseProvider {
 	return &DatabaseProvider{
 		open:        open,
-		cache:       make(map[string]*sqlx.DB),
+		cache:       make(map[string]*sql.DB),
 		credentials: make(map[string]string, 1),
 	}
 }
@@ -49,7 +48,7 @@ func (r *DatabaseProvider) Register(name string, config string) {
 // A failed ping is reported and the handle stays cached. *sql.DB is a pool and
 // reconnects on its own, so a name that was unreachable once serves the same
 // handle when the database comes back.
-func (r *DatabaseProvider) Connect(ctx context.Context, names ...string) (*sqlx.DB, error) {
+func (r *DatabaseProvider) Connect(ctx context.Context, names ...string) (*sql.DB, error) {
 	db, err := r.Open(ctx, names...)
 	if err != nil {
 		return nil, err
@@ -61,18 +60,18 @@ func (r *DatabaseProvider) Connect(ctx context.Context, names ...string) (*sqlx.
 }
 
 // Open is the same as sql.Open. It creates a client from a named connection.
-func (r *DatabaseProvider) Open(_ context.Context, names ...string) (*sqlx.DB, error) {
+func (r *DatabaseProvider) Open(_ context.Context, names ...string) (*sql.DB, error) {
 	db, err := r.cached(r.open, names...)
 	return db, err
 }
 
-// cached returns a singleton *sqlx.DB for the first name that has a
+// cached returns a singleton *sql.DB for the first name that has a
 // credential. names is a fallback list, and a name with no credential is
 // skipped rather than served from the cache.
 //
 // The lock is held across the build, so concurrent first callers get one
 // handle instead of one each. The connector is sql.Open, which does not dial.
-func (r *DatabaseProvider) cached(connector func(string, string) (*sqlx.DB, error), names ...string) (*sqlx.DB, error) {
+func (r *DatabaseProvider) cached(connector func(string, string) (*sql.DB, error), names ...string) (*sql.DB, error) {
 	if len(names) == 0 {
 		names = []string{"default"}
 	}
@@ -101,9 +100,9 @@ func (r *DatabaseProvider) cached(connector func(string, string) (*sqlx.DB, erro
 	return nil, fmt.Errorf("no configuration found for database: %v", names)
 }
 
-// with will create a *db.DB given the connector (sqlx.Connect/Open).
+// with will create a *db.DB given the connector (sql.Open).
 // The caller holds the lock.
-func (r *DatabaseProvider) with(connector func(string, string) (*sqlx.DB, error), names ...string) (*sqlx.DB, error) {
+func (r *DatabaseProvider) with(connector func(string, string) (*sql.DB, error), names ...string) (*sql.DB, error) {
 	if len(names) == 0 {
 		names = []string{"default"}
 	}

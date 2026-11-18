@@ -4,18 +4,19 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jmoiron/sqlx"
+	"database/sql"
+
 	"github.com/titpetric/oida"
 )
 
 // Transaction wraps a function in a transaction.
 // If the function returns an error, the transaction is rolled back.
 // If the function returns nil, the transaction is committed.
-func Transaction(ctx context.Context, db *sqlx.DB, fn func(context.Context, *sqlx.Tx) error) error {
+func Transaction(ctx context.Context, db *sql.DB, fn func(context.Context, *sql.Tx) error) error {
 	ctx, span := oida.Start(ctx, "db.Transaction")
 	defer span.End()
 
-	tx, err := db.BeginTxx(ctx, nil)
+	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}

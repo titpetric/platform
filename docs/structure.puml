@@ -1,8 +1,8 @@
 @startuml
 
 interface "platform.DatabaseProvider" {
-  + Open: Open (ctx context.Context, names ...string) (*sqlx.DB, error)
-  + Connect: Connect (ctx context.Context, names ...string) (*sqlx.DB, error)
+  + Open: Open (ctx context.Context, names ...string) (*sql.DB, error)
+  + Connect: Connect (ctx context.Context, names ...string) (*sql.DB, error)
 }
 
 class "platform.ErrorResponse" {
@@ -131,13 +131,13 @@ class "platform.sharedListener" {
 class "internal.DatabaseOption" {
   + MaxOpenConns: int
   + MaxIdleConns: int
-  + Apply (client *sqlx.DB)
+  + Apply (client *sql.DB)
 }
 
 interface "internal.DatabaseProvider" {
-  - open: func(string, string) (*sqlx.DB, error)
+  - open: func(string, string) (*sql.DB, error)
   - mu: sync.Mutex
-  - cache: map[string]*sqlx.DB
+  - cache: map[string]*sql.DB
   - credentials: map[string]string
 }
 
