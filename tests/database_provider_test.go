@@ -5,14 +5,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
+	"database/sql"
 
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/internal/assert"
 )
 
 func TestDatabaseProvider_Connect(t *testing.T) {
-	provider := internal.NewDatabaseProvider(sqlx.Open)
+	provider := internal.NewDatabaseProvider(sql.Open)
 	provider.Register("test", "sqlite://:memory:")
 
 	db, err := provider.Connect(t.Context(), "test")
@@ -29,7 +29,7 @@ func TestDatabaseProvider_Connect(t *testing.T) {
 }
 
 func TestDatabaseProvider_Open(t *testing.T) {
-	provider := internal.NewDatabaseProvider(func(string, string) (*sqlx.DB, error) {
+	provider := internal.NewDatabaseProvider(func(string, string) (*sql.DB, error) {
 		return nil, errors.New("test")
 	})
 	provider.Register("test", "sqlite://:memory:")
@@ -40,7 +40,7 @@ func TestDatabaseProvider_Open(t *testing.T) {
 }
 
 func TestDatabaseProviderFileSQLiteDefaults(t *testing.T) {
-	provider := internal.NewDatabaseProvider(sqlx.Open)
+	provider := internal.NewDatabaseProvider(sql.Open)
 	provider.Register("test", "sqlite://"+filepath.Join(t.TempDir(), "test.db"))
 
 	db, err := provider.Connect(t.Context(), "test")
@@ -48,20 +48,20 @@ func TestDatabaseProviderFileSQLiteDefaults(t *testing.T) {
 	t.Cleanup(func() { assert.NoError(t, db.Close()) })
 	assert.Equal(t, 10, db.Stats().MaxOpenConnections)
 
-	first, err := db.Connx(t.Context())
+	first, err := db.Conn(t.Context())
 	assert.NoError(t, err)
 	t.Cleanup(func() { assert.NoError(t, first.Close()) })
-	second, err := db.Connx(t.Context())
+	second, err := db.Conn(t.Context())
 	assert.NoError(t, err)
 	t.Cleanup(func() { assert.NoError(t, second.Close()) })
 
-	for _, connection := range []*sqlx.Conn{first, second} {
+	for _, connection := range []*sql.Conn{first, second} {
 		var journalMode string
-		assert.NoError(t, connection.GetContext(t.Context(), &journalMode, "PRAGMA journal_mode"))
+		assert.NoError(t, connection.QueryRowContext(t.Context(), "PRAGMA journal_mode").Scan(&journalMode))
 		assert.Equal(t, "wal", journalMode)
 
 		var busyTimeout int
-		assert.NoError(t, connection.GetContext(t.Context(), &busyTimeout, "PRAGMA busy_timeout"))
+		assert.NoError(t, connection.QueryRowContext(t.Context(), "PRAGMA busy_timeout").Scan(&busyTimeout))
 		assert.Equal(t, 5000, busyTimeout)
 	}
 }

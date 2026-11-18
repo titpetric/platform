@@ -45,7 +45,7 @@ type DatabaseProvider interface {
 	// For example, Open may retrieve connection details from the database. The context
 	// is used for tracing that operation, and the error returned may be the
 	// result of a query issued against the database.
-	Open(ctx context.Context, names ...string) (*sqlx.DB, error)
+	Open(ctx context.Context, names ...string) (*sql.DB, error)
 
 	// Connect has the semantics of Open + PingContext against the database,
 	// verifying that the connection is live. An error is returned if
@@ -58,7 +58,7 @@ type DatabaseProvider interface {
 	// keys based on the input parameters. An example of that would be to
 	// define `name` and `name/failover` connections. If the connection to
 	// the first fails, the second upstream is used.
-	Connect(ctx context.Context, names ...string) (*sqlx.DB, error)
+	Connect(ctx context.Context, names ...string) (*sql.DB, error)
 }
 ```
 
@@ -389,7 +389,7 @@ var Database DatabaseProvider = global.db
 - `func SetupConnections (environment []string)`
 - `func Start (ctx context.Context, options *Options) (*Platform, error)`
 - `func TestMiddleware () Middleware`
-- `func Transaction (ctx context.Context, db *sqlx.DB, fn func(context.Context, *sqlx.Tx) error) error`
+- `func Transaction (ctx context.Context, db *sql.DB, fn func(context.Context, *sql.Tx) error) error`
 - `func URLParam (r *http.Request, name string) string`
 - `func Use (mw Middleware)`
 - `func (*Manager) Context () context.Context`
@@ -587,7 +587,7 @@ func TestMiddleware() Middleware
 Transaction wraps a function in a transaction. If the function returns an error, the transaction is rolled back. If the function returns nil, the transaction is committed.
 
 ```go
-func Transaction(ctx context.Context, db *sqlx.DB, fn func(context.Context, *sqlx.Tx) error) error
+func Transaction(ctx context.Context, db *sql.DB, fn func(context.Context, *sql.Tx) error) error
 ```
 
 ### URLParam

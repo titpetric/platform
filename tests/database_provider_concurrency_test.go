@@ -7,7 +7,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
+	"database/sql"
 
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/internal/assert"
@@ -19,9 +19,9 @@ import (
 func TestDatabaseProviderSingleton(t *testing.T) {
 	var opens atomic.Int64
 
-	provider := internal.NewDatabaseProvider(func(driver, dsn string) (*sqlx.DB, error) {
+	provider := internal.NewDatabaseProvider(func(driver, dsn string) (*sql.DB, error) {
 		opens.Add(1)
-		return sqlx.Open(driver, dsn)
+		return sql.Open(driver, dsn)
 	})
 	provider.Register("test", "sqlite://:memory:")
 
@@ -30,7 +30,7 @@ func TestDatabaseProviderSingleton(t *testing.T) {
 	var (
 		wg      sync.WaitGroup
 		mu      sync.Mutex
-		handles = map[*sqlx.DB]struct{}{}
+		handles = map[*sql.DB]struct{}{}
 	)
 
 	wg.Add(callers)
@@ -57,7 +57,7 @@ func TestDatabaseProviderSingleton(t *testing.T) {
 // TestDatabaseProviderCachesUnderResolvedName covers the cache key of a
 // fallback list: the name whose credential resolved, not the first requested.
 func TestDatabaseProviderCachesUnderResolvedName(t *testing.T) {
-	provider := internal.NewDatabaseProvider(sqlx.Open)
+	provider := internal.NewDatabaseProvider(sql.Open)
 	provider.Register("default", "sqlite://"+filepath.Join(t.TempDir(), "test.db"))
 
 	// "replica" has no credential, so "default" resolves.
@@ -79,7 +79,7 @@ func TestDatabaseProviderCachesUnderResolvedName(t *testing.T) {
 func TestDatabaseProviderUnpingableRecovers(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "missing")
 
-	provider := internal.NewDatabaseProvider(sqlx.Open)
+	provider := internal.NewDatabaseProvider(sql.Open)
 	provider.Register("broken", "sqlite://"+filepath.Join(missing, "app.db"))
 
 	first, err := provider.Open(t.Context(), "broken")

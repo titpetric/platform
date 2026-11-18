@@ -2,9 +2,9 @@ package platform
 
 import (
 	"context"
+	"database/sql"
 
 	chi "github.com/go-chi/chi/v5"
-	"github.com/jmoiron/sqlx"
 
 	"github.com/titpetric/platform/internal"
 )
@@ -38,7 +38,7 @@ type DatabaseProvider interface {
 	// For example, Open may retrieve connection details from the database. The context
 	// is used for tracing that operation, and the error returned may be the
 	// result of a query issued against the database.
-	Open(ctx context.Context, names ...string) (*sqlx.DB, error)
+	Open(ctx context.Context, names ...string) (*sql.DB, error)
 
 	// Connect has the semantics of Open + PingContext against the database,
 	// verifying that the connection is live. An error is returned if
@@ -51,7 +51,7 @@ type DatabaseProvider interface {
 	// keys based on the input parameters. An example of that would be to
 	// define `name` and `name/failover` connections. If the connection to
 	// the first fails, the second upstream is used.
-	Connect(ctx context.Context, names ...string) (*sqlx.DB, error)
+	Connect(ctx context.Context, names ...string) (*sql.DB, error)
 }
 
 // Database is a holder of the database provider api in package namespace.

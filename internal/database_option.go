@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/jmoiron/sqlx"
+	"database/sql"
 )
 
 // DatabaseOption configures database connection pooling settings.
@@ -11,7 +11,7 @@ type DatabaseOption struct {
 }
 
 // Apply applies the database option settings to a database connection.
-func (o *DatabaseOption) Apply(client *sqlx.DB) {
+func (o *DatabaseOption) Apply(client *sql.DB) {
 	if o == nil {
 		return
 	}

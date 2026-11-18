@@ -4,7 +4,7 @@
 
 The repository holds two Go modules.
 
-`github.com/titpetric/platform` is the module consumers import. It depends on chi, sqlx and oida, and on no sql driver. Its tests are the ones that read unexported symbols, so they have to sit in the package they test and they add no dependency of their own.
+`github.com/titpetric/platform` is the module consumers import. It depends on chi and oida, and on no sql driver. Its tests are the ones that read unexported symbols, so they have to sit in the package they test and they add no dependency of their own.
 
 `github.com/titpetric/platform/tests` holds the tests that reach the platform through its exported API. It replaces the platform with the checkout above it, and it is where the mysql, pgx and sqlite drivers are pinned. `tests/main_test.go` registers all three with `database/sql` in package init, so every test in the suite can open any of the three DSN forms without importing a driver.
 
