@@ -3,7 +3,7 @@
 // It is a separate Go module so that the sql drivers it registers stay out
 // of the platform dependency tree. A driver is the choice of whoever builds
 // the binary: platform speaks to database/sql and never imports one. Pinning
-// a driver here would push that pin onto every consumer and duplicate the
+// a driver in this module would push that pin onto every consumer and duplicate the
 // dependency tree of anyone already on a newer version.
 package platform_test
 
@@ -18,7 +18,7 @@ import (
 )
 
 // TestMain runs the package tests. The driver registrations above happen in
-// package init, before it is called, so every test in this package can open
+// package init, before it is called, so all tests in this package can open
 // a mysql, pgx or sqlite DSN without importing a driver itself.
 func TestMain(m *testing.M) {
 	m.Run()

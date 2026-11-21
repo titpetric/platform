@@ -12,7 +12,7 @@ The platform is an extensible modular system for writing HTTP servers.
 2. Provides a lifecycle to the modules for graceful shutdown
 3. Provides a router the modules can attach to
 
-It's advised to use `platform.RegisterFunc` from `init` functions. Similarly, `platform.Use` should be used from `main` or any descendant setup functions. Don't use these functions from tests as they create a shared state.
+It's advised to use `platform.RegisterFunc` from `init` functions. Similarly, `platform.Use` belongs to `main` at the top level, or to any descendant setup function. Don't use these functions from tests as they create a shared state.
 
 It's possible to use the platform in an imperative way.
 
@@ -22,7 +22,7 @@ svc.Use(middleware.Logger)
 svc.Register(user.NewModule())
 ```
 
-The platform lifecycle is extensively tested to ensure no races, no goroutine leaks. Each platform object creates a copy of the global state and holds scoped allocations only, enabling test parallelism. Modules are part of that copy when registered with `RegisterFunc`, which is called once per platform. A value registered with the deprecated `Register` is shared by every platform in the process.
+The platform lifecycle is extensively tested to ensure no races, no goroutine leaks. Each platform object creates a copy of the global state and holds scoped allocations only, enabling test parallelism. Modules are part of that copy when registered with `RegisterFunc`, which is called once per platform. A value registered with the deprecated `Register` is shared by the platforms in the process.
 
 ## Types
 
@@ -30,16 +30,7 @@ The platform lifecycle is extensively tested to ensure no races, no goroutine le
 <summary><code>type DatabaseProvider</code></summary>
 
 ```go
-// DatabaseProvider is the implementation interface for working with named
-// connections. If no connection name is passed, the "default" connection will
-// be used. It makes no assumption about how the connection is provided, and
-// only enforces context awareness.
-//
-// Connection names, singleton behaviour, retries, fallback mechanisms,
-// multiple-name logic and everything else needed to produce a *sql.DB is left
-// to the implementation. The first party one decodes `PLATFORM_DB_*` from the
-// process environment, using the variable name as the key and its value as the
-// connection definition, and carries no other logic like reconnecting.
+// DatabaseProvider opens named connections, "default" when no name is given.
 type DatabaseProvider interface {
 	// Open takes a context, a different implementation may use it for context awareness.
 	// For example, Open may retrieve connection details from the database. The context
@@ -93,9 +84,8 @@ type ErrorResponseBody struct {
 <summary><code>type Logger</code></summary>
 
 ```go
-// Logger is the interface the platform writes its own output through.
-// It is the subset of *slog.Logger the platform needs, so a *slog.Logger
-// can be assigned to Platform.Logger as it is.
+// Logger is the interface the platform writes output through: the subset of
+// *slog.Logger it needs. A *slog.Logger assigns to Platform.Logger as it is.
 type Logger interface {
 	Info(msg string, args ...any)
 	Error(msg string, args ...any)
@@ -108,25 +98,25 @@ type Logger interface {
 <summary><code>type Manager</code></summary>
 
 ```go
-// Manager owns the socket, and the platform generation serving on it. It
-// replaces the platform under it on SIGHUP, keeping the address it serves.
+// Manager owns the socket and the platform generation serving there. A SIGHUP
+// replaces the generation and keeps the address.
 type Manager struct {
 	// Logger receives the manager's own output, and is handed to every
 	// platform generation it creates. Defaults as Platform.Logger does.
 	Logger Logger
 
 	// Setup runs against every platform generation before it starts.
-	// Registration against a platform value belongs here, as a reload
-	// discards the value it was made against. Assign it before Start: a
-	// reload runs it from the signal handler's goroutine.
+	// Registration against the platform value belongs here, as a reload
+	// discards the value it was made against. Assign it ahead of Start: a
+	// reload runs it on the signal handler’s goroutine.
 	Setup func(*Platform) error
 
-	// Check runs before a reload retires the generation that is serving,
-	// and a non-nil error abandons that reload with the generation left
-	// alone. Reading the configuration a reload would apply belongs here:
-	// Setup runs against the new generation, which exists only once the old
-	// one has stopped. Nil reloads unconditionally. Assign before Start, as
-	// with Setup, because the signal handler reads it from a goroutine.
+	// Check runs before retiring the serving generation, and a
+	// non-nil error abandons that reload with the generation left alone.
+	// Reading the configuration a reload would apply belongs here: Setup
+	// runs against the new generation, which exists only once the old one
+	// has stopped. Nil reloads unconditionally. Assign before Start, as
+	// with Setup, because the signal handler reads it on a goroutine.
 	Check func() error
 
 	options *Options
@@ -199,10 +189,10 @@ type Options struct {
 	// ServerAddr is the address the server listens to.
 	ServerAddr string
 
-	// PidFile is the file the process records its own id in, for a service
+	// PidFile is the file the process records its id in, for a service
 	// manager or a command line that signals it. Empty writes none. The
-	// directory has to exist, an existing file is overwritten, and the file
-	// is removed on a clean stop. A Manager writes it for the process, so a
+	// directory must exist, an existing file is overwritten, and the file
+	// is removed on a clean stop. A Manager writes it for the process, and the
 	// reload leaves it alone.
 	PidFile string
 
@@ -240,7 +230,7 @@ type Options struct {
 type Platform struct {
 	// Logger receives the platform's own output. New sets it to
 	// slog.Default(), or to a discarding logger when Options.Quiet is set.
-	// Assign to it before Start to reuse the platform logger from a test,
+	// Assign to it ahead of Start to reuse the platform logger from a test,
 	// or to route output into a consumer application's logger.
 	Logger Logger
 
@@ -251,8 +241,8 @@ type Platform struct {
 	server   *http.Server
 	listener net.Listener
 
-	// served is closed when the accept loop has returned. Stop waits on it,
-	// so a manager gets the socket back when Stop is done.
+	// served is closed when the accept loop has returned. Stop waits for the socket,
+	// and the manager gets the socket back when Stop is done.
 	served chan struct{}
 
 	// final shutdown context
@@ -326,7 +316,7 @@ type Router = chi.Router
 // recorder and the dashboard at once: HTTP middleware recording every request,
 // and a module mounting the debug front end under Options.Path.
 //
-// New registers one by default. A host that wires its own recorder disables
+// New registers one by default. A host that wires a recorder disables
 // Options.Telemetry, so only one dashboard is on the path and only one
 // middleware records the request.
 type TelemetryModule struct {
@@ -426,285 +416,281 @@ var Database DatabaseProvider = global.db
 - `func (UnimplementedModule) Start (ctx context.Context) error`
 - `func (UnimplementedModule) Stop (ctx context.Context) error`
 
-### Error
+### `Error`
 
-Error writes an error payload as JSON.
+`Error` writes an error payload as JSON.
 
 ```go
 func Error(w http.ResponseWriter, r *http.Request, status int, data error)
 ```
 
-### FromContext
+### `FromContext`
 
-FromContext returns the *Platform instance attached to the context.
+`FromContext` returns the *Platform instance attached to the context.
 
 ```go
 func FromContext(ctx context.Context) *Platform
 ```
 
-### FromRequest
+### `FromRequest`
 
-FromRequest returns the *Platform instance attached to the request.
+`FromRequest` returns the *Platform instance attached to the request.
 
 ```go
 func FromRequest(r *http.Request) *Platform
 ```
 
-### JSON
+### `JSON`
 
-JSON writes any payload as JSON. If the payload is nil, the write is omitted. If an error occurs in encoding, a telemetry error is logged.
+`JSON` writes any payload as JSON. If the payload is nil, the write is omitted. If an error occurs in encoding, a telemetry error is logged.
 
 ```go
 func JSON(w http.ResponseWriter, r *http.Request, status int, data any)
 ```
 
-### New
+### `New`
 
-New will create a new *Platform object. It is the allocation point for each platform instance. If no options are passed, the defaults are in use. The defaults options are provided by NewOptions().
+`New` will create a new *Platform object. It is the allocation point for each platform instance. If no options are passed, the defaults are in use. The defaults options are provided by NewOptions().
 
 ```go
 func New(options *Options) *Platform
 ```
 
-### NewManager
+### `NewManager`
 
-NewManager creates a manager for the passed options. If no options are passed, the defaults from NewOptions() are in use.
+`NewManager` creates a manager for the passed options. If no options are passed, the defaults from NewOptions() are in use.
 
 ```go
 func NewManager(options *Options) *Manager
 ```
 
-### NewOptions
+### `NewOptions`
 
-NewOptions provides default options for the platform.
+`NewOptions` provides default options for the platform.
 
 ```go
 func NewOptions() *Options
 ```
 
-### NewTelemetryModule
+### `NewTelemetryModule`
 
-NewTelemetryModule returns a telemetry module recording into its own tracer. The tracer is explicit rather than the process wide one, so two services, or two tests, do not record into each other.
+`NewTelemetryModule` returns a telemetry module recording into a dedicated tracer, which keeps two services out of each other's traces.
 
 ```go
 func NewTelemetryModule(options oida.Options) (*TelemetryModule, error)
 ```
 
-### NewTestOptions
+### `NewTestOptions`
 
-NewTestOptions produces default options for tests.
+`NewTestOptions` produces default options for tests.
 
 ```go
 func NewTestOptions() *Options
 ```
 
-### NewUnimplementedModule
+### `NewUnimplementedModule`
 
-NewUnimplementedModule will fill the module name.
+`NewUnimplementedModule` will fill the module name.
 
 ```go
 func NewUnimplementedModule(name string) *UnimplementedModule
 ```
 
-### OptionsFromContext
+### `OptionsFromContext`
 
-OptionsFromContext returns the *Options instance attached to the context.
+`OptionsFromContext` returns the *Options instance attached to the context.
 
 ```go
 func OptionsFromContext(ctx context.Context) *Options
 ```
 
-### OptionsFromRequest
+### `OptionsFromRequest`
 
-OptionsFromRequest returns the *Options instance attached to the request.
+`OptionsFromRequest` returns the *Options instance attached to the request.
 
 ```go
 func OptionsFromRequest(r *http.Request) *Options
 ```
 
-### Param
+### `Param`
 
-Param will return a named URL parameter, or query string.
+`Param` will return a named URL parameter, or query string.
 
 ```go
 func Param(r *http.Request, name string) string
 ```
 
-### QueryParam
+### `QueryParam`
 
-QueryParam will return a named query parameter from the request.
+`QueryParam` will return a named query parameter from the request.
 
 ```go
 func QueryParam(r *http.Request, name string) string
 ```
 
-### Register
+### `Register`
 
-Register will register a module in the platform global registry. It should not be relied upon in tests, keeping global state empty. This enables registering modules using blank imports.
-
-Deprecated: use RegisterFunc. One value is shared by every platform in the process, including the generations of a reload, so its state outlives the platform it was started with.
+`Register` adds a module to the global registry. Deprecated: use RegisterFunc.
 
 ```go
 func Register(m Module)
 ```
 
-### RegisterFunc
+### `RegisterFunc`
 
-RegisterFunc will register a module constructor in the platform global registry. It is called once per platform, so every platform, and every reload generation, starts a module of its own.
-
-It should not be relied upon in tests, keeping global state empty. This enables registering modules using blank imports.
+`RegisterFunc` registers a module constructor that runs once per platform.
 
 ```go
 func RegisterFunc(f func() Module)
 ```
 
-### SetupConnections
+### `SetupConnections`
 
-SetupConnections will parse the env for named connection strings.
+`SetupConnections` will parse the env for named connection strings.
 
 ```go
 func SetupConnections(environment []string)
 ```
 
-### Start
+### `Start`
 
-Start is a shorthand to create a new *Platform instance and immediately starts the server listener and handles requests.
+`Start` is a shorthand to create a new *Platform instance and immediately starts the server listener and handles requests.
 
 ```go
 func Start(ctx context.Context, options *Options) (*Platform, error)
 ```
 
-### TestMiddleware
+### `TestMiddleware`
 
-TestMiddleware returns a middleware that just passes along the request.
+`TestMiddleware` returns a middleware that just passes along the request.
 
 ```go
 func TestMiddleware() Middleware
 ```
 
-### Transaction
+### `Transaction`
 
-Transaction wraps a function in a transaction. If the function returns an error, the transaction is rolled back. If the function returns nil, the transaction is committed.
+`Transaction` wraps a function in a transaction. If the function returns an error, the transaction is rolled back. If the function returns nil, the transaction is committed.
 
 ```go
 func Transaction(ctx context.Context, db *sql.DB, fn func(context.Context, *sql.Tx) error) error
 ```
 
-### URLParam
+### `URLParam`
 
-URLParam will return a named parameter value from the request URL.
+`URLParam` will return a named parameter value from the request URL.
 
 ```go
 func URLParam(r *http.Request, name string) string
 ```
 
-### Use
+### `Use`
 
-Use will add a middleware to the platform router. It should not be relied upon in tests, keeping global state empty. This should be used from main() to define any global middleware.
+`Use` adds a middleware to the platform router. Call it in main, not a test.
 
 ```go
 func Use(mw Middleware)
 ```
 
-### Context
+### `Context`
 
-Context returns the cancellation context for the manager. When the context finishes, the platform has shut down and the socket is closed.
+`Context` returns the cancellation context, done once the manager stops.
 
 ```go
 func (*Manager) Context() context.Context
 ```
 
-### Platform
+### `Platform`
 
-Platform returns the generation currently serving, and nil when there is none: before Start, after Stop, and after a reload that failed.
+`Platform` returns the generation currently serving, and nil when there is none: before Start, after Stop, and after a reload that failed.
 
 ```go
 func (*Manager) Platform() *Platform
 ```
 
-### Reload
+### `Reload`
 
-Reload stops the running platform and starts a new one on the same socket, unless Check refuses it first. Generations never overlap, so a module registered as a value has to survive a restart.
+`Reload` stops the running platform and starts a new one on the same socket, unless Check refuses it first. Generations never overlap, and the module registered as a value must survive a restart.
 
 ```go
 func (*Manager) Reload(ctx context.Context) error
 ```
 
-### Start
+### `Start`
 
-Start binds the listener, starts the first platform generation on it, writes Options.PidFile and arms the SIGHUP handler. Cancelling ctx stops the manager.
+`Start` binds the listener, starts the first platform generation on the socket, writes Options.PidFile and arms the SIGHUP handler. Cancelling ctx stops the manager.
 
 ```go
 func (*Manager) Start(ctx context.Context) error
 ```
 
-### Stop
+### `Stop`
 
-Stop shuts down the running platform and closes the socket. A stopped manager does not start again.
+`Stop` shuts down the running platform and closes the socket. A stopped manager does not start again.
 
 ```go
 func (*Manager) Stop()
 ```
 
-### URL
+### `URL`
 
-URL gives the e2e endpoint URL for requests. A reload does not change it. Before a successful Start there is no socket and the URL is empty.
+`URL` gives the e2e endpoint URL for requests. A reload does not change it. Before Start succeeds there is no socket and the URL is empty.
 
 ```go
 func (*Manager) URL() string
 ```
 
-### Wait
+### `Wait`
 
-Wait will pause until the manager is stopped. A reload does not end it.
+`Wait` will pause until the manager is stopped. A reload does not end it.
 
 ```go
 func (*Manager) Wait()
 ```
 
-### Context
+### `Context`
 
-Context returns the cancellation context for the service. When the context finishes, the server has shut down.
+`Context` returns the cancellation context, done once the server stops.
 
 ```go
 func (*Platform) Context() context.Context
 ```
 
-### Find
+### `Find`
 
-Find fills target with the module matching the type.
+`Find` fills target with the module matching the type.
 
 ```go
 func (*Platform) Find(target any) bool
 ```
 
-### Register
+### `Register`
 
-Register will add a registry.Module into the internal platform registry. This function should be called before Serve is called.
+`Register` adds a module to the platform registry.
 
 ```go
 func (*Platform) Register(m Module)
 ```
 
-### Start
+### `Start`
 
-Start starts the server, writes Options.PidFile and prints the registered routes. It stops on a cancelled context, SIGINT or SIGTERM.
+`Start` starts the server, writes Options.PidFile and prints the registered routes. It stops on a cancelled context, SIGINT or SIGTERM.
 
 ```go
 func (*Platform) Start(ctx context.Context) error
 ```
 
-### Stats
+### `Stats`
 
-Stats will report how many middlewares and plugins are added to the registry.
+`Stats` will report how many middlewares and plugins are added to the registry.
 
 ```go
 func (*Platform) Stats() (int, int)
 ```
 
-### Stop
+### `Stop`
 
-Stop will gracefully shutdown the server and then cancel the server context when done.
+`Stop` will gracefully shutdown the server and then cancel the server context when done.
 
 Stop is an important part of the lifecycle tests. When closing the registry, each plugins Stop function gets invoked in parallel. This enables the plugin to clear background goroutine event loops, or flush a dirty buffer to storage.
 
@@ -714,163 +700,161 @@ Only after the server has fully shut down does the internal context get cancelle
 func (*Platform) Stop()
 ```
 
-### URL
+### `URL`
 
-URL gives the e2e endpoint URL for requests.
+`URL` gives the e2e endpoint URL for requests.
 
 ```go
 func (*Platform) URL() string
 ```
 
-### Use
+### `Use`
 
-Use will add a middleware to the internal platform registry. This function should be called before Serve is called.
+`Use` adds a middleware to the platform registry.
 
 ```go
 func (*Platform) Use(m Middleware)
 ```
 
-### Wait
+### `Wait`
 
-Wait will pause until the server is shut down.
+`Wait` will pause until the server is shut down.
 
 ```go
 func (*Platform) Wait()
 ```
 
-### Cleanup
+### `Cleanup`
 
-Cleanup registers a function to run when the registry closes, as testing.T.Cleanup does for a test. The cleanups are registered in Start, and run in Close.
+`Cleanup` registers a function to run when the registry closes.
 
 ```go
 func (*Registry) Cleanup(fn func(context.Context))
 ```
 
-### Clone
+### `Clone`
 
-Clone provides a copy of the registry for use in the platform. Modules registered as constructors are built here, one set per clone.
+`Clone` provides a copy of the registry for use in the platform. Modules registered as constructors are built here, one set per clone.
 
 ```go
 func (*Registry) Clone() *Registry
 ```
 
-### Close
+### `Close`
 
-Close will invoke all the modules close functions in parallel. When finished, it will clear the registered modules list, as well as any defined middleware and invoked cleanups.
+`Close` runs the cleanups, then clears the modules, middleware and cleanups.
 
 ```go
 func (*Registry) Close(ctx context.Context)
 ```
 
-### Find
+### `Find`
 
-Find gets a Module from the registry. The target argument can be a pointer or an interface. The function returns true if a module matching the type or interface was found and assigned to `target`.
+`Find` fills target, a pointer or an interface, with a matching module.
 
 ```go
 func (*Registry) Find(target any) bool
 ```
 
-### Register
+### `Register`
 
-Register adds a Module to the registry.
-
-Deprecated: use RegisterFunc. One value is shared by every platform that clones the registry, including the generations of a reload, so its state outlives the platform it was started with.
+`Register` adds a Module to the registry. Deprecated: use RegisterFunc.
 
 ```go
 func (*Registry) Register(m Module)
 ```
 
-### RegisterFunc
+### `RegisterFunc`
 
-RegisterFunc adds a module constructor to the registry. Clone calls it, so every platform starts a module of its own.
+`RegisterFunc` adds a module constructor that Clone calls per platform.
 
 ```go
 func (*Registry) RegisterFunc(f func() Module)
 ```
 
-### Start
+### `Start`
 
-Start will invoke all the modules start functions sequentially. If an error occurs, execution is halted and an error is returned. The context is passed along for observability and access to the platform. The registry's own output goes to the logger of the platform in the context; without one it is discarded.
+`Start` starts the modules in order and then mounts them. A failure halts the run, and an error ends it.
 
 ```go
 func (*Registry) Start(ctx context.Context, mux Router, opts *Options) error
 ```
 
-### Stats
+### `Stats`
 
-Stats returns counts for modules and middlewares in the registry.
+`Stats` returns counts for modules and middlewares in the registry.
 
 ```go
 func (*Registry) Stats() int
 ```
 
-### Use
+### `Use`
 
-Use adds a Middleware to the registry.
+`Use` adds a Middleware to the registry.
 
 ```go
 func (*Registry) Use(f Middleware)
 ```
 
-### Middleware
+### `Middleware`
 
-Middleware records requests handled by next.
+`Middleware` records requests handled by next.
 
 ```go
 func (*TelemetryModule) Middleware(next http.Handler) http.Handler
 ```
 
-### Mount
+### `Mount`
 
-Mount registers the debug front end on the platform router. The tracer is an http.Handler serving its own dashboard, and oida.Mount adds the subtree patterns each router understands.
+`Mount` registers the debug front end on the platform router.
 
 ```go
 func (*TelemetryModule) Mount(_ context.Context, r Router) error
 ```
 
-### Options
+### `Options`
 
-Options returns the options the tracer runs on, which is what the module was built with after the environment was applied. The retention driver is left out of the copy; a caller that needs it holds the storage it configured.
+`Options` returns the options the tracer runs on, after the environment applied.
 
 ```go
 func (*TelemetryModule) Options() oida.Options
 ```
 
-### Tracer
+### `Tracer`
 
-Tracer returns the tracer the module records into.
+`Tracer` returns the tracer the module records into.
 
 ```go
 func (*TelemetryModule) Tracer() *oida.Tracer
 ```
 
-### Mount
+### `Mount`
 
-Mount returns nil (no error).
+`Mount` returns nil (no error).
 
 ```go
 func (UnimplementedModule) Mount(ctx context.Context, r Router) error
 ```
 
-### Name
+### `Name`
 
-Name returns an empty string.
+`Name` returns an empty string.
 
 ```go
 func (UnimplementedModule) Name() string
 ```
 
-### Start
+### `Start`
 
-Start returns nil (no error).
+`Start` returns nil (no error).
 
 ```go
 func (UnimplementedModule) Start(ctx context.Context) error
 ```
 
-### Stop
+### `Stop`
 
-Stop returns nil (no error).
+`Stop` returns nil (no error).
 
 ```go
 func (UnimplementedModule) Stop(ctx context.Context) error

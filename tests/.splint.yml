@@ -1,0 +1,11 @@
+# A test-only module imports the package under test everywhere, and chi builds
+# the routers the suites serve. The pollution rule is about application code.
+# The company group keeps the tree's own imports apart from the third party
+# ones, which is the split the root module's project group makes.
+imports:
+  company:
+    - github.com/titpetric/platform
+  pollution:
+    ignore:
+      - github.com/go-chi/chi/v5
+      - github.com/titpetric/platform

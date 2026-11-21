@@ -9,16 +9,16 @@
 - A router (alias to `chi.Router`) for attaching module routes.
 - Named database connections with automatic environment scanning.
 
-Each `Platform` instance clones the global registry, enabling isolated test instances and avoiding races or goroutine leaks. The clone calls the constructors registered with `platform.RegisterFunc()`, so each instance holds modules of its own. A value registered with the deprecated `platform.Register()` is shared by every instance in the process.
+Each `Platform` instance clones the global registry, enabling isolated test instances and avoiding races or goroutine leaks. The clone calls the constructors registered with `platform.RegisterFunc()`, so each instance holds separate modules. A value registered with the deprecated `platform.Register()` is shared by every instance in the process.
 
 ## Key Concepts
 
-- Module - implements `Name() string`, `Start(context.Context) error`, `Stop(context.Context) error`, `Mount(context.Context, Router) error`. Registered as a constructor with `platform.RegisterFunc()`, so each platform builds its own.
+- Module - implements `Name() string`, `Start(context.Context) error`, `Stop(context.Context) error`, `Mount(context.Context, Router) error`. Registered as a constructor with `platform.RegisterFunc()`, so each platform builds one.
 - Middleware - type `func(http.Handler) http.Handler`, added via `platform.Use()` or `(*Platform).Use()`.
-- Registry - package and instance level container value managing modules and middleware; enables `init` usage via package API.
-- Database - named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed, and is `sqlite://:memory:` unless `PLATFORM_DB_DEFAULT` replaces it. The platform imports no sql driver: the binary registers its own with a blank import. See [SQL Database Usage](database.md).
+- Registry - package and instance level container value managing modules and middleware, enabling `init` usage via package API.
+- Database - named connections, automatically scanned from `PLATFORM_DB_*` environment variables. `"default"` is used if no name is passed, and is `sqlite://:memory:` unless `PLATFORM_DB_DEFAULT` replaces it. The platform imports no sql driver: the binary registers one with a blank import. See [SQL Database Usage](database.md).
 - Logger - the `Platform.Logger` field, an interface with `Info` and `Error`, receiving the platform's own output.
-- Manager - owns the listening socket and the `*Platform` serving on it, replacing the platform on `SIGHUP`. It also owns the pidfile, because a reload does not make a new process.
+- Manager - owns the listening socket and the `*Platform` serving there, replacing the platform on `SIGHUP`. It also owns the pidfile, because a reload does not make a new process.
 - Pidfile - the file `Options.PidFile` names, holding the process id something else sends a signal to. Empty writes none.
 
 ## Logging
@@ -32,14 +32,14 @@ type Logger interface {
 }
 ```
 
-`New` sets the field to `slog.Default()`, or to a discarding logger when `Options.Quiet` is set. A `*slog.Logger` satisfies the interface as it is, so a consumer application can hand the platform its own logger:
+`New` sets the field to `slog.Default()`, or to a discarding logger when `Options.Quiet` is set. A `*slog.Logger` satisfies the interface as it is, and the consumer application can hand the platform a logger:
 
 ```go
 p := platform.New(platform.NewOptions())
 p.Logger = slog.New(slog.NewJSONHandler(os.Stdout, nil))
 ```
 
-Assign the field before calling `Start`. `Start` captures the logger once for the route dump and the signal handler goroutine; every other write resolves the field at call time, including `Stop` and the logger a module reaches through a request or a context.
+Assign the field before calling `Start`. `Start` captures the logger once for the route dump and the signal handler goroutine. Every other write resolves the field at call time, including `Stop` and the logger a module reaches through a request or a context.
 
 Under a `Manager` there is no platform value to assign to. `NewManager` defaults `Manager.Logger` the same way, and hands it to each generation before `Setup` runs, so set `m.Logger` or assign `p.Logger` from `Manager.Setup`.
 
@@ -53,13 +53,13 @@ platform.FromRequest(r).Logger.Info("handled", "path", r.URL.Path)
 
 1. **Register modules** via `platform.RegisterFunc()` (or `Register` on a `*Platform` instance).
 2. **Add middleware** via `platform.Use()` before calling `Start(context.Context)`.
-3. **Start the platform** with `Start(context.Context)`; modules are started and then mounted, the socket is bound, and `Options.PidFile` is written when one is named.
-4. **Stop** with `Stop()`, which is also what a `SIGINT` or a `SIGTERM` reaches; the server is shut down gracefully with a 5 second timeout, the registry then stops every module in parallel on a live context with a 5 second budget of its own, and the platform context is cancelled last, once they have all returned. `Wait` therefore does not release while a module is still tearing down.
+3. **Start the platform** with `Start(context.Context)`. Modules are started and then mounted, the socket is bound, and `Options.PidFile` is written when one is named.
+4. **Stop** with `Stop()`, which is also what a `SIGINT` or a `SIGTERM` reaches. The server is shut down gracefully with a 5 second timeout, the registry then stops every module in parallel on a live context with a separate 5 second budget, and the platform context is cancelled last, once they have all returned. `Wait` therefore does not release when a module still tears down.
 5. Application exit. `Stop` returns nothing: a pidfile that could not be removed is logged through `Platform.Logger`, and a `server.Shutdown` error is handed to the telemetry sink on a context that carries no trace, so it is discarded.
 
 ## Reload
 
-A `*Platform` is a one-shot value. `Stop` clears its registry and cancels its context, and there is no way back from that, so a reload is a new platform. `Manager` is what outlives the old one and builds the new one:
+A `*Platform` is a one-shot value. `Stop` clears its registry and cancels its context, and there is no way back from that: a reload is a new platform. `Manager` is what outlives the old one and builds the new one:
 
 ```go
 m := platform.NewManager(platform.NewOptions())
@@ -69,19 +69,19 @@ if err := m.Start(ctx); err != nil {
 m.Wait()
 ```
 
-`cmd.Main` runs a manager, so an app built on it reloads with `kill -HUP`. Used directly, `platform.Start` is unchanged, and `SIGHUP` keeps its default disposition, which terminates the process.
+`cmd.Main` runs a manager, and the app built on the manager reloads with `kill -HUP`. Used directly, `platform.Start` is unchanged, and `SIGHUP` keeps its default disposition, which terminates the process.
 
-The manager owns the process signals for its whole life: `SIGHUP` to reload, `SIGINT` and `SIGTERM` to stop, and a cancelled start context to stop. The generations it runs arm none of them, so a reload never leaves a moment where a `SIGTERM` takes its default disposition and kills the process with no drain and no module `Stop`.
+The manager owns the process signals for its whole life: `SIGHUP` to reload, `SIGINT` and `SIGTERM` to stop, and a cancelled start context to stop. The generations it runs arm none of them, and the reload never leaves a moment where a `SIGTERM` takes its default disposition and kills the process with no drain and no module `Stop`.
 
-The manager holds the listening socket, so a reload keeps the address it was reached on, along with the connections queued on it. Everything above the socket is new: the router, the registry, the server, the telemetry recorder, and the value `Platform()` returns.
+The manager holds the listening socket, and the reload keeps the address it was reached on, along with the connections queued there. Everything above the socket is new: the router, the registry, the server, the telemetry recorder, and the value `Platform()` returns.
 
 Generations do not overlap: the old one is drained and stopped before the new one starts. Requests that arrive during the swap wait in the accept queue of the socket rather than being refused, and requests already in flight are served by the generation that took them.
 
 A reload costs a small number of dropped requests. A connection the outgoing generation had already accepted, whose request bytes arrive after `Shutdown` has begun, is closed without a response: `net/http` returns from the connection as soon as the server is shutting down, having read the request. Measured over 140 reloads under load with keep-alive off, that is 402 client-side `EOF` against 48393 served, and zero when no reload runs. A client that retries idempotent requests does not notice. Closing the gap needs generations that overlap, which contradicts the ordering guarantee above.
 
-Modules registered with `platform.RegisterFunc` are constructed per generation, so a reload starts fresh values. A module registered with the deprecated `platform.Register` is one value shared by every generation, and has to tolerate `Start` after `Stop`.
+Modules registered with `platform.RegisterFunc` are constructed per generation, and the reload starts fresh values. A module registered with the deprecated `platform.Register` is one value shared by the generations, and must tolerate `Start` after `Stop`.
 
-Registrations made against a platform value do not survive a reload, because the value does not. `Manager.Setup` is where they belong:
+Registrations made against the platform value do not survive a reload, because the value does not. `Manager.Setup` is where they belong:
 
 ```go
 m.Setup = func(p *platform.Platform) error {
@@ -91,7 +91,7 @@ m.Setup = func(p *platform.Platform) error {
 }
 ```
 
-A reload that fails leaves nothing serving: the old generation is already gone, and a retry would read the same configuration again. `Reload` returns the error, and the `SIGHUP` handler stops the manager, so the failure is visible to whatever supervises the process.
+A reload that fails leaves nothing serving: the old generation is already gone, and a retry would read the same configuration again. `Reload` returns the error, and the `SIGHUP` handler stops the manager, and the failure is visible to whatever supervises the process.
 
 `Manager.Check` is how that is avoided. It runs before the generation that is serving is retired, and a non-nil error abandons the reload with that generation left alone:
 
@@ -102,7 +102,7 @@ m.Check = func() error {
 }
 ```
 
-Reading the configuration a reload would apply belongs here rather than in `Setup`, which runs against the new generation and is therefore reached only after the old one has been stopped. A signal carries no way to report a problem back, so without `Check` a `kill -HUP` with a configuration that does not parse is indistinguishable from one that does, right up until nothing is serving.
+Reading the configuration a reload would apply belongs here rather than in `Setup`, which runs against the new generation and is therefore reached only after the old one has been stopped. A signal carries no way to report a problem back, so without `Check` a `kill -HUP` with a configuration which does not parse is indistinguishable from one that does, right up until nothing is serving.
 
 The `SIGHUP` handler tells the two apart from what is serving rather than from the error: a refused reload leaves the current generation in place and the handler logs and carries on, while a failure after the retire leaves nothing and stops the manager.
 
@@ -115,12 +115,12 @@ options := platform.NewOptions()
 options.PidFile = "/run/myapp.pid"
 ```
 
-The file holds the decimal pid and a newline, created 0644 before the umask, which is the form `kill -HUP $(cat /run/myapp.pid)` and every service manager expects. The platform exports no reader for it: whatever sends the signal already has the path from its own configuration and needs one integer out of the file. Empty, the default, writes nothing.
+The file holds the decimal pid and a newline, created 0644 before the umask, which is the form `kill -HUP $(cat /run/myapp.pid)` and all service managers expect. The platform exports no reader for it: whatever sends the signal already has the path from the configuration and needs one integer out of the file. Empty, the default, writes nothing.
 
-It is written once the modules have started and the socket is bound, so the file never names a process that then failed to come up, and removed once the server has drained. A file still present after the process is gone means the process did not stop cleanly.
+It is written once the modules have started and the socket is bound, and the file never names a process that then failed to come up, and removed once the server has drained. A file still present after the process is gone means the process did not stop cleanly.
 
 Removal reads the file and then unlinks it, which is not atomic. A process that claims the same path between the two loses its file. That follows from a pidfile being a record and not a lock: two processes sharing one path are already misconfigured.
 
-The manager owns the file, not the generations it runs. A pidfile records a process, and a reload does not make a new one, so a generation neither writes nor removes one: `startGeneration` clears it. Without that, every reload would remove the file and write it again, and the moment a `SIGHUP` sender reads it is exactly the moment it would be missing.
+The manager owns the file, not the generations it runs. A pidfile records a process, and a reload does not make a new one, and the generation neither writes nor removes one: `startGeneration` clears it. Without that, every reload would remove the file and write it again, and the moment a `SIGHUP` sender reads it is exactly the moment it would be missing.
 
-The directory has to exist. It belongs to whatever packages the service, `RuntimeDirectory=` in a systemd unit being the usual case, and creating it here would mean guessing its owner and mode, so a path that names a missing directory fails the start rather than being created. An existing file is overwritten rather than treated as a running instance: a pidfile is a record and not a lock, and refusing to start because of a file a killed process left behind is how a service fails to come back after a power cut.
+The directory must exist. It belongs to whatever packages the service, `RuntimeDirectory=` in a systemd unit being the usual case, and creating it on this side would mean guessing its owner and mode, and the path that names a missing directory fails the start rather than being created. An existing file is overwritten rather than treated as a running instance: a pidfile is a record and not a lock, and refusing to start because of a file a killed process left behind is how a service fails to come back after a power cut.

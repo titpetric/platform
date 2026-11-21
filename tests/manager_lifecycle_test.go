@@ -15,7 +15,7 @@ import (
 	"github.com/titpetric/platform/internal/assert"
 )
 
-// TestManagerReloadAfterStop covers a Reload against a stopped manager, which
+// TestManagerReloadAfterStop covers a Reload against the stopped manager, which
 // is refused, leaves no generation, and stops every module it started.
 func TestManagerReloadAfterStop(t *testing.T) {
 	mod := &countingModule{}
@@ -81,8 +81,8 @@ func TestManagerStopContextLive(t *testing.T) {
 }
 
 // TestManagerPidFileFailureReleasesSocket covers a Start that fails on the
-// pidfile, after the listener bound and before Serve runs. Stop has to return
-// without waiting out its timeout, and the port has to be free.
+// pidfile, after the listener bound and before Serve runs. Stop must return
+// without waiting out its timeout, and the port must be free.
 func TestManagerPidFileFailureReleasesSocket(t *testing.T) {
 	options := platform.NewTestOptions()
 	options.PidFile = "/proc/definitely/not/writable/run.pid"
@@ -117,7 +117,7 @@ func TestManagerReloadSignalChild(t *testing.T) {
 		p.Register(&platform.UnimplementedModule{
 			NameFn: func() string { return "slow" },
 			StartFn: func(context.Context) error {
-				// Only the generations a reload builds are slow, so the
+				// Only the generations a reload builds are slow, and the
 				// first start does not stall the handshake.
 				if os.Getenv(reloadChildEnv) == "reloading" {
 					time.Sleep(3 * time.Second)
@@ -138,7 +138,7 @@ func TestManagerReloadSignalChild(t *testing.T) {
 }
 
 // TestManagerSigtermDuringReload covers a SIGTERM landing while a reload is in
-// flight, which the manager has to catch and drain rather than take the default
+// flight, which the manager must catch and drain rather than take the default
 // disposition on.
 //
 // It signals a child rather than raising in process: signal.Notify is

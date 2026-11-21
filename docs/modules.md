@@ -13,13 +13,13 @@ type Module interface {
 }
 ```
 
-The functions run in this order, and each phase completes across every module before the next begins: every `Start` has returned before the first `Mount` runs, so a module may rely in `Mount` on state another module built in `Start`. Within a phase the order is registration order.
+The functions run in this order, and each phase completes across every module before the next begins: every `Start` has returned before the first `Mount` runs, and the module may rely in `Mount` on state another module built in `Start`. Within a phase the order is registration order.
 
 - `Start(context.Context) error` - start background goroutines or services.
 - `Mount(context.Context, Router) error` - attach HTTP routes. Middleware belongs in `platform.Use` or `(*Platform).Use`, not here: `r.Use` from `Mount` panics once another module has registered a route.
-- `Stop(context.Context) error` - clean up and stop all background work. Every module's `Stop` runs in parallel on shutdown, so it must not depend on another module's teardown, and it runs for a module whose own `Start` returned an error, so it has to tolerate a partially built value. A panic in `Stop` is recovered and recorded.
+- `Stop(context.Context) error` - clean up and stop all background work. Every module's `Stop` runs in parallel on shutdown, so it must not depend on another module's teardown, and it runs for a module whose own `Start` returned an error, so it must tolerate a partially built value. A panic in `Stop` is recovered and recorded.
 
-The context `Stop` receives is live, with a five second budget of its own. It is not the platform's shutdown context: that one is cancelled only once every module has torn down, so `Wait` does not return while a `Stop` is still flushing. The budget is a deadline to honour, not an enforced one. The registry waits for every `Stop` to return, however long that takes.
+The context `Stop` receives is live, with a separate five second budget. It is not the platform's shutdown context: that one is cancelled only once every module has torn down, so `Wait` does not return while a `Stop` is still flushing. The budget is a deadline to honour, not an enforced one. The registry waits for every `Stop` to return, however long that takes.
 
 ### Firewalling modules
 
@@ -43,7 +43,7 @@ func (m *Module) Start(ctx context.Context) error {
 }
 ```
 
-`Find` resolves against registrations, not against started modules, so it can hand back a module whose `Start` has not run yet. A module that needs its dependency ready should use it from `Mount` or from a request rather than from `Start`.
+`Find` resolves against registrations, not against started modules, so it can hand back a module whose `Start` has not run yet. A module that needs its dependency ready should use it in `Mount`, `Start`, or a request rather than from `Start`.
 
 Or it may expose its complete storage API:
 
@@ -58,7 +58,7 @@ This allows API usage behind interfaces. In our case, we can expose module-scope
 
 ### Using `UnimplementedModule`
 
-Embed `platform.UnimplementedModule` to reduce boilerplate and override only the methods you need. `Name` is the exception: it has to return a non-empty string or startup fails with `module %T doesn't return name`. Override it, or embed the pointer `NewUnimplementedModule` returns, which fills `NameFn`:
+Embed `platform.UnimplementedModule` to reduce boilerplate and override only the methods you need. `Name` is the exception: it must return a non-empty string or startup fails with `module %T doesn't return name`. Override it, or embed the pointer `NewUnimplementedModule` returns, which fills `NameFn`:
 
 ```go
 type StaticModule struct {
@@ -75,7 +75,7 @@ func (m *StaticModule) Mount(_ context.Context, r platform.Router) error {
 }
 ```
 
-The type also carries a hook per method, `NameFn`, `StartFn`, `StopFn` and `MountFn`. Assigning those is the shorter route for a test or a module small enough not to want a type of its own.
+The type also carries a hook per method, `NameFn`, `StartFn`, `StopFn` and `MountFn`. Assigning those is the shorter route for a test or a module small enough not to want a separate type.
 
 ## Minimal App Example
 
@@ -94,7 +94,7 @@ func main() {
 }
 ```
 
-`platform.Start` returns as soon as the server is accepting, so `Wait` is what blocks until shutdown. To get `SIGHUP` reloads instead, run a `platform.Manager` or call `cmd.Main`; see [The Platform](platform.md).
+`platform.Start` returns as soon as the server is accepting, so `Wait` blocks until shutdown. To get `SIGHUP` reloads instead, run a `platform.Manager` or call `cmd.Main`. See [The Platform](platform.md).
 
 `loggingMiddleware` example:
 

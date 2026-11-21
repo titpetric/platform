@@ -78,3 +78,9 @@ func TestHandlerName(t *testing.T) {
 type discardLogger struct{}
 
 func (discardLogger) Info(string, ...any) {}
+
+// TestLoggerContract covers the interface PrintRoutes writes through.
+func TestLoggerContract(t *testing.T) {
+	var log Logger = discardLogger{}
+	log.Info("test")
+}

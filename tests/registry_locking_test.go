@@ -12,8 +12,8 @@ import (
 	"github.com/titpetric/platform/internal/assert"
 )
 
-// reentrantModule reaches back into the registry from its own lifecycle
-// methods, which is what docs/modules.md tells a module author to do. Each test
+// reentrantModule reaches back into the registry from the lifecycle
+// methods, which docs/modules.md tells a module author to do. Each test
 // over it covers the locking convention in registry.go, not the module API.
 type reentrantModule struct {
 	*platform.UnimplementedModule
@@ -36,7 +36,7 @@ func (m *reentrantModule) Mount(ctx context.Context, _ platform.Router) error {
 	return nil
 }
 
-// sideModule is what the reentrant module looks for.
+// sideModule is the module the reentrant one looks for.
 type sideModule struct {
 	*platform.UnimplementedModule
 }

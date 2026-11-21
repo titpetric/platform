@@ -11,16 +11,8 @@ import (
 	"github.com/titpetric/platform"
 )
 
-// Main is the entrypoint for the app.
-//
-// It's expected to have control of the app lifecycle. An application
-// exit is not expected to be graceful in case of errors. Main starts
-// the platform server with modules loaded beforehand. It is blocking
-// until server shutdown from cancellation of the context, or a caught
-// SIGTERM. A caught SIGHUP reloads instead, replacing the platform while
-// the socket stays bound; see platform.Manager.
-//
-// The variadic parameter allows to inject options from test.
+// Main runs the platform server with a manager and blocks until shutdown.
+// A caught SIGHUP reloads, while SIGINT or SIGTERM stops it. A variadic parameter injects options from a test.
 func Main(ctx context.Context, options ...*platform.Options) {
 	var option *platform.Options
 	for _, opt := range options {

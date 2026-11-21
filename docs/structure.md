@@ -10,7 +10,7 @@ The repository holds two Go modules.
 
 The suite is an external test package, not a black box: it imports `internal/assert` for its assertions, and it covers `internal`, `internal/httpcontext` and `internal/pidfile` through their exported API. `internal/httpcontext` has no test left in the root module at all.
 
-The split keeps driver pins out of the consumer dependency tree. Run both with `atkins`; the root module alone is `go test ./...`, the suite is `go test ./...` from `tests/`.
+The split keeps driver pins out of the consumer dependency tree. Run both with `atkins`. The root module alone is `go test ./...`, the suite is `go test ./...` from `tests/`.
 
 ## Diagrams
 

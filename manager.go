@@ -14,25 +14,25 @@ import (
 	"github.com/titpetric/platform/internal/pidfile"
 )
 
-// Manager owns the socket, and the platform generation serving on it. It
-// replaces the platform under it on SIGHUP, keeping the address it serves.
+// Manager owns the socket and the platform generation serving there. A SIGHUP
+// replaces the generation and keeps the address.
 type Manager struct {
 	// Logger receives the manager's own output, and is handed to every
 	// platform generation it creates. Defaults as Platform.Logger does.
 	Logger Logger
 
 	// Setup runs against every platform generation before it starts.
-	// Registration against a platform value belongs here, as a reload
-	// discards the value it was made against. Assign it before Start: a
-	// reload runs it from the signal handler's goroutine.
+	// Registration against the platform value belongs here, as a reload
+	// discards the value it was made against. Assign it ahead of Start: a
+	// reload runs it on the signal handler’s goroutine.
 	Setup func(*Platform) error
 
-	// Check runs before a reload retires the generation that is serving,
-	// and a non-nil error abandons that reload with the generation left
-	// alone. Reading the configuration a reload would apply belongs here:
-	// Setup runs against the new generation, which exists only once the old
-	// one has stopped. Nil reloads unconditionally. Assign before Start, as
-	// with Setup, because the signal handler reads it from a goroutine.
+	// Check runs before retiring the serving generation, and a
+	// non-nil error abandons that reload with the generation left alone.
+	// Reading the configuration a reload would apply belongs here: Setup
+	// runs against the new generation, which exists only once the old one
+	// has stopped. Nil reloads unconditionally. Assign before Start, as
+	// with Setup, because the signal handler reads it on a goroutine.
 	Check func() error
 
 	options *Options
@@ -86,7 +86,7 @@ func NewManager(options *Options) *Manager {
 	return m
 }
 
-// Start binds the listener, starts the first platform generation on it,
+// Start binds the listener, starts the first platform generation on the socket,
 // writes Options.PidFile and arms the SIGHUP handler. Cancelling ctx stops
 // the manager.
 func (m *Manager) Start(ctx context.Context) error {
@@ -105,7 +105,7 @@ func (m *Manager) Start(ctx context.Context) error {
 		return err
 	}
 
-	// Once something is serving, so the file never names a process that
+	// Once something is serving, and the file never names a process that
 	// failed to come up, and before the handler a signal arrives at.
 	if err := m.pid.Write(); err != nil {
 		m.retire()
@@ -115,8 +115,8 @@ func (m *Manager) Start(ctx context.Context) error {
 
 	// The manager owns the process signals for its whole life: SIGHUP to
 	// reload, SIGINT and SIGTERM to stop. Notify keeps SIGHUP from terminating
-	// the process, which is what it would do by default. The generations arm
-	// none of them, so a reload never leaves a moment with no handler.
+	// the process, which it would do by default. The generations arm
+	// none of them, and the reload never leaves a moment with no handler.
 	reload := make(chan os.Signal, 1)
 	signal.Notify(reload, syscall.SIGHUP)
 
@@ -172,14 +172,14 @@ func (m *Manager) Start(ctx context.Context) error {
 }
 
 // Reload stops the running platform and starts a new one on the same socket,
-// unless Check refuses it first. Generations never overlap, so a module
-// registered as a value has to survive a restart.
+// unless Check refuses it first. Generations never overlap, and the module
+// registered as a value must survive a restart.
 func (m *Manager) Reload(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	// A stopped manager does not start again. Stop cancels before it releases
-	// mu, so a Reload already queued on the lock sees this.
+	// mu, and the Reload already queued on the lock sees this.
 	if err := m.context.Err(); err != nil {
 		return fmt.Errorf("reload: manager stopped: %w", err)
 	}
@@ -202,7 +202,6 @@ func (m *Manager) Reload(ctx context.Context) error {
 }
 
 // startGeneration builds a platform on the shared socket and starts it.
-// The caller holds mu.
 func (m *Manager) startGeneration(ctx context.Context) error {
 	p := New(m.options)
 	p.Logger = m.Logger
@@ -210,7 +209,7 @@ func (m *Manager) startGeneration(ctx context.Context) error {
 	p.managed = true
 
 	// The pidfile records the process, and the manager holds it. Leaving a
-	// generation one of its own would have every reload remove the file and
+	// generation holding a pidfile would have every reload remove the file and
 	// write it again, and `-s reload` reads it in exactly that window.
 	p.pid = pidfile.Pidfile{}
 
@@ -245,8 +244,7 @@ func (m *Manager) retire() {
 	g.platform.Stop()
 }
 
-// watch takes the manager down with a generation that stopped on its own,
-// which is a caught SIGTERM, or the start context being cancelled.
+// watch stops the manager when a generation stops alone.
 func (m *Manager) watch(g *generation) {
 	<-g.platform.Context().Done()
 
@@ -267,7 +265,7 @@ func (m *Manager) Platform() *Platform {
 }
 
 // URL gives the e2e endpoint URL for requests. A reload does not change it.
-// Before a successful Start there is no socket and the URL is empty.
+// Before Start succeeds there is no socket and the URL is empty.
 func (m *Manager) URL() string {
 	shared := m.shared.Load()
 	if shared == nil {
@@ -277,8 +275,7 @@ func (m *Manager) URL() string {
 	return listenerURL(shared)
 }
 
-// Context returns the cancellation context for the manager. When the context
-// finishes, the platform has shut down and the socket is closed.
+// Context returns the cancellation context, done once the manager stops.
 func (m *Manager) Context() context.Context {
 	return m.context
 }

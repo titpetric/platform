@@ -41,11 +41,11 @@ func (m *Module) PostItem(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-The GET handler has to read the submitted values with `r.FormValue` or `r.PostFormValue`. `platform.Param` and `platform.QueryParam` read the URL path and the query string only, so a handler that uses them re-renders an empty form.
+The GET handler must read the submitted values with `r.FormValue` or `r.PostFormValue`. `platform.Param` and `platform.QueryParam` read the URL path and the query string only, and the handler that uses them re-renders an empty form.
 
 ## Background jobs
 
-The module can implement its background job lifecycle by providing a `Start` and `Stop` function. Invoking `Stop` should be a blocking operation. A module still has to satisfy the whole contract, so embed `platform.UnimplementedModule` and override only these two. For example, with `github.com/robfig/cron/v3`:
+The module can implement its background job lifecycle by providing a `Start` and `Stop` function. Invoking `Stop` should be a blocking operation. A module still must satisfy the whole contract, so embed `platform.UnimplementedModule` and override only these two. For example, with `github.com/robfig/cron/v3`:
 
 ```go
 type Crontab struct {
@@ -80,12 +80,12 @@ func (c *Crontab) Stop(context.Context) error {
 }
 ```
 
-Since `Stop` is blocking, it will wait up to 3 seconds here, so that any running scheduled task is completed before exiting. `Platform.Stop` waits for every module's `Stop` to return, however long that takes. The context it passes carries a five second budget, so a module with nothing better to go on can bound its own teardown by it.
+Since `Stop` is blocking, it will wait up to 3 seconds here, so that any running scheduled task is completed before exiting. `Platform.Stop` waits for every module's `Stop` to return, however long that takes. The context it passes carries a five second budget, and the module with nothing better to go on can bound the teardown by it.
 
 ## Middleware
 
 - Add global middleware via `platform.Use()` (package) or `(*Platform).Use()` (instance).
-- Package-level `platform.Use()` must be called before `platform.New()` or `platform.Start()`. `New` clones the global registry once, so a later call never reaches that platform. Call it from `main` or an `init`.
-- Instance `(*Platform).Use()` must be called before `(*Platform).Start()`. Under a `platform.Manager`, register it from `Manager.Setup`, which runs against every generation.
+- Package-level `platform.Use()` must be called before `platform.New()` or `platform.Start()`. `New` clones the global registry once, and the later call never reaches that platform. Call it from `main` or an `init`.
+- Instance `(*Platform).Use()` must be called before `(*Platform).Start()`. Under a `platform.Manager`, register it in `Manager.Setup`, which runs against every generation.
 - Adding middleware too late is silent: no error, no panic, the middleware just never runs.
 - You can use any existing middleware as long as it matches the `Middleware` signature, `func(http.Handler) http.Handler`.

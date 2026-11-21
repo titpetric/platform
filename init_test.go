@@ -3,6 +3,7 @@ package platform
 import (
 	"testing"
 
+	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/internal/assert"
 )
 
@@ -51,4 +52,15 @@ func TestDatabaseEnvMalformed(t *testing.T) {
 	}
 
 	assert.Equal(t, want, got)
+}
+
+// TestSetupConnections covers the exported entry point, which registers into
+// the package provider.
+func TestSetupConnections(t *testing.T) {
+	provider := global.db
+	global.db = internal.NewDatabaseProvider(internal.Open)
+	t.Cleanup(func() { global.db = provider })
+
+	SetupConnections([]string{"PLATFORM_DB_MAIN=sqlite://:memory:"})
+	assert.Contains(t, global.db.List(), "main")
 }

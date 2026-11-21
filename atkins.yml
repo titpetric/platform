@@ -28,7 +28,7 @@ jobs:
         run: go mod tidy
       # pairing wants a source file beside every _test.go and modcheck
       # objects to the replace directive. Both are what a test only module
-      # is, so the suite runs without them.
+      # is, and the suite runs without them.
       - dir: tests
         run: splint --linters godoc,imports,func-args,func-returns,coverage,grouping,wraphandler,filecheck,visibility,selfcontained ./... || true
       - dir: tests
@@ -43,7 +43,7 @@ jobs:
       - dir: tests
         run: go test -failfast -race -count=1 -cover -coverpkg=${{coverpkg}} -coverprofile=../tests.cov ./...
       # One profile for the whole module. Both runs use the same covermode,
-      # so the second file contributes everything but its mode header.
+      # and the second file contributes everything but its mode header.
       - tail -n +2 tests.cov >> pkg.cov && rm -f tests.cov
 
   integration:
@@ -74,8 +74,7 @@ jobs:
       - task: mdox:fmt
 
   diagrams:
-    desc: "Regenerate the structural diagrams"
-    # Both diagrams are derived files. Edit the source, not the puml or svg.
+    desc: "Regenerate the derived diagrams. Edit the source, not the puml or svg"
     steps:
       - splint docs --render imports ./... > docs/imports.puml
       - splint docs --render puml ./... > docs/structure.puml

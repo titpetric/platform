@@ -45,7 +45,7 @@ func TestPidfile(t *testing.T) {
 		info, err := os.Stat(path)
 		assert.NoError(t, err)
 		// The umask owns the rest of the mode, so asserting 0644 exactly
-		// fails under a umask that is not 022.
+		// fails with a umask that is not 022.
 		assert.True(t, info.Mode().Perm()&0o400 != 0)
 		assert.True(t, info.Mode().Perm()&0o111 == 0)
 	})

@@ -12,10 +12,10 @@ import (
 // Mode is the mode a pidfile is created with, before the umask.
 const Mode = 0o644
 
-// Pidfile is the file a process records its own id in.
+// Pidfile is the file a process records its id in.
 //
-// The zero value is disabled, which is what an empty path asks for, and every
-// method on it is then a no-op. A pidfile is a record and not a lock: Write
+// The zero value is disabled, which an empty path asks for, and every
+// method on the pidfile is then a no-op. A pidfile is a record and not a lock: Write
 // overwrites whatever was there, and Remove gives the file up only while it
 // still holds the id Write put in it.
 type Pidfile struct {

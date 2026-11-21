@@ -48,10 +48,7 @@ func PrintRoutes(log Logger, r chi.Routes) {
 	})
 }
 
-// handlerName names a handler for the route log, resolving the symbol where
-// the handler has one and falling back to its type. reflect.Value.Pointer is
-// legal only for a chan, func, map, pointer, slice or unsafe pointer, and a
-// handler may be a struct value with a ServeHTTP method, so the kind decides.
+// handlerName names a handler for the route log, by symbol or by type.
 func handlerName(handler http.Handler) string {
 	value := reflect.ValueOf(handler)
 

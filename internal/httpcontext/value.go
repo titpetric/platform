@@ -10,7 +10,7 @@ type Value[T any] struct {
 	Key any
 }
 
-// NewValue creates a new value.
+// NewValue returns a Value whose Get yields the zero value when none is set.
 func NewValue[T any](key any) *Value[T] {
 	return &Value[T]{Key: key}
 }

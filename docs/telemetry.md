@@ -32,7 +32,7 @@ func (s *UserStorage) GetUsers(ctx context.Context) ([]User, error) {
 }
 ```
 
-Pass the returned `ctx` down. That is what makes the next `Start` a child rather than a sibling.
+Pass the returned `ctx` down. That makes the next `Start` a child rather than a sibling.
 
 `StartAuto` reads the name from the symbol, so it survives a rename. In the example below the span is named `storage.UserStorage.GetUsers`:
 
@@ -62,23 +62,23 @@ span.SetAttribute("rows", len(users))
 
 ## Errors
 
-Code holding the span records on it directly:
+Code holding the span records on the span directly:
 
 ```go
 span.RecordError(err)
 ```
 
-Code that does not, such as an error path several calls below, records through the context:
+Code that records nothing, such as an error path several calls below, goes through the context:
 
 ```go
 oida.RecordError(ctx, err)
 ```
 
-Both mark the span and its trace as failed, which is what the dashboard's error filter and the `Errors` column in statistics use. A nil error is ignored.
+Both mark the span and its trace as failed, which the dashboard's error filter and the `Errors` column in statistics read. A nil error is ignored.
 
 ## Logs
 
-A trace carries log entries, attributed to the innermost open span, so the lines a request wrote are read next to the spans that wrote them:
+A trace carries log entries, attributed to the innermost open span, and the lines a request wrote are read next to the spans that wrote them:
 
 ```go
 span.Info("cache miss", "key", key)
@@ -86,7 +86,7 @@ span.Warn("retrying upstream", "attempt", n)
 span.Error("upstream refused", "status", resp.StatusCode)
 ```
 
-`CaptureLogs` is on by default, and `OIDA_CAPTURE_LOGS=false` turns it off. Disabled, `Info` and `Warn` do nothing and `Error` records its formatted text on the active span the way `RecordError` does, so the message is not lost.
+`CaptureLogs` is on by default, and `OIDA_CAPTURE_LOGS=false` turns it off. Disabled, `Info` and `Warn` do nothing and `Error` records its formatted text on the active span the way `RecordError` does, and the message is not lost.
 
 ## Configuration
 
@@ -98,9 +98,9 @@ span.Error("upstream refused", "status", resp.StatusCode)
 | `PLATFORM_TELEMETRY_PATH`    | `/debug/oida`                | Mount path of the dashboard.                                             |
 | `PLATFORM_TELEMETRY_SERVICE` | `platform`                   | Service name shown in the dashboard.                                     |
 
-`oida.NewOptions` also sets `ReadEnv`, so the recorder applies its own `OIDA_*` variables when the tracer is built: retention, sampling, allowed networks, users and the signing secret are configurable from the deployment without the platform proxying a variable for each of them. They are the table in the [configuration guide](https://github.com/titpetric/oida/blob/main/docs/guide-configuration.md), and an `OIDA_*` variable applies only where the code left the field at its default, so a value set on `Options.Telemetry` wins.
+`oida.NewOptions` also sets `ReadEnv`, and the recorder applies the `OIDA_*` variables when the tracer is built: retention, sampling, allowed networks, users and the signing secret are configurable from the deployment without the platform proxying a variable for each of them. They are the table in the [configuration guide](https://github.com/titpetric/oida/blob/main/docs/guide-configuration.md), and an `OIDA_*` variable applies only where the code left the field at its default, and the value set on `Options.Telemetry` wins.
 
-The three variables above are the exception, because they are read before a tracer exists. `PLATFORM_TELEMETRY_SERVICE` and `PLATFORM_TELEMETRY_PATH` are set on the struct, so `OIDA_SERVICE_NAME` never applies and `OIDA_PATH` applies only where the platform variable left the path at `/debug/oida`, whether it was unset or set to that value. `OIDA_ENABLED` is read by the platform alongside its own variable, because registration is decided before the tracer that would have applied it; `PLATFORM_TELEMETRY_ENABLED` decides when both are set.
+The three variables above are the exception, because they are read before the tracer exists. `PLATFORM_TELEMETRY_SERVICE` and `PLATFORM_TELEMETRY_PATH` are set on the struct, so `OIDA_SERVICE_NAME` never applies and `OIDA_PATH` applies only where the platform variable left the path at `/debug/oida`, whether it was unset or set to that value. `OIDA_ENABLED` is read by the platform alongside the platform variable, because registration is decided before the tracer that would have applied it. `PLATFORM_TELEMETRY_ENABLED` decides when both are set.
 
 Anything else is set on the struct:
 
@@ -115,7 +115,7 @@ options.Telemetry.Authorize = func(r *http.Request) bool {
 svc := platform.New(options)
 ```
 
-The dashboard is unauthenticated unless it is told otherwise. `Authorize` is the one you write yourself; the recorder also carries a CIDR allow list, a login screen and bearer tokens:
+The dashboard is unauthenticated unless it is told otherwise. `Authorize` is the one you write yourself. The recorder also carries a CIDR allow list, a login screen and bearer tokens:
 
 ```go
 options.Telemetry.AllowedNetworks = []string{"127.0.0.0/8", "10.0.0.0/8"}
@@ -123,7 +123,7 @@ options.Telemetry.Users = map[string]string{"admin": bcryptHash} // htpasswd -nb
 options.Telemetry.SigningSecret = os.Getenv("OIDA_SIGNING_SECRET")
 ```
 
-`Authorize` runs first, then the allow list, then credentials. A request rejected by either of the first two gets a 404; one missing credentials is redirected to `{path}/login` or answered with a 401. Do not expose the dashboard publicly without at least one of them.
+`Authorize` runs first, then the allow list, then credentials. A request rejected by either of the first two gets a 404. One missing credentials is redirected to `{path}/login` or answered with a 401. Do not expose the dashboard publicly without at least one of them.
 
 ## Retention
 
@@ -134,7 +134,7 @@ options := platform.NewOptions()
 options.Telemetry.RingBufferSize = 500
 ```
 
-To keep traces across a restart, ask for disk storage. It writes one JSON document per trace into a folder, retaining at most the limit it is given. The recorder builds it from the environment:
+To keep traces across a restart, ask for disk storage. It writes one JSON document per trace into a folder, retaining at most the limit it is given. The recorder builds it out of the environment:
 
 ```bash
 OIDA_STORAGE_DRIVER=disk
@@ -154,13 +154,13 @@ options := platform.NewOptions()
 options.Telemetry.Storage = store
 ```
 
-Either way the folder is created and checked for writability, so a bad path fails when the driver is built rather than on the first recorded trace. Set from code the error is yours to handle. Set from the environment it reaches `platform.New`, which logs `telemetry disabled` and starts the service without a recorder: the dashboard path answers 404 and nothing is recorded. Under `Options.Quiet` that log line is discarded too. With no path it uses a folder under the operating system temporary directory, which does not survive a reboot.
+Either way the folder is created and checked for writability, and the bad path fails when the driver is built rather than on the first recorded trace. Set from code the error is yours to handle. Set from the environment it reaches `platform.New`, which logs `telemetry disabled` and starts the service without a recorder: the dashboard path answers 404 and nothing is recorded. Under `Options.Quiet` that log line is discarded too. With no path it uses a folder under the operating system temporary directory, which does not survive a reboot.
 
 `RingBufferSize` only sizes the default memory storage. Once `Storage` is set, the driver's own limit bounds retention instead, and it wins over every `OIDA_STORAGE_*` variable.
 
 ## Bringing your own recorder
 
-A host that registers its own telemetry module turns this one off, so only one dashboard is on the path and only one middleware records the request:
+A host that registers a telemetry module turns this one off, and only one dashboard is on the path and only one middleware records the request:
 
 ```go
 options := platform.NewOptions()
@@ -173,7 +173,7 @@ svc.Register(recorder)
 
 `Telemetry.Enabled` gates registration, not just recording: a disabled Telemetry puts no route and no middleware on the router at all. `NewTestOptions` disables it already, so tests observe no dashboard and no recorder unless they opt back in.
 
-`Options.Telemetry` is `oida.Options`, so the zero value is disabled. An `Options` built by hand asks for the recorder the same way `NewOptions` does, by filling it from `oida.NewOptions` and enabling it:
+`Options.Telemetry` is `oida.Options`, and the zero value is disabled. An `Options` built by hand asks for the recorder the same way `NewOptions` does, by filling it out of `oida.NewOptions` and enabling it:
 
 ```go
 options := &platform.Options{
@@ -183,7 +183,7 @@ options := &platform.Options{
 options.Telemetry.Enabled = true
 ```
 
-`oida.NewOptions` also sets `ReadEnv`. A recorder that must ignore the deployment, which is what a test wants, clears it:
+`oida.NewOptions` also sets `ReadEnv`. A recorder that must ignore the deployment, which a test wants, clears it:
 
 ```go
 options.Telemetry.ReadEnv = false
@@ -193,9 +193,9 @@ options.Telemetry.ReadEnv = false
 
 ## What gets recorded
 
-1. **Requests.** The middleware records every sampled request as a trace, named by the routed pattern, so `/users/1` and `/users/2` group into `GET /users/{id}`. The trace ID is also the `Request-Id` response header, which makes it the cheapest correlation key for logs. Paths in `Telemetry.IgnorePaths` are never traced: `/healthz`, `/readyz`, `/metrics` and `/favicon.ico` by default, and the dashboard's own subtree always.
+1. **Requests.** The middleware records every sampled request as a trace, named by the routed pattern, so `/users/1` and `/users/2` group into `GET /users/{id}`. The trace ID is also the `Request-Id` response header, the cheapest correlation key for logs. Paths in `Telemetry.IgnorePaths` are never traced: `/healthz`, `/readyz`, `/metrics` and `/favicon.ico` by default, and the dashboard's own subtree always.
 
-2. **Startup.** Module lifecycle does not arrive over the network, so it gets a trace of its own named `platform.setup`, with `registry.Start` below it, `registry.start` and `registry.mount` below that, and one `module.start: <name>` span per module under `registry.start`. The recorder is a module, so it has one too.
+2. **Startup.** Module lifecycle does not arrive over the network, so it gets a separate trace named `platform.setup`, with `registry.Start` below it, `registry.start` and `registry.mount` below that, and one `module.start: <name>` span per module under `registry.start`. The recorder is a module, so it has one too.
 
 3. **Transactions.** `platform.Transaction` records a `db.Transaction` span.
 

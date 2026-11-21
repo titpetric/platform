@@ -124,7 +124,7 @@ func TestCleanSQLiteDSN(t *testing.T) {
 			want: "file:app?mode=memory&cache=shared",
 		},
 		{
-			// The "?" belongs to a directory name, so the path has no query
+			// The "?" belongs to a directory name, and the path has no query
 			// and the options open one.
 			name: "question mark in a directory name",
 			dsn:  "/tmp/a?b/app.db",

@@ -27,14 +27,7 @@ func cleanDSN(driver, dsn string) string {
 	}
 }
 
-// splitDSN separates a DSN into the part before its query and the query
-// itself, neither carrying the "?".
-//
-// The query begins at the first "?" at or after the last "/". Both DSN forms
-// the platform accepts put the query last and cannot have a "/" in it: the
-// mysql grammar is [user[:pass]@][net[(addr)]]/dbname[?params], and a sqlite
-// DSN is a path or a file: URI. A "?" before that belongs to a password or to
-// a directory name, not to a query.
+// splitDSN separates a DSN into the part before its query and the query.
 func splitDSN(dsn string) (head, query string) {
 	from := strings.LastIndex(dsn, "/") + 1
 
@@ -54,9 +47,7 @@ func joinDSN(head, query string) string {
 	return head + "?" + query
 }
 
-// addOption appends key=value unless the query already sets key. The existing
-// query is never re-encoded: a driver that accepts bytes url would escape
-// differently keeps the DSN it was given.
+// addOption appends key=value unless the query already sets key.
 func addOption(query, key, value string) string {
 	if hasOption(query, key) {
 		return query
@@ -67,9 +58,7 @@ func addOption(query, key, value string) string {
 	return query + "&" + key + "=" + value
 }
 
-// hasOption reports whether the query already sets key. A query the standard
-// library cannot parse falls back to a textual match, so a DSN a driver
-// accepts but url does not is still never given a duplicate option.
+// hasOption reports whether the query sets key, by parse or by text.
 func hasOption(query, key string) bool {
 	if values, err := url.ParseQuery(query); err == nil {
 		return values.Has(key)

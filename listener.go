@@ -6,8 +6,7 @@ import (
 	"time"
 )
 
-// sharedListener is a socket that outlives the platform serving on it. The
-// manager owns one, and hands a generationListener to each platform.
+// sharedListener is a socket that outlives each platform serving it.
 type sharedListener struct {
 	net.Listener
 
@@ -17,8 +16,7 @@ type sharedListener struct {
 	pending chan net.Conn
 }
 
-// deadliner unblocks an accept loop without closing the socket under it.
-// *net.TCPListener implements it.
+// deadliner unblocks an accept loop without closing the socket.
 type deadliner interface {
 	SetDeadline(t time.Time) error
 }
@@ -30,8 +28,7 @@ func newSharedListener(l net.Listener) *sharedListener {
 	}
 }
 
-// next hands the socket to a new generation, clearing the deadline the
-// previous one was retired with.
+// next hands the socket to a new generation, clearing the old deadline.
 func (s *sharedListener) next() *generationListener {
 	if d, ok := s.Listener.(deadliner); ok {
 		_ = d.SetDeadline(time.Time{})
@@ -43,9 +40,7 @@ func (s *sharedListener) next() *generationListener {
 	}
 }
 
-// handoff parks a connection for the next generation, and closes it when the
-// slot is taken. One slot is enough: a retiring generation hands over at most
-// the one connection it accepted and did not serve.
+// handoff parks a connection for the next generation, closing it when the slot is full.
 func (s *sharedListener) handoff(conn net.Conn) {
 	select {
 	case s.pending <- conn:
@@ -54,7 +49,7 @@ func (s *sharedListener) handoff(conn net.Conn) {
 	}
 }
 
-// Close closes the socket, and anything parked on it.
+// Close closes the socket, and anything parked there.
 func (s *sharedListener) Close() error {
 	select {
 	case conn := <-s.pending:
@@ -65,8 +60,7 @@ func (s *sharedListener) Close() error {
 	return s.Listener.Close()
 }
 
-// generationListener is the view of the shared socket one platform
-// generation gets. Closing it retires the generation, not the socket.
+// generationListener is one platform generation's view of the shared socket.
 type generationListener struct {
 	shared *sharedListener
 
@@ -76,8 +70,7 @@ type generationListener struct {
 
 var _ net.Listener = (*generationListener)(nil)
 
-// Accept returns the next connection, or net.ErrClosed once the generation
-// has been retired.
+// Accept returns the next connection, or net.ErrClosed once retired.
 func (l *generationListener) Accept() (net.Conn, error) {
 	select {
 	case conn := <-l.shared.pending:
@@ -89,7 +82,7 @@ func (l *generationListener) Accept() (net.Conn, error) {
 
 	select {
 	case <-l.closed:
-		// The socket moved on while this accept was blocked on it, so
+		// The socket moved on while this accept was blocked there, so
 		// the connection is the next generation's to serve.
 		if conn != nil {
 			l.shared.handoff(conn)
@@ -101,8 +94,7 @@ func (l *generationListener) Accept() (net.Conn, error) {
 	return conn, err
 }
 
-// Close retires the generation without closing the shared socket. A
-// deadline in the past unblocks an accept already in flight.
+// Close retires the generation without closing the shared socket.
 func (l *generationListener) Close() error {
 	l.once.Do(func() {
 		close(l.closed)
@@ -120,8 +112,7 @@ func (l *generationListener) Addr() net.Addr {
 	return l.shared.Addr()
 }
 
-// listenerURL gives the e2e endpoint URL for a listener, and an empty string
-// for a listener with no address, which is one that never bound.
+// listenerURL gives the e2e URL of a listener, or "" when it has no address.
 func listenerURL(l net.Listener) string {
 	if l == nil {
 		return ""

@@ -7,7 +7,7 @@ import (
 	"github.com/titpetric/platform/internal/assert"
 )
 
-// recordingTB stands in for a *testing.T so the failure reporters can be
+// recordingTB stands in for a *testing.T and the failure reporters can be
 // called without failing the test that calls them. Only Fail and FailNow are
 // reached; the embedded nil TB is never used.
 type recordingTB struct {
@@ -24,9 +24,9 @@ func (r *recordingTB) FailNow() {
 	r.failed = true
 }
 
-// mustFail calls a failing assertion against a recordingTB, so the failure is
+// mustFail calls a failing assertion against the recordingTB, and the failure is
 // recorded instead of failing the test that drives it. Every assertion prints
-// its message to stdout when it fails, so a passing run prints one line per
+// its message to stdout when it fails, and the passing run prints one line per
 // case. That is the reporter working, not a test failing.
 func mustFail(t *testing.T, name string, failing func(testing.TB)) {
 	t.Helper()
@@ -108,9 +108,9 @@ func assertCore(t *testing.T) {
 	assert.Assert(t, true, "condition holds for %d", 42)
 }
 
-// assertReporters drives Errorf and Fail against a stand-in TB, so the failure
+// assertReporters drives Errorf and Fail against a stand-in TB, and the failure
 // they raise is recorded instead of failing this test. Both print the message
-// to stdout, which is what the two lines in a passing run are.
+// to stdout, which are the two lines of a passing run.
 func assertReporters(t *testing.T) {
 	errorf := &recordingTB{}
 	assert.Errorf(errorf, "reporter check: %d", 42)

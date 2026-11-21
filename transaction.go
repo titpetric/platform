@@ -2,9 +2,8 @@ package platform
 
 import (
 	"context"
-	"fmt"
-
 	"database/sql"
+	"fmt"
 
 	"github.com/titpetric/oida"
 )

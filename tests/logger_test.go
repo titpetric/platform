@@ -36,7 +36,7 @@ func (l *recordLogger) has(msg string) bool {
 }
 
 // verboseTestOptions produces test options that log. NewTestOptions is
-// quiet, which is what the rest of the suite wants, but a test that asserts
+// quiet, which the rest of the suite wants, but a test that asserts
 // on output needs the platform to produce some.
 func verboseTestOptions() *platform.Options {
 	options := platform.NewTestOptions()
@@ -88,7 +88,7 @@ func TestLogger(t *testing.T) {
 		svc.Stop()
 		svc.Wait()
 
-		// The signal goroutine wakes on its own schedule.
+		// The signal goroutine wakes on a schedule.
 		time.Sleep(50 * time.Millisecond)
 
 		assert.False(t, log.has("caught sigterm, stopping server"))

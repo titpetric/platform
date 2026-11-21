@@ -114,7 +114,7 @@ func TestManager(t *testing.T) {
 	})
 }
 
-// TestManager_sighup covers the signal the manager exists for. It has to
+// TestManager_sighup covers the signal the manager exists for. It must
 // be running throughout: SIGHUP terminates a process that ignores it.
 func TestManager_sighup(t *testing.T) {
 	mod := &countingModule{}
@@ -145,12 +145,12 @@ func TestManager_sighup(t *testing.T) {
 }
 
 // TestManager_reload_drains covers a request in flight while the reload
-// retires the generation serving it. The old handler finishes the response.
+// retires the generation serving it, while the old handler finishes the response.
 func TestManager_reload_drains(t *testing.T) {
 	release := make(chan struct{})
 	serving := make(chan struct{})
 
-	// Only the request that the reload races has to block; the one after
+	// Only the request that the reload races must block; the one after
 	// it checks that the new generation serves.
 	var once sync.Once
 
@@ -220,7 +220,7 @@ func TestManager_failed_reload(t *testing.T) {
 	m.Wait()
 }
 
-// TestManager_context_cancel covers the platform stopping on its own. The
+// TestManager_context_cancel covers the platform stopping alone. The
 // manager is watching for it, and goes down with the generation it holds.
 func TestManager_context_cancel(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
@@ -309,7 +309,7 @@ func TestManagerPidFile(t *testing.T) {
 }
 
 // TestManagerCheck covers the hook that decides whether a reload happens,
-// separating a refusal that keeps serving from a failure that does not.
+// separating a refusal that keeps serving from a failure that stops serving.
 func TestManagerCheck(t *testing.T) {
 	// Check is read from the handler's goroutine, so it goes on before Start.
 	newManager := func(tb testing.TB, mod platform.Module, check func() error) *platform.Manager {
@@ -375,7 +375,7 @@ func TestManagerCheck(t *testing.T) {
 	})
 
 	// The handler decides from what is serving rather than from the error,
-	// so a refused SIGHUP must not take the process down.
+	// and the refused SIGHUP must not take the process down.
 	t.Run("a refused reload survives sighup", func(t *testing.T) {
 		mod := &countingModule{}
 		m := newManager(t, mod, func() error {

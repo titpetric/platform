@@ -1,13 +1,12 @@
 package platform_test
 
 import (
+	"database/sql"
 	"os"
 	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"testing"
-
-	"database/sql"
 
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/internal/assert"
@@ -74,7 +73,7 @@ func TestDatabaseProviderCachesUnderResolvedName(t *testing.T) {
 }
 
 // TestDatabaseProviderUnpingableRecovers covers a Connect whose ping fails. The
-// handle is a pool and reconnects on its own, so it stays cached and serves the
+// handle is a pool and reconnects unaided, so it stays cached and serves the
 // callers already holding it once the database is reachable.
 func TestDatabaseProviderUnpingableRecovers(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "missing")
@@ -87,7 +86,7 @@ func TestDatabaseProviderUnpingableRecovers(t *testing.T) {
 	assert.NotNil(t, first)
 
 	_, err = provider.Connect(t.Context(), "broken")
-	assert.Error(t, err, "a database in a directory that does not exist cannot be pinged")
+	assert.Error(t, err, "a database in a directory that is missing cannot be pinged")
 
 	assert.NoError(t, os.MkdirAll(missing, 0o755))
 

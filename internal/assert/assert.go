@@ -104,7 +104,7 @@ func CheckEquals(t testing.TB, actual, expected any, msg ...any) {
 	}
 }
 
-// Assert is similar to True() under a different name and earlier
+// Assert is similar to True() by a different name and earlier
 // fortio/stats test implementation.
 func Assert(t testing.TB, cond bool, msg string, rest ...any) {
 	if !cond {

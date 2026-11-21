@@ -5,8 +5,8 @@
 // 3. Provides a router the modules can attach to
 //
 // It's advised to use `platform.RegisterFunc` from `init` functions.
-// Similarly, `platform.Use` should be used from `main` or any
-// descendant setup functions. Don't use these functions from tests
+// Similarly, `platform.Use` belongs to `main` at the top level, or to
+// any descendant setup function. Don't use these functions from tests
 // as they create a shared state.
 //
 // It's possible to use the platform in an imperative way.
@@ -22,7 +22,7 @@
 // state and holds scoped allocations only, enabling test parallelism.
 // Modules are part of that copy when registered with `RegisterFunc`,
 // which is called once per platform. A value registered with the
-// deprecated `Register` is shared by every platform in the process.
+// deprecated `Register` is shared by the platforms in the process.
 package platform
 
 import (
@@ -50,7 +50,7 @@ import (
 type Platform struct {
 	// Logger receives the platform's own output. New sets it to
 	// slog.Default(), or to a discarding logger when Options.Quiet is set.
-	// Assign to it before Start to reuse the platform logger from a test,
+	// Assign to it ahead of Start to reuse the platform logger from a test,
 	// or to route output into a consumer application's logger.
 	Logger Logger
 
@@ -61,8 +61,8 @@ type Platform struct {
 	server   *http.Server
 	listener net.Listener
 
-	// served is closed when the accept loop has returned. Stop waits on it,
-	// so a manager gets the socket back when Stop is done.
+	// served is closed when the accept loop has returned. Stop waits for the socket,
+	// and the manager gets the socket back when Stop is done.
 	served chan struct{}
 
 	// final shutdown context
@@ -108,7 +108,7 @@ func New(options *Options) *Platform {
 	}
 
 	// Set up the platform logger. It's set before anything that logs, and
-	// stays assignable so a test or a consumer can take the output over.
+	// stays assignable and the test or a consumer can take the output over.
 	p.Logger = slog.Default()
 	if options.Quiet {
 		p.Logger = discard
@@ -117,8 +117,8 @@ func New(options *Options) *Platform {
 	// Set up the default registry.
 	p.registry = global.registry.Clone()
 
-	// Record into oida unless telemetry is off, which is how a host that
-	// brought its own recorder keeps this one off the router. An invalid
+	// Record into oida unless telemetry is off, which is the way a host that
+	// brought a recorder keeps this one off the router. An invalid
 	// config disables recording rather than failing the service: every
 	// instrumentation call below is nil safe.
 	if options.Telemetry.Enabled {
@@ -136,14 +136,12 @@ func New(options *Options) *Platform {
 	return p
 }
 
-// Register will add a registry.Module into the internal platform registry.
-// This function should be called before Serve is called.
+// Register adds a module to the platform registry.
 func (p *Platform) Register(m Module) {
 	p.registry.register(m)
 }
 
-// Use will add a middleware to the internal platform registry.
-// This function should be called before Serve is called.
+// Use adds a middleware to the platform registry.
 func (p *Platform) Use(m Middleware) {
 	p.registry.Use(m)
 }
@@ -173,7 +171,7 @@ func (p *Platform) Start(ctx context.Context) error {
 	// what this records.
 	if err := p.pid.Write(); err != nil {
 		// setup bound the socket and built the server, but Serve runs
-		// below, so nothing else closes either. p.served is closed so the
+		// below, so nothing else closes either. p.served is closed and the
 		// wait in Stop has a writer.
 		if p.listener != nil {
 			_ = p.listener.Close()
@@ -244,9 +242,7 @@ func (p *Platform) setup(startCtx context.Context) error {
 	})
 }
 
-// observe runs fn inside a background trace, so the spans it starts are
-// recorded. Without a telemetry module there is nothing to record into and fn
-// runs as it is.
+// observe runs fn inside a background trace when a telemetry module records.
 func (p *Platform) observe(ctx context.Context, name string, fn func(context.Context) error) error {
 	if p.telemetry == nil {
 		return fn(ctx)
@@ -265,7 +261,7 @@ func (p *Platform) setupRequestContext(next http.Handler) http.Handler {
 }
 
 func (p *Platform) setupListener() error {
-	// A Manager hands its platform a listener to serve, so the socket
+	// A Manager hands its platform a listener to serve, and the socket
 	// survives a reload. Only bind one when there is none.
 	if p.listener == nil {
 		listener, err := net.Listen("tcp", p.options.ServerAddr)
@@ -279,8 +275,7 @@ func (p *Platform) setupListener() error {
 	return nil
 }
 
-// Context returns the cancellation context for the service.
-// When the context finishes, the server has shut down.
+// Context returns the cancellation context, done once the server stops.
 func (p *Platform) Context() context.Context {
 	return p.context
 }
@@ -342,7 +337,7 @@ func (p *Platform) Stop() {
 		oida.RecordError(p.context, p.server.Shutdown(ctx))
 
 		// Shutdown returns once the connections are done, but the accept
-		// loop is a goroutine of its own, and nothing may be accepting
+		// loop is a separate goroutine, and nothing may be accepting
 		// when a manager hands the socket to the next generation.
 		select {
 		case <-p.served:

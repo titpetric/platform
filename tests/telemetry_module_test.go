@@ -14,13 +14,13 @@ import (
 )
 
 // telemetryPath is the path these tests mount the dashboard on. It is spelled
-// out rather than read from the recorder, so a test asks for the address it
+// out rather than read from the recorder, and the test asks for the address it
 // configured instead of whatever the library defaults to.
 const telemetryPath = "/debug/oida"
 
 // tracedOptions returns recorder options a test can rely on: recording is on,
 // memory accounting is off because it costs a GC read per trace, and ReadEnv is
-// off so an OIDA_* variable in the environment cannot reconfigure the run.
+// off, and the OIDA_* variable in the environment cannot reconfigure the run.
 func tracedOptions() oida.Options {
 	options := oida.NewOptions("platform-test")
 	options.Path = telemetryPath
@@ -31,7 +31,7 @@ func tracedOptions() oida.Options {
 }
 
 // newTracedPlatform returns a platform recording into oida. NewTestOptions
-// disables telemetry, so a test that wants the dashboard opts back in.
+// disables telemetry, and the test that wants the dashboard opts back in.
 func newTracedPlatform(t *testing.T) *platform.Platform {
 	t.Helper()
 
@@ -95,7 +95,7 @@ func TestTelemetryModuleRecordsRequests(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(body, &traces))
 
 	// The startup trace and the request. Requests to the dashboard itself
-	// are not recorded, so the count is stable.
+	// are not recorded, and the count is stable.
 	byName := map[string]oida.Trace{}
 	for _, trace := range traces {
 		byName[trace.Name] = trace
@@ -142,7 +142,7 @@ func TestTelemetryModuleRecordsStartup(t *testing.T) {
 	assert.Contains(t, names, "module.start: TestTelemetry")
 }
 
-// A disabled Telemetry registers no module, so the dashboard is not on the
+// A disabled Telemetry registers no module, and the dashboard is not on the
 // router at all rather than mounted and empty.
 func TestTelemetryDisabledRegistersNoModule(t *testing.T) {
 	svc := NewTestPlatform(t)
@@ -189,7 +189,7 @@ func TestTelemetryDefaults(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, status)
 }
 
-// The environment turns recording on, which is how a deployment asks for the
+// The environment turns recording on, which is the way a deployment asks for the
 // dashboard without a code change.
 func TestTelemetryEnabledByEnv(t *testing.T) {
 	t.Setenv("PLATFORM_TELEMETRY_ENABLED", "true")
@@ -208,7 +208,7 @@ func TestTelemetryEnabledByEnv(t *testing.T) {
 }
 
 // OIDA_ENABLED is read by the platform rather than left to oida, because
-// registration is decided before a tracer exists: a module that never
+// registration is decided before the tracer exists: a module that never
 // registered never reaches the New that would have applied the variable.
 func TestTelemetryEnabledByRecorderEnv(t *testing.T) {
 	// The test environment pins the platform's own variable, so it is the
@@ -217,7 +217,7 @@ func TestTelemetryEnabledByRecorderEnv(t *testing.T) {
 	t.Setenv("OIDA_ENABLED", "true")
 	assert.True(t, platform.NewOptions().Telemetry.Enabled)
 
-	// The platform's own variable decides, so a deployment can keep the
+	// The platform's own variable decides, and the deployment can keep the
 	// dashboard off a service the recorder is configured for elsewhere.
 	t.Setenv("PLATFORM_TELEMETRY_ENABLED", "false")
 	assert.False(t, platform.NewOptions().Telemetry.Enabled)

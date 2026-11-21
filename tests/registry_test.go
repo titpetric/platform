@@ -62,8 +62,8 @@ func TestRegistry_Modules(t *testing.T) {
 	})
 }
 
-// TestRegistry_RegisterFunc covers constructor registration, which is what
-// gives each platform, and each reload generation, modules of its own.
+// TestRegistry_RegisterFunc covers constructor registration, which
+// gives each platform, and each reload generation, separate modules.
 func TestRegistry_RegisterFunc(t *testing.T) {
 	var built int
 
@@ -82,7 +82,7 @@ func TestRegistry_RegisterFunc(t *testing.T) {
 	assert.True(t, r.Clone().Find(&second))
 
 	assert.Equal(t, 2, built)
-	assert.True(t, first != second, "each clone should get its own module")
+	assert.True(t, first != second, "each clone should get a separate module")
 	assert.Equal(t, "1", first.Nickname)
 	assert.Equal(t, "2", second.Nickname)
 }

@@ -18,10 +18,10 @@ type Options struct {
 	// ServerAddr is the address the server listens to.
 	ServerAddr string
 
-	// PidFile is the file the process records its own id in, for a service
+	// PidFile is the file the process records its id in, for a service
 	// manager or a command line that signals it. Empty writes none. The
-	// directory has to exist, an existing file is overwritten, and the file
-	// is removed on a clean stop. A Manager writes it for the process, so a
+	// directory must exist, an existing file is overwritten, and the file
+	// is removed on a clean stop. A Manager writes it for the process, and the
 	// reload leaves it alone.
 	PidFile string
 
@@ -56,13 +56,13 @@ func NewOptions() *Options {
 	opt.Modules = opt.envCSV("PLATFORM_MODULES")
 
 	// oida.NewOptions carries the recorder's own defaults (ring buffer,
-	// sampling, mount path) and sets ReadEnv, so the OIDA_* environment
+	// sampling, mount path) and sets ReadEnv, and the OIDA_* environment
 	// reaches retention, sampling and access control without the platform
 	// proxying a variable for each of them.
 	opt.Telemetry = oida.NewOptions(opt.env("PLATFORM_TELEMETRY_SERVICE", "platform"))
 	opt.Telemetry.Path = opt.env("PLATFORM_TELEMETRY_PATH", opt.Telemetry.Path)
 
-	// Registration is gated on this before a tracer exists, so OIDA_ENABLED
+	// Registration is gated on this before the tracer exists, so OIDA_ENABLED
 	// is read here rather than left to oida: a module that never registered
 	// does not reach the New that would have applied it.
 	opt.Telemetry.Enabled = opt.envBool("PLATFORM_TELEMETRY_ENABLED", opt.envBool("OIDA_ENABLED", false))
@@ -100,7 +100,7 @@ func NewTestOptions() *Options {
 
 		// Tests get no dashboard and no recorder unless they ask for
 		// one, which keeps the global state they observe empty. A
-		// literal leaves ReadEnv off, so an OIDA_* variable in the
+		// literal leaves ReadEnv off, and the OIDA_* variable in the
 		// environment cannot turn a test run into a recording one.
 		// It leaves PidFile empty for the same reason: one test binary
 		// runs many platforms, and an inherited PLATFORM_PIDFILE would

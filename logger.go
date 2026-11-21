@@ -5,16 +5,14 @@ import (
 	"log/slog"
 )
 
-// Logger is the interface the platform writes its own output through.
-// It is the subset of *slog.Logger the platform needs, so a *slog.Logger
-// can be assigned to Platform.Logger as it is.
+// Logger is the interface the platform writes output through: the subset of
+// *slog.Logger it needs. A *slog.Logger assigns to Platform.Logger as it is.
 type Logger interface {
 	Info(msg string, args ...any)
 	Error(msg string, args ...any)
 }
 
-// discard swallows platform output. It backs Options.Quiet, and stands in
-// when Platform.Logger has been set to nil.
+// discard swallows platform output, backing Options.Quiet.
 var discard Logger = slog.New(slog.DiscardHandler)
 
 // logger returns the platform logger, never nil.
@@ -33,9 +31,7 @@ func (m *Manager) logger() Logger {
 	return m.Logger
 }
 
-// loggerFromContext returns the logger of the platform bound to the context.
-// A Registry is usable as a bare value, outside of a platform, so there may
-// be no platform in the context, in which case output is discarded.
+// loggerFromContext returns the platform logger bound to the context.
 func loggerFromContext(ctx context.Context) Logger {
 	if p := FromContext(ctx); p != nil {
 		return p.logger()

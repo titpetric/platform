@@ -37,15 +37,13 @@ type Registry struct {
 	cleanups []func(context.Context)
 }
 
-// registration is a registered module: an instance, or the constructor a
-// clone calls to make one.
+// registration is a module instance, or the constructor that makes one.
 type registration struct {
 	module  Module
 	factory func() Module
 }
 
-// instance returns the module to start, calling the constructor when the
-// registration is one.
+// instance returns the module to start, calling the constructor when there is one.
 func (e registration) instance() Module {
 	if e.factory != nil {
 		return e.factory()
@@ -53,17 +51,12 @@ func (e registration) instance() Module {
 	return e.module
 }
 
-// Register adds a Module to the registry.
-//
-// Deprecated: use RegisterFunc. One value is shared by every platform that
-// clones the registry, including the generations of a reload, so its state
-// outlives the platform it was started with.
+// Register adds a Module to the registry. Deprecated: use RegisterFunc.
 func (r *Registry) Register(m Module) {
 	r.register(m)
 }
 
-// RegisterFunc adds a module constructor to the registry. Clone calls it,
-// so every platform starts a module of its own.
+// RegisterFunc adds a module constructor that Clone calls per platform.
 func (r *Registry) RegisterFunc(f func() Module) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -71,9 +64,7 @@ func (r *Registry) RegisterFunc(f func() Module) {
 	r.registrations = append(r.registrations, registration{factory: f})
 }
 
-// register adds a module value, and is what the platform registers into,
-// its registry being one platform's own. It takes the lock: the callers
-// outside this file hold none of their own.
+// register adds a module value, taking the lock itself.
 func (r *Registry) register(m Module) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -81,11 +72,7 @@ func (r *Registry) register(m Module) {
 	r.registrations = append(r.registrations, registration{module: m})
 }
 
-// materialize calls the constructors that have not been called yet. Clone
-// does it for a platform; a registry started as it stands does it here.
-//
-// The caller holds the write lock. A constructor is foreign code, so this is
-// only safe for a registry nothing else can reach yet.
+// materialize calls the constructors not called yet. The caller holds the write lock.
 func (r *Registry) materialize() {
 	for i, e := range r.registrations {
 		if e.module == nil {
@@ -94,9 +81,7 @@ func (r *Registry) materialize() {
 	}
 }
 
-// Cleanup registers a function to run when the registry closes, as
-// testing.T.Cleanup does for a test. The cleanups are registered in Start,
-// and run in Close.
+// Cleanup registers a function to run when the registry closes.
 func (r *Registry) Cleanup(fn func(context.Context)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -109,9 +94,7 @@ func (r *Registry) cleanup(fn func(context.Context)) {
 	r.cleanups = append(r.cleanups, fn)
 }
 
-// Find gets a Module from the registry.
-// The target argument can be a pointer or an interface. The function returns true
-// if a module matching the type or interface was found and assigned to `target`.
+// Find fills target, a pointer or an interface, with a matching module.
 func (r *Registry) Find(target any) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -163,11 +146,8 @@ func (r *Registry) Use(f Middleware) {
 	r.middleware = append(r.middleware, f)
 }
 
-// Start will invoke all the modules start functions sequentially.
-// If an error occurs, execution is halted and an error is returned.
-// The context is passed along for observability and access to the platform.
-// The registry's own output goes to the logger of the platform in the
-// context; without one it is discarded.
+// Start starts the modules in order and then mounts them. A failure halts the
+// run, and an error ends it.
 func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
 	ctx, span := oida.Start(ctx, "registry.Start")
 	defer span.End()
@@ -194,11 +174,7 @@ func (r *Registry) Start(ctx context.Context, mux Router, opts *Options) error {
 	return r.mount(ctx, mux, middleware, modules)
 }
 
-// filter will provide a set of enabled modules based on options
-// it prints which modules are enabled/disabled to the log.
-//
-// It takes the registrations rather than reading them off the registry,
-// because Name is the module's own code and must not run under the lock.
+// filter returns the modules the options enable, and logs the rest.
 func filter(registrations []registration, log Logger, opts *Options) ([]Module, error) {
 	var enabled []Module
 	var disabled []string
@@ -232,8 +208,7 @@ func filter(registrations []registration, log Logger, opts *Options) ([]Module, 
 	return enabled, nil
 }
 
-// mount attaches the middleware and then every module's routes. It holds no
-// lock: Mount is the module's code and may reach back into the registry.
+// mount attaches the middleware and then every module's routes, holding no lock.
 func (r *Registry) mount(ctx context.Context, mux Router, middleware []Middleware, modules []Module) error {
 	ctx, span := oida.Start(ctx, "registry.mount")
 	defer span.End()
@@ -296,9 +271,7 @@ func (r *Registry) stopModule(ctx context.Context, mod Module) {
 	}
 }
 
-// Close will invoke all the modules close functions in parallel.
-// When finished, it will clear the registered modules list, as
-// well as any defined middleware and invoked cleanups.
+// Close runs the cleanups, then clears the modules, middleware and cleanups.
 func (r *Registry) Close(ctx context.Context) {
 	r.mu.Lock()
 	cleanups := r.cleanups
@@ -313,8 +286,7 @@ func (r *Registry) Close(ctx context.Context) {
 	r.close(ctx, cleanups)
 }
 
-// close runs the cleanups in parallel and waits for them. It holds no lock: a
-// cleanup is a module's Stop, which may reach back into the registry.
+// close runs the cleanups in parallel and waits for them, holding no lock.
 func (r *Registry) close(ctx context.Context, cleanups []func(context.Context)) {
 	ctx, span := oida.Start(ctx, "registry.close")
 	defer span.End()

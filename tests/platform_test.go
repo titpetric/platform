@@ -124,8 +124,8 @@ func BenchmarkPlatform(b *testing.B) {
 }
 
 // TestPlatform_stop_after_failed_start covers the lifecycle hole where setup
-// fails before the server is built. Stop is still how a caller releases what
-// did get allocated, so it has to tolerate that.
+// fails before the server is built. Stop is still the way a caller releases what
+// did get allocated, so it must tolerate that.
 func TestPlatform_stop_after_failed_start(t *testing.T) {
 	options := platform.NewTestOptions()
 	options.ServerAddr = "127.0.0.1:not-a-port"
@@ -199,7 +199,7 @@ func TestPlatformPidFile(t *testing.T) {
 		svc := platform.New(options)
 		assert.Error(t, svc.Start(t.Context()))
 
-		// A file naming a process that never came up is what a service
+		// A file naming a process that never came up is the failure a service
 		// manager would act on.
 		_, err := os.Stat(path)
 		assert.ErrorIs(t, err, fs.ErrNotExist)
@@ -224,12 +224,12 @@ const (
 	signalPidFileEnv = "PLATFORM_TEST_SIGNAL_PIDFILE"
 
 	// signalReady is printed once Start has returned, which is after the
-	// signal handler is armed. The parent waits for it before signalling:
+	// signal handler is armed. The parent waits for it, then signals:
 	// a signal delivered before then takes its default disposition and
 	// kills the child outright.
 	signalReady = "ready"
 
-	// signalStopped is printed once Wait has returned, so the parent can
+	// signalStopped is printed once Wait has returned, and the parent can
 	// tell a graceful stop from a process that was killed.
 	signalStopped = "stopped"
 )
@@ -256,7 +256,7 @@ func TestPlatformSignalChild(t *testing.T) {
 // TestPlatformSignals covers the two signals a platform stops on.
 //
 // It signals a child rather than raising in process: signal.Notify is
-// process-wide, so a SIGTERM raised here would reach every platform the
+// process-wide, and the SIGTERM raised in this process would reach every platform the
 // suite has running, and an unarmed moment kills the test binary.
 func TestPlatformSignals(t *testing.T) {
 	if testing.Short() {
@@ -322,7 +322,7 @@ func TestPlatformSignals(t *testing.T) {
 	}
 }
 
-// waitFor reports whether want appears on its own line before the stream
+// waitFor reports whether want appears on a line before the stream
 // ends.
 func waitFor(lines *bufio.Scanner, want string) bool {
 	for lines.Scan() {

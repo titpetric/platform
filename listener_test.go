@@ -20,7 +20,7 @@ func newTestSharedListener(tb testing.TB) *sharedListener {
 }
 
 // TestSharedListener covers the socket outliving the generation serving on
-// it, which is what makes a reload keep its address.
+// it, which makes a reload keep its address.
 func TestSharedListener(t *testing.T) {
 	shared := newTestSharedListener(t)
 	addr := shared.Addr().String()
@@ -36,8 +36,8 @@ func TestSharedListener(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NoError(t, conn.Close())
 
-	// Retiring the generation is what http.Server.Shutdown does to the
-	// listener it serves. The socket has to survive it.
+	// Retiring the generation does what http.Server.Shutdown does to the
+	// listener it serves. The socket must survive it.
 	assert.NoError(t, first.Close())
 
 	_, err = first.Accept()
@@ -105,21 +105,21 @@ func TestSharedListener_handoff(t *testing.T) {
 		shared.handoff(first)
 		shared.handoff(second)
 
-		// The slot is taken, so the second connection is closed rather
+		// The slot is taken, and the second connection is closed rather
 		// than held for a generation that may never arrive.
 		_, err := second.Write([]byte("x"))
 		assert.ErrorIs(t, err, io.ErrClosedPipe)
 
 		assert.NoError(t, shared.Close())
 
-		// Closing the socket releases what was parked on it.
+		// Closing the socket releases what was parked there.
 		_, err = first.Write([]byte("x"))
 		assert.ErrorIs(t, err, io.ErrClosedPipe)
 	})
 }
 
 // TestListenerURLNoSocket covers the URL of a platform and a manager that have
-// no socket, which is every one before a successful Start.
+// no socket, which is every one before Start succeeds.
 func TestListenerURLNoSocket(t *testing.T) {
 	assert.Equal(t, "", listenerURL(nil))
 

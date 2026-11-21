@@ -1,0 +1,8 @@
+# chi is the router every routing file writes against, and oida is the tracer
+# the middleware and the dashboard read through. A rule about a dependency
+# spreading keeps these two out: they are the tree.
+imports:
+  pollution:
+    ignore:
+      - github.com/go-chi/chi/v5
+      - github.com/titpetric/oida

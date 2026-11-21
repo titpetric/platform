@@ -1,11 +1,10 @@
 package platform_test
 
 import (
+	"database/sql"
 	"errors"
 	"path/filepath"
 	"testing"
-
-	"database/sql"
 
 	"github.com/titpetric/platform/internal"
 	"github.com/titpetric/platform/internal/assert"
